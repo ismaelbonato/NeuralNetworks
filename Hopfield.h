@@ -2,33 +2,34 @@
 #define HOPFIELD_H
 #include "Model.h"
 
-#include <vector>
-#include <memory>
 #include <cstddef> // for size_t
+#include <memory>
+#include <vector>
 
-#include "Layer.h"
 #include "HopfieldLayer.h"
+#include "Layer.h"
 #include "LearningRule.h"
 
-class Hopfield: public Model
+class Hopfield : public Model
 {
 public:
     Hopfield(size_t n)
-        : Model(std::make_unique<HebbianRule>(), n)
+        : Model(n)
     {
-        layers.emplace_back(std::make_unique<HopfieldLayer>(n, n));
+        layers.emplace_back(
+            std::make_unique<HopfieldLayer>(std::move(std::make_unique<HebbianRule>()), n, n));
     }
 
     // Constructor with custom learning rule
     Hopfield(std::unique_ptr<LearningRule> newRule, size_t n)
-        : Model(std::move(newRule), n)
+        : Model(n)
     {
-        layers.emplace_back(std::make_unique<HopfieldLayer>(n, n));
+        layers.emplace_back(std::make_unique<HopfieldLayer>(std::move(newRule), n, n));
     }
 
     ~Hopfield() override = default;
-private:
 
+private:
 };
 
 #endif // HOPFIELD_H

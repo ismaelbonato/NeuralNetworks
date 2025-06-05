@@ -12,20 +12,15 @@ public:
     Model() = default;
 
     // Constructor that takes ownership of a LearningRule and sets the number of neurons
-    Model(std::unique_ptr<LearningRule> rule, size_t n)
-        : nNeurons(n), learningRule(std::move(rule)) {}
+    Model(size_t n)
+        : nNeurons(n) {}
 
     virtual ~Model() = default;
 protected:
     size_t nNeurons;
     std::vector<std::unique_ptr<Layer>> layers;
-    std::unique_ptr<LearningRule> learningRule;
 
 public:
-    void setLearningRule(std::unique_ptr<LearningRule> rule) {
-        learningRule = std::move(rule);
-    }
-
     // Add a layer to the model
     void addLayer(std::unique_ptr<Layer> layer) {
         layers.push_back(std::move(layer));
@@ -40,11 +35,8 @@ public:
 
     // Call the learning rule's learn method
     void learn(const std::vector<Pattern>& patterns) {
-        if (!learningRule) return; 
-        if (layers.empty()) return; 
-
-        for (auto& layer : layers) { // Ensure 'auto&' for proper iteration
-            layer->setWeights(learningRule->learn(patterns));
+        for (auto& layer : layers) { 
+            layer->learn(patterns);
         }
     }
     

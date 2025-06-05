@@ -14,7 +14,7 @@ Pattern png_to_bits(const std::string& filename) {
     cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE); 
     cv::Mat resizedImage;
 
-    cv::resize(img, resizedImage, cv::Size(64, 64));
+    cv::resize(img, resizedImage, cv::Size(32, 32));
 
     Pattern pattern;
     pattern.reserve(static_cast<size_t>(resizedImage.rows) * static_cast<size_t>(resizedImage.cols));
@@ -28,6 +28,20 @@ Pattern png_to_bits(const std::string& filename) {
     return pattern;
 }
 
+void print(const Pattern &p)
+{
+    size_t idx = 0;
+    for (auto i :  p) {
+        if(idx == 32) {
+            std::cout << std::endl;
+            idx = 0;
+        }
+        idx++;
+        std::cout << ((i > 0) ? " " : "x");
+    }
+    std::cout << std::endl;
+}
+
 int main()
 {
     // put the learning method in the layer not in the model to avoid deal with 3d 4d // tensors
@@ -38,37 +52,19 @@ int main()
     patterns.emplace_back(png_to_bits("../Misc/marge.png"));
     patterns.emplace_back(png_to_bits("../Misc/meg.png"));
     patterns.emplace_back(png_to_bits("../Misc/grandpa.png"));
-    patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
     Pattern p(png_to_bits("../Misc/homer_defect.png"));
 
     auto N = patterns.at(0).size();
-    Hopfield net(std::make_unique<HebbianRule>(), N);
+
+    Hopfield net(std::move(std::make_unique<HebbianRule>()), N);
 
     net.learn(patterns);
-    size_t idx = 0;
-    for (auto &&i :  p) {
-        if(idx == 64) {
-            std::cout << std::endl;
-            idx = 0;
-        }
-        idx++;
-        std::cout << ((i > 0) ? " " : "x");
-    }
-    std::cout << std::endl;
-
+    
     auto ret = net.forward(p);
 
-    idx = 0;
-    for (auto &&i :  ret) {
-        if(idx == 64) {
-            std::cout << std::endl;
-            idx = 0;
-        }
-        idx++;
-        std::cout << ((i > 0) ? " " : "x");
-    }
-    std::cout << std::endl;
-
+    print(p);
+    print(ret);
     std::cout << "Hello, Hopfield Network!" << std::endl;
 
     return 0;

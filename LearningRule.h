@@ -5,9 +5,9 @@
 #include <memory>
 #include <cstddef> // for size_t
 #include <iostream>
-#include "Layer.h"
 
-class LearningRule;
+
+using Pattern = std::vector<double>;
 
 class LearningRule
 {
