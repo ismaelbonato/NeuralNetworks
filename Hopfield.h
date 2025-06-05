@@ -17,7 +17,9 @@ public:
         : Model(n)
     {
         layers.emplace_back(
-            std::make_unique<HopfieldLayer>(std::move(std::make_unique<HebbianRule>()), n, n));
+            std::make_unique<HopfieldLayer>(std::move(std::make_unique<HebbianRule>()),
+                                            n,
+                                            n));
     }
 
     // Constructor with custom learning rule

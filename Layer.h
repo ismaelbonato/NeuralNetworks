@@ -29,13 +29,20 @@ public:
     {}
     virtual ~Layer() = default;
 
-    // Constructor to receive a unique_ptr and a size_t
     size_t getInputSize() const { return inputSize; }
     size_t getOutputSize() const { return outputSize; }
 
+    // Unsuperted methods
     virtual void learn(const std::vector<Pattern>& patterns)
     {
         auto w = learningRule->learn(patterns);
+        setWeights(std::move(w));
+    }
+
+    // supervised learning
+    virtual void learn(const std::vector<Pattern>& inputs, const std::vector<Pattern>& labels)
+    {
+        auto w = learningRule->learn(inputs, labels);
         setWeights(std::move(w));
     }
 
@@ -44,9 +51,9 @@ public:
     //virtual void backward(const std::vector<Pattern>& patterns);
     virtual void setWeights(const std::vector<Pattern> &ws)
     {
-        if (ws.size() != inputSize)
-            throw std::invalid_argument("Weights size does not match input size.");
-
+        if (ws.size() != weights.size()) {
+            throw std::runtime_error("Weights size mismatch");
+        }
         this->weights = std::move(ws);
     }
 };
