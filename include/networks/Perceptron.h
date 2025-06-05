@@ -1,8 +1,8 @@
 #ifndef PERCEPTRON_H
 #define PERCEPTRON_H
 
-#include "Model.h"
-#include "PerceptronLayer.h"
+#include "base/Model.h"
+#include "networks/PerceptronLayer.h"
 #include <memory>
 #include <vector>
 

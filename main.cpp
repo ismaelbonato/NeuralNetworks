@@ -5,12 +5,10 @@
 #include <filesystem>
 #include "Helper.h"
 
-
-#include "Hopfield.h"
-#include "LearningRule.h"
-#include "Layer.h"
-
-#include "Perceptron.h"
+#include "networks/Hopfield.h"
+#include "base/LearningRule.h"
+#include "base/Layer.h"
+#include "networks/Perceptron.h"
 
 
 int main()

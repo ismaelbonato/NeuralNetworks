@@ -2,7 +2,7 @@
 #define HELPER_H
 
 #include <opencv2/opencv.hpp>
-#include "Layer.h"
+#include "base/Layer.h"
 
 Pattern png_to_bits(const std::string& filename) {
     cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE); 

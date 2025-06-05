@@ -1,14 +1,14 @@
 #ifndef HOPFIELD_H
 #define HOPFIELD_H
-#include "Model.h"
+#include "base/Model.h"
 
 #include <cstddef> // for size_t
 #include <memory>
 #include <vector>
 
-#include "HopfieldLayer.h"
-#include "Layer.h"
-#include "LearningRule.h"
+#include "networks/HopfieldLayer.h"
+#include "base/Layer.h"
+#include "base/LearningRule.h"
 
 class Hopfield : public Model
 {

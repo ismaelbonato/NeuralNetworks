@@ -1,6 +1,6 @@
 #ifndef HOPFIELDLAYER_H
 #define HOPFIELDLAYER_H
-#include "Layer.h"
+#include "base/Layer.h"
 
 #include <stdexcept>
 #include <vector>

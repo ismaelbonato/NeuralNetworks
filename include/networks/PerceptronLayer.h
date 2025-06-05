@@ -1,7 +1,7 @@
 #ifndef PERCEPTRONLAYER_H
 #define PERCEPTRONLAYER_H
 
-#include "Layer.h"
+#include "base/Layer.h"
 #include <stdexcept>
 #include <vector>
 

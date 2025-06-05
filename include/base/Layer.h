@@ -1,7 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include "LearningRule.h"
+#include "base/LearningRule.h"
 #include <memory>
 #include <vector>
 

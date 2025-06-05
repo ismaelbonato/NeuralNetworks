@@ -1,7 +1,7 @@
 #ifndef MODEL_H
 #define MODEL_H
-#include "Layer.h" // Include the header file where Layer is defined
-#include "LearningRule.h"
+#include "base/Layer.h" // Include the header file where Layer is defined
+#include "base/LearningRule.h"
 #include <cstddef> // Include for size_t
 #include <memory>
 #include <vector>

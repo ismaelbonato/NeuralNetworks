@@ -12,15 +12,15 @@ set(LIBRARIES
     Eigen3::Eigen
 )
 
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE HEADERS "include/*.cpp")
+
 add_executable(Network
     main.cpp
-    Hopfield.cpp
-    Model.cpp
-    HopfieldLayer.cpp
-    Layer.cpp
-    LearningRule.cpp
-    Perceptron.cpp
-    PerceptronLayer.cpp
+    Helper.h
+    ${SOURCES} 
+    ${HEADERS}
+
 )
 
 # Add extra warning flags
@@ -35,5 +35,6 @@ target_compile_options(Network PRIVATE
     -Wnon-virtual-dtor
 )
 
-target_include_directories(Network PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(Network PRIVATE )
+target_include_directories(Network PRIVATE ${OpenCV_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(Network PRIVATE ${LIBRARIES})
