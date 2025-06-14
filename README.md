@@ -80,11 +80,11 @@ std::vector<Pattern> patterns = {
     png_to_bits("pattern2.png")
 };
 
-Hopfield net(std::make_unique<HebbianRule>(), patterns[0].size());
+Hopfield net(std::make_shared<HebbianRule>(), patterns[0].size());
 net.learn(patterns);
 
 Pattern noisy = png_to_bits("noisy_pattern.png");
-Pattern recalled = net.forward(noisy);
+Pattern recalled = net.infer(noisy);
 
 // Print recalled pattern as ASCII art
 for (size_t i = 0; i < recalled.size(); ++i) {
@@ -116,4 +116,5 @@ This project is open source and available under the MIT License.
 - [OpenCV](https://opencv.org/)
 - Classic Hopfield network theory
 - [stb_image](https://github.com/nothings/stb) (optional, for image loading)
+
 

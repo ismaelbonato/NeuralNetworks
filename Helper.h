@@ -1,34 +1,39 @@
-#ifndef HELPER_H
-#define HELPER_H
+#pragma once
 
-#include <opencv2/opencv.hpp>
 #include "base/Layer.h"
+#include "base/LearningRule.h"
+#include "networks/Hopfield.h"
+#include "networks/Perceptron.h"
+#include <opencv2/opencv.hpp>
 
-Pattern png_to_bits(const std::string& filename) {
-    cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE); 
+Pattern png_to_bits(const std::string &filename)
+{
+    cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE);
     cv::Mat resizedImage;
 
     cv::resize(img, resizedImage, cv::Size(32, 32));
 
     Pattern pattern;
-    pattern.reserve(static_cast<size_t>(resizedImage.rows) * static_cast<size_t>(resizedImage.cols));
-    
+    pattern.reserve(static_cast<size_t>(resizedImage.rows)
+                    * static_cast<size_t>(resizedImage.cols));
+
     for (size_t r = 0; r < static_cast<size_t>(resizedImage.rows); ++r) {
         for (size_t c = 0; c < static_cast<size_t>(resizedImage.cols); ++c) {
-            auto pixel = resizedImage.at<uchar>( static_cast<int>(r), static_cast<int>(c)); 
-            pattern.emplace_back( pixel > 128 ? 1.0 : -1.0 ); // Convert to bipolar representation
+            auto pixel = resizedImage.at<uchar>(static_cast<int>(r),
+                                                static_cast<int>(c));
+            pattern.emplace_back(
+                //pixel > 128 ? 1.0 : -1.0); // Convert to bipolar representation   
+                pixel > 128 ? 1.0f : 0.0f); // Convert to binary representation
         }
     }
     return pattern;
 }
 
-
 void print(const Pattern &p)
 {
-
     size_t idx = 0;
-    for (auto i :  p) {
-        if(idx == 32) {
+    for (auto i : p) {
+        if (idx == 64) {
             std::cout << std::endl;
             idx = 0;
         }
@@ -37,6 +42,58 @@ void print(const Pattern &p)
         //std::cout << ((i > 0) ? " " : "x");
     }
     std::cout << std::endl;
+}
+
+void hopfieldNetwork()
+{
+    std::vector<Pattern> patterns{};
+
+    patterns.emplace_back(png_to_bits("../Misc/bart.png"));
+    patterns.emplace_back(png_to_bits("../Misc/homer.png"));
+    patterns.emplace_back(png_to_bits("../Misc/marge.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/meg.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/grandpa.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
+    Pattern p(png_to_bits("../Misc/homer_defect.png"));
+
+    auto N = patterns.at(0).size();
+
+    Hopfield net(std::make_shared<HebbianRule>(), N);
+
+    net.learn(patterns);
+
+    auto ret = net.infer(p);
+
+    print(p);
+    std::cout << "Recall result: " << std::endl;
+    print(ret);
+    std::cout << "Hello, Hopfield Network!" << std::endl;
+}
+
+void perceptronNetwork()
+{
+    std::vector<Pattern> inputs
+        = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+
+    std::vector<Pattern> labels = {
+        {0.0}, // 0 AND 0
+        {0.0}, // 0 AND 1
+        {0.0}, // 1 AND 0
+        {1.0}  // 1 AND 1
+    };
+
+    size_t in = inputs.at(0).size();
+    size_t out = labels.at(0).size();
+    Perceptron net(std::make_shared<PerceptronRule>(), in, out);
+
+    net.learn(inputs, labels);
+
+    std::cout << "Perceptron Network trained!" << std::endl;
+    for (const auto &input : inputs) {
+        Pattern output = net.infer(input);
+        print(input);
+        print(output);
+    }
 }
 
 /*
@@ -57,5 +114,3 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
         }
     }
 */
-
-#endif // HELPER_H

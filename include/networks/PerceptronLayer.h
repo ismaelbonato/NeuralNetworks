@@ -1,5 +1,4 @@
-#ifndef PERCEPTRONLAYER_H
-#define PERCEPTRONLAYER_H
+#pragma once
 
 #include "base/Layer.h"
 #include <stdexcept>
@@ -14,29 +13,44 @@ public:
         weights.resize(out, Pattern(out, 0.0));
     }
 
-    PerceptronLayer(std::unique_ptr<LearningRule> newRule, size_t in, size_t out)
-        : Layer(std::move(newRule), in, out)
+    PerceptronLayer(const std::shared_ptr<LearningRule> &newRule,
+                    size_t in,
+                    size_t out)
+        : Layer(newRule, in, out)
     {
-        weights.resize(out, std::vector<double>(out, 0.0));
+        weights.resize(out, std::vector<float>(out, 0.0));
     }
 
-    int activation(double value) const override
+    float activation(float value) const override
     {
         return value > 0 ? 1 : 0; // Classic perceptron uses step function
     }
 
-    Pattern forward(const Pattern &input) const override
+    void learn(const Pattern &input,
+               const Pattern &label,
+               float learningRate = 0.1f) override
     {
-        Pattern result(outputSize, 0.0);
+        if (learningRule == nullptr) {
+            throw std::runtime_error(
+                "Learning rule is not set for this layer.");
+        }
+
         for (size_t i = 0; i < outputSize; ++i) {
-            double sum = 0.0;
+            // Compute weighted sum (no bias)
+            float sum = 0.0f;
             for (size_t j = 0; j < inputSize; ++j) {
                 sum += weights[i][j] * input[j];
             }
-            result[i] = activation(sum);
+            // Apply activation
+            float output = activation(sum);
+            float error = label[i] - output;
+
+            // Update weights (no bias update)
+            for (size_t j = 0; j < inputSize; ++j) {
+                learningRule->updateWeight(weights[i][j],
+                                           learningRate * error * input[j],
+                                           learningRate);
+            }
         }
-        return result;
     }
 };
-
-#endif // PERCEPTRONLAYER_H

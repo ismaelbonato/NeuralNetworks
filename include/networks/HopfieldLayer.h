@@ -1,5 +1,4 @@
-#ifndef HOPFIELDLAYER_H
-#define HOPFIELDLAYER_H
+#pragma once
 #include "base/Layer.h"
 
 #include <stdexcept>
@@ -13,35 +12,61 @@ public:
     HopfieldLayer(size_t in, size_t out)
         : Layer(in, out)
     {
-        weights.resize(in, std::vector<double>(out, 0.0));
+        weights.resize(in, std::vector<float>(out, 0.0));
     }
 
-    HopfieldLayer(std::unique_ptr<LearningRule> newRule, size_t in, size_t out)
-        : Layer(std::move(newRule), in, out)
+    HopfieldLayer(const std::shared_ptr<LearningRule> &newRule,
+                  size_t in,
+                  size_t out)
+        : Layer(newRule, in, out)
     {
-        weights.resize(in, std::vector<double>(out, 0.0));
+        weights.resize(in, std::vector<float>(out, 0.0));
     }
 
     ~HopfieldLayer() override = default;
 
-    int activation(double value) const override
+    float activation(float value) const override
     {
         return (value >= 0) ? 1 : -1; // Bipolar activation function
     }
 
-    // Overload forward: update until convergence
-    Pattern forward(const Pattern &input) const override
+    Pattern infer(const Pattern &input) const override
+    {
+        return recall(input); //  Return Value Optimization (RVO)
+    }
+
+    // Apply the Hebbian learning rule to update weights
+    void learn(const Pattern &pattern) override
+    {
+        size_t n = pattern.size();
+
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t j = 0; j < n; ++j) {
+                if (i != j) {
+                    weights[i][j]
+                        = learningRule->updateWeight(weights[i][j],
+                                                        pattern[i] * pattern[j],
+                                                        1.0f);
+                }
+            }
+        }
+    }
+
+
+    // Overload infer: update until convergence
+    Pattern recall(const Pattern &input) const
     {
         Pattern state = input;
         Pattern prev_state;
         do {
             prev_state = state;
-            // Asynchronous update: update each neuron based on current state
             for (size_t i = 0; i < state.size(); ++i) {
-                double sum = 0.0;
+                float sum = 0.0;
                 for (size_t j = 0; j < state.size(); ++j) {
                     if (i != j) {
-                        sum += weights[i][j] * state[j];
+                        sum += learningRule->updateWeight(weights[i][j],
+                                                          state[j],
+                                                          1.0f);
                     }
                 }
                 state[i] = activation(sum);
@@ -50,5 +75,3 @@ public:
         return state;
     }
 };
-
-#endif // HOPFIELDLAYER_H

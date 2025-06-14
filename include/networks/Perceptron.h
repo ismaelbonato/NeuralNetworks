@@ -1,5 +1,4 @@
-#ifndef PERCEPTRON_H
-#define PERCEPTRON_H
+#pragma once
 
 #include "base/Model.h"
 #include "networks/PerceptronLayer.h"
@@ -13,21 +12,33 @@ public:
         : Model(in)
     {
         layers.emplace_back(
-            std::make_unique<PerceptronLayer>(std::move(
-                                                  std::make_unique<PerceptronRule>()),
+            std::make_unique<PerceptronLayer>(std::make_shared<PerceptronRule>(),
                                               in,
                                               out));
     }
 
     // Constructor with custom learning rule
-    Perceptron(std::unique_ptr<LearningRule> newRule, size_t in, size_t out)
+    Perceptron(const std::shared_ptr<LearningRule> &newRule,
+               size_t in,
+               size_t out)
         : Model(in)
     {
-        layers.emplace_back(
-            std::make_unique<PerceptronLayer>(std::move(newRule), in, out));
+        layers.emplace_back(std::make_unique<PerceptronLayer>(newRule, in, out));
     }
 
     ~Perceptron() override = default;
-};
 
-#endif // PERCEPTRON_H
+    void learn(const std::vector<Pattern> &inputs,
+                       const std::vector<Pattern> &labels,
+                       float learningRate = 0.1f,
+                       size_t epochs = 100000) override
+    {
+        for (size_t epoch = 0; epoch < epochs; ++epoch) {
+            for (size_t i = 0; i < inputs.size(); ++i) {
+                for (auto &layer : layers) {
+                    layer->learn(inputs[i], labels[i], learningRate);
+                }
+            }
+        }
+    }
+};

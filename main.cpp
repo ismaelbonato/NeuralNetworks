@@ -1,67 +1,82 @@
+#include "Helper.h"
+#include <array>
+#include <filesystem>
 #include <iostream>
 #include <math.h>
-#include <array>
 #include <memory>
-#include <filesystem>
-#include "Helper.h"
 
-#include "networks/Hopfield.h"
-#include "base/LearningRule.h"
 #include "base/Layer.h"
+#include "base/LearningRule.h"
+#include "networks/FeedForward.h"
+#include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
 
+void feedForwardNetwork()
+{
+    
+    std::vector<Pattern> inputs;
+
+    inputs.emplace_back(png_to_bits("../Misc/bart.png"));
+    inputs.emplace_back(png_to_bits("../Misc/homer.png"));
+    inputs.emplace_back(png_to_bits("../Misc/marge.png"));
+    inputs.emplace_back(png_to_bits("../Misc/meg.png"));
+    inputs.emplace_back(png_to_bits("../Misc/grandpa.png"));
+    inputs.emplace_back(png_to_bits("../Misc/lisa.png"));
+
+    Pattern p(png_to_bits("../Misc/meg.png"));
+
+    std::vector<Pattern> labels = {
+        {1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, //bart
+        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, //homer
+        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, //marge
+        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, //meg
+        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, //grandpa
+        {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
+
+/*
+std::vector<Pattern> inputs = {
+    {0.0f, 0.0f},
+    {0.0f, 1.0f},
+    {1.0f, 0.0f},
+    {1.0f, 1.0f}
+};
+
+std::vector<Pattern> labels = {
+    {0.0f}, // 0 XOR 0 = 0
+    {1.0f}, // 0 XOR 1 = 1
+    {1.0f}, // 1 XOR 0 = 1
+    {0.0f}  // 1 XOR 1 = 0
+};
+*/
+    size_t N = inputs.at(0).size();
+    size_t O = labels.at(0).size();
+    
+    std::vector<size_t> layers = { N, 16, 8, O};
+    FeedforwardNetwork mlp(layers);
+
+    float learningRate = 0.1f;
+    size_t epochs = 10000;
+    mlp.learn(inputs, labels, learningRate, epochs);
+
+    size_t index = 1;
+    for (const auto &input : inputs) {
+        Pattern output = mlp.infer(input);
+        std::cout << "Input: " << index++ << " - ";
+        std::cout << "Output: " << "{ ";
+        for (auto &i : output)
+        {
+            std::cout << i << ", ";
+        }
+        std::cout << "}" << std::endl;
+    }
+}
 
 int main()
 {
-/*  std::vector<Pattern> patterns;
 
-    patterns.emplace_back(png_to_bits("../Misc/bart.png"));
-    patterns.emplace_back(png_to_bits("../Misc/homer.png"));
-    patterns.emplace_back(png_to_bits("../Misc/marge.png"));
-    patterns.emplace_back(png_to_bits("../Misc/meg.png"));
-    patterns.emplace_back(png_to_bits("../Misc/grandpa.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
-    Pattern p(png_to_bits("../Misc/homer_defect.png"));
-
-    auto N = patterns.at(0).size();
-
-    Hopfield net(std::move(std::make_unique<HebbianRule>()), N);
-
-    net.learn(patterns);
+    feedForwardNetwork();
+    //perceptronNetwork();
+    //hopfieldNetwork();
     
-    auto ret = net.forward(p);
-
-    print(p);
-    print(ret);
-    std::cout << "Hello, Hopfield Network!" << std::endl;
-*/
-
-    std::vector<Pattern> inputs = {
-        {0.0, 0.0},
-        {0.0, 1.0},
-        {1.0, 0.0},
-        {1.0, 1.0}
-    };
-
-    std::vector<Pattern> labels = {
-        {0.0}, // 0 AND 0
-        {0.0}, // 0 AND 1
-        {0.0}, // 1 AND 0
-        {1.0}  // 1 AND 1
-    };
-
-    size_t in = inputs.at(0).size();
-    size_t out = labels.at(0).size();
-    Perceptron net(std::move(std::make_unique<PerceptronRule>()), in, out);
-
-    net.learn(inputs, labels);
-
-    std::cout << "Perceptron Network trained!" << std::endl;
-    for (const auto& input : inputs) {
-        Pattern output = net.forward(input);
-        print(input); 
-        print(output); 
-    }
-
     return 0;
 }

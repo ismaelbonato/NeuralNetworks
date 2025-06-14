@@ -1,23 +1,25 @@
-#ifndef LEARNINGRULE_H
-#define LEARNINGRULE_H
+#pragma once
 
+#include <cmath>
 #include <cstddef> // for size_t
 #include <iostream>
 #include <memory>
+#include <stdexcept> // for std::runtime_error
+#include <utility>   // for std::pair
 #include <vector>
 
-using Pattern = std::vector<double>;
-
+using Pattern = std::vector<float>;
+using PairOfPatternAndBias = std::pair<std::vector<Pattern>, Pattern>;
 class LearningRule
 {
+protected:
 public:
     LearningRule() = default;
-
     virtual ~LearningRule() = default;
 
-    virtual std::vector<Pattern> learn(const std::vector<Pattern> &patterns) = 0;
-    virtual std::vector<Pattern> learn(const std::vector<Pattern> &inputs,
-                                       const std::vector<Pattern> &labels)
+    virtual float updateWeight(float weight,
+                               float gradient,
+                               float learningRate) const
         = 0;
 };
 
@@ -27,82 +29,56 @@ public:
     HebbianRule() = default;
     ~HebbianRule() override = default;
 
-    using LearningRule::learn;
-
-    // Apply the Hebbian learning rule to update weights
-    std::vector<Pattern> learn(const std::vector<Pattern> &patterns) override
+    float updateWeight(float weight,
+                       float gradient,
+                       float) const override
     {
-        size_t n = patterns[0].size();
-        std::vector<Pattern> weights;
-
-        weights.assign(n, Pattern(n, 0.0));
-        for (const auto &pattern : patterns) {
-            for (size_t i = 0; i < n; ++i) {
-                for (size_t j = 0; j < n; ++j) {
-                    if (i != j) {
-                        weights[i][j] += pattern[i] * pattern[j];
-                    }
-                }
-            }
-        }
-        // Optionally normalize weights here
-        return weights; // Return the updated weights
-    }
-    std::vector<Pattern> learn(const std::vector<Pattern> &,
-                               const std::vector<Pattern> &) override
-    {
-        return {};
+        // Hebbian learning doesn't use gradient or learning rate in the traditional sense.
+        // Instead, weights are updated based on the correlation of inputs.
+        return weight
+               + gradient; // Gradient here represents the correlation term.
     }
 };
 
 class PerceptronRule : public LearningRule
 {
 public:
-    PerceptronRule(double rate = 0.1)
-        : learningRate(rate)
-    {}
+    PerceptronRule() = default;
     ~PerceptronRule() override = default;
 
-    using LearningRule::learn;
-
-    // Supervised perceptron learning rule
-    std::vector<Pattern> learn(const std::vector<Pattern> &inputs,
-                               const std::vector<Pattern> &labels) override
+    float updateWeight(float weight,
+                       float gradient,
+                       float learningRate) const override
     {
-        size_t nSamples = inputs.size();
-        size_t nInputs = inputs[0].size();
-        size_t nOutputs = labels[0].size();
-
-        // Initialize weights to zero
-        std::vector<Pattern> weights(nOutputs, Pattern(nInputs, 0.0));
-
-        // Simple online perceptron learning (single epoch)
-        for (size_t sample = 0; sample < nSamples; ++sample) {
-            const Pattern &input = inputs[sample];
-            const Pattern &target = labels[sample];
-
-            for (size_t out = 0; out < nOutputs; ++out) {
-                // Compute weighted sum
-                double sum = 0.0;
-                for (size_t in = 0; in < nInputs; ++in) {
-                    sum += weights[out][in] * input[in];
-                }
-                // Step activation
-                double output = sum > 0 ? 1.0 : 0.0;
-                // Update weights
-                for (size_t in = 0; in < nInputs; ++in) {
-                    weights[out][in] += learningRate * (target[out] - output) * input[in];
-                }
-            }
-        }
-        return weights;
+        // Perceptron update rule
+        return weight + learningRate * gradient;
     }
-
-    // For unsupervised, just return empty (not used)
-    std::vector<Pattern> learn(const std::vector<Pattern> &) override { return {}; }
-
-private:
-    double learningRate;
 };
 
-#endif // LEARNINGRULE_H
+class SGDRule : public LearningRule
+{
+public:
+    SGDRule() = default;
+    ~SGDRule() override = default;
+
+    float updateWeight(float weight,
+                       float gradient,
+                       float learningRate) const override
+    {
+        return weight - learningRate * gradient;
+    }
+};
+
+class AdamRule : public LearningRule
+{
+public:
+    AdamRule() = default;
+    ~AdamRule() override = default;
+
+    float updateWeight(float,
+                       float,
+                       float) const override
+    {
+        throw std::runtime_error("AdamRule not implemented yet.");
+    }
+};
