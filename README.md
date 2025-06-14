@@ -1,40 +1,56 @@
-# Hopfield Network
+# Neural Networks: Hopfield, Perceptron, and Feedforward Networks
 
-This project implements a classic **Hopfield neural network** in C++ for associative memory and pattern recognition. It supports learning and recalling binary patterns, such as 8x8 or 16x16 images (e.g., bitmap digits or font glyphs), using the Hebbian learning rule.
-
-
+This project implements classic neural network models in C++ for associative memory, pattern recognition, and supervised learning. It now supports **Hopfield networks**, **single-layer perceptrons**, and **multilayer feedforward (MLP) networks** with modular, extensible OOP design.
 
 ## Features
 
-- **Modular OOP design:** The codebase is now structured around `Model`, `Layer`, and `LearningRule` classes, making it easy to extend or swap components.
-- **Associative memory:** Store and recall binary patterns, even from noisy or incomplete inputs.
-- **Hebbian learning:** Classic unsupervised learning rule for weight calculation, implemented as a separate class.
+- **Modular OOP design:** Core abstractions for `Model`, `Layer`, and `LearningRule` allow easy extension and swapping of components.
+- **Feedforward (MLP) network:** Supports arbitrary depth, customizable layer sizes, and pluggable learning rules (SGD, etc.).
+- **Perceptron:** Classic single-layer perceptron for supervised learning.
+- **Hopfield network:** Associative memory with Hebbian learning for binary pattern storage and recall.
+- **Flexible learning rules:** Learning algorithms (SGD, Hebbian, etc.) are implemented as separate classes and can be assigned per layer.
 - **Pattern visualization:** Print patterns and outputs as ASCII art in the terminal.
 - **OpenCV integration:** Load and convert PNG images as patterns.
 - **Hamming distance analysis:** Quantitatively compare pattern similarity.
 - **Flexible pattern loading:** Easily add new patterns from images or code.
-- **Modern CMake build:** Uses C++20, extra warnings, and links OpenCV/Eigen automatically.
 
+## Supported Networks
 
+- **Feedforward (MLP) Network:**  
+  - Arbitrary number of layers and neurons per layer.
+  - Pluggable activation functions (sigmoid, ReLU, etc.).
+  - Stochastic Gradient Descent (SGD) and other learning rules.
+- **Perceptron Network:**  
+  - Single-layer, supervised learning with step activation.
+- **Hopfield Network:**  
+  - Unsupervised associative memory with Hebbian learning.
 
 ## How It Works
 
 1. **Define Patterns:**  
-   Patterns (e.g., 8x8 or 16x16 binary images) are stored as arrays of -1s and +1s.
+   Patterns (e.g., 8x8 or 16x16 binary images) are stored as arrays of -1s and +1s (Hopfield) or 0s and 1s (Perceptron/MLP).
 
 2. **Learning:**  
-   The network uses the Hebbian rule (now a dedicated class) to compute weights from the provided patterns:
-   \[
-   w_{ij} = \frac{1}{P} \sum_{p=1}^{P} s_i^p s_j^p
-   \]
-   where \( s_i^p \) is the bipolar value (-1/+1) of neuron \( i \) in pattern \( p \).
+   - **Feedforward/Perceptron:**  
+     Supervised learning using SGD or other rules.  
+     For MLP:  
+     \[
+     w_{ij} \leftarrow w_{ij} - \eta \frac{\partial L}{\partial w_{ij}}
+     \]
+   - **Hopfield:**  
+     Unsupervised Hebbian rule:  
+     \[
+     w_{ij} = \frac{1}{P} \sum_{p=1}^{P} s_i^p s_j^p
+     \]
 
-3. **Recall:**  
-   Given a (possibly noisy) input pattern, the network updates neuron states to converge to the closest stored pattern.
+3. **Recall/Inference:**  
+   - **Feedforward/Perceptron:**  
+     Forward pass through the network to compute outputs.
+   - **Hopfield:**  
+     Iterative update until convergence to a stored pattern.
 
 4. **Visualization:**  
    Patterns and outputs can be printed as ASCII art in the terminal for easy inspection.
-
 
 ## Build Instructions
 
@@ -43,14 +59,13 @@ This project implements a classic **Hopfield neural network** in C++ for associa
 - C++20 compiler (e.g., g++ 10+)
 - [OpenCV 4](https://opencv.org/) (for image loading)
 - [CMake 3.10+](https://cmake.org/)
-- [Eigen3](https://eigen.tuxfamily.org/) (header-only, for future extensibility)
 
 ### Build Steps
 
 ```sh
 # Clone the repository
 git clone <your-repo-url>
-cd NeuralNetworks/HopfieldNetwork
+cd NeuralNetworks
 
 # Create a build directory and compile
 mkdir build
@@ -59,57 +74,39 @@ cmake ..
 make
 ```
 
-This will produce an executable named `hopfield`.
-
-
-## Usage
-
-1. **Edit `main.cpp`** to define your patterns or load them from images (e.g., PNGs in the `Misc/` folder).
-2. **Run the executable:**
-   ```sh
-   ./hopfield
-   ```
-3. **View the output** in your terminal.
-
+This will produce an executable named `Network`.
 
 ## Example
 
 ```cpp
-std::vector<Pattern> patterns = {
+std::vector<Pattern> inputs = {
     png_to_bits("pattern1.png"),
-    png_to_bits("pattern2.png")
+    png_to_bits("pattern2.png"),
+    // ...
+};
+std::vector<Pattern> labels = {
+    {1.0, 0.0},
+    {0.0, 1.0},
+    // ...
 };
 
-Hopfield net(std::make_shared<HebbianRule>(), patterns[0].size());
-net.learn(patterns);
+size_t N = inputs[0].size();
+size_t O = labels[0].size();
+std::vector<size_t> layers = { N, 16, 8, O };
+FeedforwardNetwork mlp(layers);
 
-Pattern noisy = png_to_bits("noisy_pattern.png");
-Pattern recalled = net.infer(noisy);
+float learningRate = 0.1f;
+size_t epochs = 10000;
+mlp.learn(inputs, labels, learningRate, epochs);
 
-// Print recalled pattern as ASCII art
-for (size_t i = 0; i < recalled.size(); ++i) {
-    if (i % 64 == 0) std::cout << '\n';
-    std::cout << (recalled[i] > 0 ? " " : "x");
+for (const auto &input : inputs) {
+    Pattern output = mlp.infer(input);
+    // Print or process output
 }
 ```
-
-
-
-## Capacity
-
-A classic Hopfield network can reliably store about **0.138 × N** patterns, where **N** is the number of neurons (bits in your pattern).  
-- For 8×8 patterns (64 bits): ~8 patterns
-- For 16×16 patterns (256 bits): ~35 patterns
-
-Storing more patterns increases the risk of recall errors and spurious states.
-
-
-
 ## License
 
 This project is open source and available under the MIT License.
-
-
 
 ## Acknowledgements
 
