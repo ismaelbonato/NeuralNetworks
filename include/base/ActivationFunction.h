@@ -1,7 +1,6 @@
 #pragma once
 #include <cmath>
 #include <stdexcept>
-#include <vector>
 
 template<typename T>
 class ActivationFunction
@@ -18,7 +17,7 @@ class SigmoidActivation : public ActivationFunction<T>
 public:
     T operator()(T x) const override
     {
-        return 1.0f / (1.0f + std::exp(-x));
+        return static_cast<T>(1.0) / (static_cast<T>(1.0) + std::exp(-x));
     }
     T derivative(T x) const override
     {

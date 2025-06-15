@@ -13,7 +13,7 @@
 
 void feedForwardNetwork()
 {
-    std::vector<Pattern> inputs;
+    Patterns inputs;
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
     inputs.emplace_back(png_to_bits("../Misc/homer.png"));
@@ -24,7 +24,7 @@ void feedForwardNetwork()
 
     Pattern p(png_to_bits("../Misc/meg.png"));
 
-    std::vector<Pattern> labels = {
+    Patterns labels = {
         {1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, //bart
         {0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, //homer
         {0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, //marge
@@ -33,14 +33,14 @@ void feedForwardNetwork()
         {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
 
 /*
-std::vector<Pattern> inputs = {
+Patterns inputs = {
     {0.0f, 0.0f},
     {0.0f, 1.0f},
     {1.0f, 0.0f},
     {1.0f, 1.0f}
 };
 
-std::vector<Pattern> labels = {
+Patterns labels = {
     {0.0f}, // 0 XOR 0 = 0
     {1.0f}, // 0 XOR 1 = 1
     {1.0f}, // 1 XOR 0 = 1
@@ -53,7 +53,7 @@ std::vector<Pattern> labels = {
     std::vector<size_t> layers = { N, 16, 8, O};
     FeedforwardNetwork mlp(layers);
 
-    float learningRate = 0.1f;
+    Scalar learningRate = 0.1f;
     size_t epochs = 10000;
     mlp.learn(inputs, labels, learningRate, epochs);
 
@@ -72,9 +72,24 @@ std::vector<Pattern> labels = {
 
 int main()
 {
-    feedForwardNetwork();
-    //perceptronNetwork();
-    //hopfieldNetwork();
+    std::cout << "Hello, Neural Networks!" << std::endl;
     
+    std::cout << "==========================" << std::endl;
+    std::cout << "Perceptron Network" << std::endl;
+    std::cout << "==========================" << std::endl;
+    perceptronNetwork();    
+    std::cout << std::endl;
+    std::cout << "==========================" << std::endl;
+    std::cout << "Hopfield Network" << std::endl;
+    std::cout << "==========================" << std::endl;
+    hopfieldNetwork();
+    std::cout << std::endl;
+    std::cout << "==========================" << std::endl;
+    std::cout << "Feed Forward Network" << std::endl;
+    std::cout << "==========================" << std::endl;
+    feedForwardNetwork();
+    std::cout << std::endl;
+    std::cout << "==========================" << std::endl;
+
     return 0;
 }

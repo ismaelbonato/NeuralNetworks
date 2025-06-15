@@ -1,10 +1,14 @@
 #pragma once
 
 #include "base/Layer.h"
+#include "base/Types.h"
 #include "base/LearningRule.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
 #include <opencv2/opencv.hpp>
+
+#include "base/Types.h"
+
 
 Pattern png_to_bits(const std::string &filename)
 {
@@ -46,7 +50,7 @@ void print(const Pattern &p)
 
 void hopfieldNetwork()
 {
-    std::vector<Pattern> patterns{};
+    Patterns patterns{};
 
     //patterns.emplace_back(png_to_bits("../Misc/bart.png"));
     //patterns.emplace_back(png_to_bits("../Misc/homer.png"));
@@ -79,10 +83,10 @@ void hopfieldNetwork()
 
 void perceptronNetwork()
 {
-    std::vector<Pattern> inputs
+    Patterns inputs
         = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
-    std::vector<Pattern> labels = {
+    Patterns labels = {
         {0.0}, // 0 AND 0
         {0.0}, // 0 AND 1
         {0.0}, // 1 AND 0

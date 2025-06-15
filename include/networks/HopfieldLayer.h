@@ -1,9 +1,9 @@
 #pragma once
 #include "base/Layer.h"
+#include "base/Types.h"
 
 #include <algorithm> // for std::fill
 #include <stdexcept>
-#include <vector>
 
 class HopfieldLayer : public Layer
 {
@@ -11,8 +11,8 @@ public:
     HopfieldLayer() = delete;
 
     HopfieldLayer(
-        const std::shared_ptr<LearningRule<float>> &newRule,
-        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        const std::shared_ptr<LearningRule<Scalar>> &newRule,
+        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
         size_t in,
         size_t out)
         : Layer(newRule, activationFunction, in, out)
@@ -29,7 +29,7 @@ public:
 
     virtual void updateWeights(const Pattern &pattern,
                                const Pattern &,
-                               float learningRate = 1.0f)
+                               Scalar learningRate = 1.0f)
     {
         size_t n = pattern.size();
 
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void initWeights(float value = 0.0f) override
+    void initWeights(Scalar value = 0.0f) override
     {
         if (weights.empty()) {
             weights.resize(outputSize, Pattern(inputSize, value));

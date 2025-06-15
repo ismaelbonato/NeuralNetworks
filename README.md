@@ -79,12 +79,12 @@ This will produce an executable named `Network`.
 ## Example
 
 ```cpp
-std::vector<Pattern> inputs = {
+Patterns inputs = {
     png_to_bits("pattern1.png"),
     png_to_bits("pattern2.png"),
     // ...
 };
-std::vector<Pattern> labels = {
+Patterns labels = {
     {1.0, 0.0},
     {0.0, 1.0},
     // ...
@@ -95,7 +95,7 @@ size_t O = labels[0].size();
 std::vector<size_t> layers = { N, 16, 8, O };
 FeedforwardNetwork mlp(layers);
 
-float learningRate = 0.1f;
+Scalar learningRate = 0.1f;
 size_t epochs = 10000;
 mlp.learn(inputs, labels, learningRate, epochs);
 

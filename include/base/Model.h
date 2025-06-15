@@ -2,6 +2,7 @@
 
 #include "base/Layer.h" // Include the header file where Layer is defined
 #include "base/LearningRule.h"
+#include "base/Types.h" // Include for Pattern and Scalar types
 #include <cstddef> // Include for size_t
 #include <memory>
 #include <vector>
@@ -50,16 +51,16 @@ public:
 
 
     // Apply the Hebbian learning rule to update weights
-    virtual void learn(const std::vector<Pattern> &)
+    virtual void learn(const Patterns &)
     {
         std::cerr << "Learn method not implemented for this model type."
                   << std::endl;
         throw std::runtime_error("Learn method not implemented for this model type.");
     }
 
-    virtual void learn(const std::vector<Pattern> &inputs,
-                       const std::vector<Pattern> &labels,
-                       float learningRate = 0.1f,
+    virtual void learn(const Patterns &inputs,
+                       const Patterns &labels,
+                       Scalar learningRate = 0.1f,
                        size_t epochs = 100000)
         = 0;
 

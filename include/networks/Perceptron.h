@@ -2,8 +2,9 @@
 
 #include "base/Model.h"
 #include "networks/PerceptronLayer.h"
+#include "base/Types.h"
+
 #include <memory>
-#include <vector>
 
 class Perceptron : public Model
 {
@@ -12,16 +13,16 @@ public:
         : Model(in)
     {
         layers.emplace_back(std::make_unique<PerceptronLayer>(
-            std::make_shared<PerceptronRule<float>>(),
-            std::make_shared<StepActivation<float>>(),
+            std::make_shared<PerceptronRule<Scalar>>(),
+            std::make_shared<StepActivation<Scalar>>(),
             in,
             out));
     }
 
     // Constructor with custom learning rule
     Perceptron(
-        const std::shared_ptr<LearningRule<float>> &newRule,
-        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        const std::shared_ptr<LearningRule<Scalar>> &newRule,
+        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
         size_t in,
         size_t out)
         : Model(in)
@@ -34,9 +35,9 @@ public:
 
     ~Perceptron() override = default;
 
-    void learn(const std::vector<Pattern> &inputs,
-               const std::vector<Pattern> &labels,
-               float learningRate = 0.1f,
+    void learn(const Patterns &inputs,
+               const Patterns &labels,
+               Scalar learningRate = 0.1f,
                size_t epochs = 10000) override
     {
         std::cout << "Training feedforward Network..." << std::endl;

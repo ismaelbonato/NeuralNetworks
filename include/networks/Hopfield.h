@@ -1,13 +1,12 @@
 #pragma once
 #include "base/Model.h"
-
-#include <cstddef> // for size_t
-#include <memory>
-#include <vector>
-
 #include "base/Layer.h"
 #include "base/LearningRule.h"
 #include "networks/HopfieldLayer.h"
+#include "base/Types.h"
+
+#include <cstddef> // for size_t
+#include <memory>
 
 class Hopfield : public Model
 {
@@ -16,15 +15,15 @@ public:
         : Model(n)
     {
         layers.emplace_back(std::make_unique<HopfieldLayer>(
-            std::make_shared<HebbianRule<float>>(),
-            std::make_shared<StepPolarActivation<float>>(),
+            std::make_shared<HebbianRule<Scalar>>(),
+            std::make_shared<StepPolarActivation<Scalar>>(),
             n,
             n));
     }
 
     // Constructor with custom learning rule
-    Hopfield(const std::shared_ptr<LearningRule<float>> &newRule,
-             const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+    Hopfield(const std::shared_ptr<LearningRule<Scalar>> &newRule,
+             const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
              size_t n)
         : Model(n)
     {
@@ -34,7 +33,7 @@ public:
 
     ~Hopfield() override = default;
 
-    void learn(const std::vector<Pattern> &patterns) override
+    void learn(const Patterns &patterns) override
     {
         if (patterns.empty()) {
             throw std::runtime_error("Patterns vector is empty.");
@@ -47,9 +46,9 @@ public:
         }
     }
 
-    void learn(const std::vector<Pattern> &,
-               const std::vector<Pattern> &,
-               float,
+    void learn(const Patterns &,
+               const Patterns &,
+               Scalar,
                size_t) override
     {
         std::cerr << "Learn method not implemented for Hopfield network."

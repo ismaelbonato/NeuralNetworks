@@ -1,13 +1,12 @@
 #pragma once
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
-#include <memory>
-#include <vector>
+#include "base/Types.h"
 
-using Pattern = std::vector<float>;
+#include <memory>
 
 // Matrix-vector multiplication: multiplies a matrix (vector of Pattern) by a Pattern vector
-static Pattern matvec_mul(const std::vector<Pattern> &matrix, const Pattern &vec)
+static Pattern matvec_mul(const Patterns &matrix, const Pattern &vec)
 {
     if (matrix.empty() || matrix.size() != vec.size())
         throw std::runtime_error(
@@ -44,18 +43,18 @@ class Layer
 public:
     size_t inputSize;
     size_t outputSize;
-    std::vector<Pattern> weights;
+    Patterns weights;
     Pattern output;
-    std::shared_ptr<LearningRule<float>> learningRule;
-    std::shared_ptr<ActivationFunction<float>> activation;
+    std::shared_ptr<LearningRule<Scalar>> learningRule;
+    std::shared_ptr<ActivationFunction<Scalar>> activation;
 
     Pattern biases;
 
 public:
     Layer() = delete;
 
-    Layer(const std::shared_ptr<LearningRule<float>> &newRule,
-          const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+    Layer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
+          const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
           size_t in,
           size_t out)
         : inputSize(in)
@@ -66,18 +65,18 @@ public:
 
     virtual ~Layer() = default;
 
-    virtual void initWeights(float value = 0.0f) = 0;
+    virtual void initWeights(Scalar value = 0.0f) = 0;
 
     size_t getInputSize() const { return inputSize; }
     size_t getOutputSize() const { return outputSize; }
 
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &delta,
-                               float learningRate)
+                               Scalar learningRate)
     {
         for (size_t i = 0; i < outputSize; ++i) {
             for (size_t j = 0; j < inputSize; ++j) {
-                float grad = delta[i] * prev_activations[j];
+                Scalar grad = delta[i] * prev_activations[j];
                 weights[i][j] = learningRule->updateWeight(weights[i][j],
                                                            grad,
                                                            learningRate);
@@ -106,7 +105,7 @@ public:
             throw std::runtime_error("Input is empty");
         }
 
-        float sum = 0.0;
+        Scalar sum = 0.0;
         for (size_t i = 0; i < outputSize; ++i) {
             sum = biases[i];
             for (size_t j = 0; j < inputSize; ++j) {

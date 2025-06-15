@@ -1,15 +1,14 @@
 #pragma once
 
+#include "base/Types.h"
+
+
 #include <cmath>
 #include <cstddef> // for size_t
 #include <iostream>
 #include <memory>
 #include <stdexcept> // for std::runtime_error
 #include <utility>   // for std::pair
-#include <vector>
-
-using Pattern = std::vector<float>;
-using PairOfPatternAndBias = std::pair<std::vector<Pattern>, Pattern>;
 
 template<typename T>
 class LearningRule

@@ -1,13 +1,14 @@
 #pragma once
 #include "base/Layer.h"
+#include "base/Types.h"
 #include <random>
 
 class FeedforwardLayer : public Layer
 {
 public:
     FeedforwardLayer(
-        const std::shared_ptr<LearningRule<float>> &rule,
-        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        const std::shared_ptr<LearningRule<Scalar>> &rule,
+        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
         size_t in,
         size_t out)
         : Layer(rule, activationFunction, in, out)
@@ -17,11 +18,11 @@ public:
 
     ~FeedforwardLayer() override = default;
 
-    void initWeights(float value = 0.0f) override
+    void initWeights(Scalar value = 0.0f) override
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
+        std::uniform_real_distribution<Scalar> dis(-1.0f, 1.0f);
 
         if (weights.empty()) {
             weights.resize(outputSize, Pattern(inputSize, value));

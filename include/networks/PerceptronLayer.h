@@ -1,16 +1,17 @@
 #pragma once
 
 #include "base/Layer.h"
+#include "base/Types.h"
+
 #include <stdexcept>
-#include <vector>
 #include <random>
 
 class PerceptronLayer : public Layer
 {
 public:
     PerceptronLayer() = delete; // Default constructor is not allowed
-    PerceptronLayer(const std::shared_ptr<LearningRule<float>> &newRule,
-        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+    PerceptronLayer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
+        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
                     size_t in,
                     size_t out)
         : Layer(newRule, activationFunction, in, out)
@@ -19,11 +20,11 @@ public:
     }
     ~PerceptronLayer() override = default;
 
-    void initWeights(float value = 0.0f) override // each layer should initialize its weights
+    void initWeights(Scalar value = 0.0f) override // each layer should initialize its weights
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-1.0, 1.0);
+        std::uniform_real_distribution<Scalar> dis(-1.0, 1.0);
 
         if (weights.empty()) {
             weights.resize(outputSize, Pattern(inputSize, value));
