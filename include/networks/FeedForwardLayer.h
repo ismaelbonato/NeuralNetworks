@@ -6,7 +6,7 @@ class FeedforwardLayer : public Layer
 {
 public:
     FeedforwardLayer(
-        const std::shared_ptr<LearningRule> &rule,
+        const std::shared_ptr<LearningRule<float>> &rule,
         const std::shared_ptr<ActivationFunction<float>> &activationFunction,
         size_t in,
         size_t out)

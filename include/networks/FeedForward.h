@@ -17,7 +17,7 @@ public:
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.emplace_back(std::make_unique<FeedforwardLayer>(
-                std::make_shared<SGDRule>(),
+                std::make_shared<SGDRule<float>>(),
                 std::make_shared<SigmoidActivation<float>>(),
                 layerSizes[i - 1],
                 layerSizes[i]));
@@ -25,7 +25,7 @@ public:
     }
 
     FeedforwardNetwork(
-        const std::shared_ptr<LearningRule> &rule,
+        const std::shared_ptr<LearningRule<float>> &rule,
         const std::shared_ptr<ActivationFunction<float>> &activationFunction,
         const std::vector<size_t> &layerSizes)
         : activate(layerSizes.size())

@@ -16,14 +16,14 @@ public:
         : Model(n)
     {
         layers.emplace_back(std::make_unique<HopfieldLayer>(
-            std::make_shared<HebbianRule>(),
+            std::make_shared<HebbianRule<float>>(),
             std::make_shared<StepPolarActivation<float>>(),
             n,
             n));
     }
 
     // Constructor with custom learning rule
-    Hopfield(const std::shared_ptr<LearningRule> &newRule,
+    Hopfield(const std::shared_ptr<LearningRule<float>> &newRule,
              const std::shared_ptr<ActivationFunction<float>> &activationFunction,
              size_t n)
         : Model(n)

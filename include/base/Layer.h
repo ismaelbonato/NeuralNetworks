@@ -46,7 +46,7 @@ public:
     size_t outputSize;
     std::vector<Pattern> weights;
     Pattern output;
-    std::shared_ptr<LearningRule> learningRule;
+    std::shared_ptr<LearningRule<float>> learningRule;
     std::shared_ptr<ActivationFunction<float>> activation;
 
     Pattern biases;
@@ -54,7 +54,7 @@ public:
 public:
     Layer() = delete;
 
-    Layer(const std::shared_ptr<LearningRule> &newRule,
+    Layer(const std::shared_ptr<LearningRule<float>> &newRule,
           const std::shared_ptr<ActivationFunction<float>> &activationFunction,
           size_t in,
           size_t out)

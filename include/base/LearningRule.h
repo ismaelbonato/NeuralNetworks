@@ -10,6 +10,8 @@
 
 using Pattern = std::vector<float>;
 using PairOfPatternAndBias = std::pair<std::vector<Pattern>, Pattern>;
+
+template<typename T>
 class LearningRule
 {
 protected:
@@ -17,67 +19,59 @@ public:
     LearningRule() = default;
     virtual ~LearningRule() = default;
 
-    virtual float updateWeight(float weight,
-                               float gradient,
-                               float learningRate) const
-        = 0;
+    virtual T updateWeight(T weight, T gradient, T learningRate) const = 0;
 };
 
-class HebbianRule : public LearningRule
+template<typename T>
+class HebbianRule : public LearningRule<T>
 {
 public:
     HebbianRule() = default;
     ~HebbianRule() override = default;
 
-    float updateWeight(float weight,
-                       float gradient,
-                       float) const override
+    T updateWeight(T weight, T gradient, T) const override
     {
         // Hebbian learning doesn't use gradient or learning rate in the traditional sense.
         // Instead, weights are updated based on the correlation of inputs.
-        return weight
-               + gradient; // Gradient here represents the correlation term.
+        //Gradient here represents the correlation term.
+        return weight + gradient;
     }
 };
 
-class PerceptronRule : public LearningRule
+template<typename T>
+class PerceptronRule : public LearningRule<T>
 {
 public:
     PerceptronRule() = default;
     ~PerceptronRule() override = default;
 
-    float updateWeight(float weight,
-                       float gradient,
-                       float learningRate) const override
+    T updateWeight(T weight, T gradient, T learningRate) const override
     {
-        // Perceptron update rule
         return weight + learningRate * gradient;
     }
 };
 
-class SGDRule : public LearningRule
+template<typename T>
+class SGDRule : public LearningRule<T>
 {
 public:
     SGDRule() = default;
     ~SGDRule() override = default;
 
-    float updateWeight(float weight,
-                       float gradient,
-                       float learningRate) const override
+    T updateWeight(T weight, T gradient, T learningRate) const override
     {
         return weight - learningRate * gradient;
     }
 };
 
-class AdamRule : public LearningRule
+template<typename T>
+class AdamRule : public LearningRule<T>
 {
 public:
     AdamRule() = default;
     ~AdamRule() override = default;
 
-    float updateWeight(float,
-                       float,
-                       float) const override
+    T updateWeight(T, T, T) const override
     {
         throw std::runtime_error("AdamRule not implemented yet.");
     }

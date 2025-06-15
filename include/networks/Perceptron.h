@@ -12,7 +12,7 @@ public:
         : Model(in)
     {
         layers.emplace_back(std::make_unique<PerceptronLayer>(
-            std::make_shared<PerceptronRule>(),
+            std::make_shared<PerceptronRule<float>>(),
             std::make_shared<StepActivation<float>>(),
             in,
             out));
@@ -20,7 +20,7 @@ public:
 
     // Constructor with custom learning rule
     Perceptron(
-        const std::shared_ptr<LearningRule> &newRule,
+        const std::shared_ptr<LearningRule<float>> &newRule,
         const std::shared_ptr<ActivationFunction<float>> &activationFunction,
         size_t in,
         size_t out)

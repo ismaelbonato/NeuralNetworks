@@ -9,7 +9,7 @@ class PerceptronLayer : public Layer
 {
 public:
     PerceptronLayer() = delete; // Default constructor is not allowed
-    PerceptronLayer(const std::shared_ptr<LearningRule> &newRule,
+    PerceptronLayer(const std::shared_ptr<LearningRule<float>> &newRule,
         const std::shared_ptr<ActivationFunction<float>> &activationFunction,
                     size_t in,
                     size_t out)
