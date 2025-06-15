@@ -11,6 +11,10 @@ private:
     Patterns preActivations; // Store pre-activations for each layer
 
 public:
+
+    // Default constructor creates a network with a single layer
+    FeedforwardNetwork() = default; // No layers by default, can be extended later
+
     FeedforwardNetwork(const std::vector<size_t> &layerSizes)
         : activate(layerSizes.size())
         , preActivations(layerSizes.size() - 1)
@@ -42,6 +46,20 @@ public:
     }
 
     ~FeedforwardNetwork() override = default;
+
+    void addLayer(std::unique_ptr<Layer> layer) override 
+    {
+        // Update the activate and preActivations vectors
+        if (activate.empty()) {
+            activate.emplace_back(Pattern(layer->getOutputSize(), 0.0f));
+        } 
+        activate.emplace_back(Pattern(layer->getOutputSize()));
+        preActivations.emplace_back(Pattern(layer->getInputSize(), 0.0f));
+
+        Model::addLayer(std::move(layer));
+    }
+
+
 
     // Call the learning rule's learn method supervised
     void learn(const Patterns &inputs,

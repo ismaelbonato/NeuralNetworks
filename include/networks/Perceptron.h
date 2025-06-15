@@ -10,7 +10,6 @@ class Perceptron : public Model
 {
 public:
     Perceptron(const size_t in, const size_t out)
-        : Model(in)
     {
         layers.emplace_back(std::make_unique<PerceptronLayer>(
             std::make_shared<PerceptronRule<Scalar>>(),
@@ -25,7 +24,6 @@ public:
         const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
         size_t in,
         size_t out)
-        : Model(in)
     {
         layers.emplace_back(std::make_unique<PerceptronLayer>(newRule,
                                                               activationFunction,

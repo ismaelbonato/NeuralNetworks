@@ -13,17 +13,16 @@ class Model
 {
 public:
     Model() = default;
-
-    // Constructor that takes ownership of a LearningRule and sets the number of neurons
-    Model(size_t) {}
-
     virtual ~Model() = default;
 
     std::vector<std::unique_ptr<Layer>> layers;
 
 public:
     // Add a layer to the model
-    //void addLayer(std::unique_ptr<Layer> layer) { layers.push_back(layer); }
+    virtual void addLayer(std::unique_ptr<Layer> layer) 
+    { 
+        layers.push_back(std::move(layer));
+    }
 
     // Remove a layer by index
     void removeLayer(size_t index)
@@ -46,9 +45,6 @@ public:
         }
         return result;
     }
-
-
-
 
     // Apply the Hebbian learning rule to update weights
     virtual void learn(const Patterns &)

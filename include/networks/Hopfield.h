@@ -12,7 +12,6 @@ class Hopfield : public Model
 {
 public:
     Hopfield(size_t n)
-        : Model(n)
     {
         layers.emplace_back(std::make_unique<HopfieldLayer>(
             std::make_shared<HebbianRule<Scalar>>(),
@@ -25,7 +24,6 @@ public:
     Hopfield(const std::shared_ptr<LearningRule<Scalar>> &newRule,
              const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
              size_t n)
-        : Model(n)
     {
         layers.emplace_back(
             std::make_unique<HopfieldLayer>(newRule, activationFunction, n, n));
