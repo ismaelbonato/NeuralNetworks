@@ -39,7 +39,7 @@ public:
         for (auto &pattern : patterns)
         {
             for (auto &layer : layers) {
-                layer->learn(pattern);
+                layer->updateWeights(pattern, {}, 1.0f);
             }
         }
     }

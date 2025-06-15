@@ -1,7 +1,6 @@
 #pragma once
 #include "base/LearningRule.h"
 #include <memory>
-#include <random>
 #include <vector>
 
 using Pattern = std::vector<float>;
@@ -18,59 +17,18 @@ public:
     Pattern biases;
 
 public:
-    Layer() = default;
-
-    Layer(size_t in, size_t out)
-        : inputSize(in)
-        , outputSize(out)
-    {
-        initWeights();
-    }
+    Layer() = delete;
 
     Layer(const std::shared_ptr<LearningRule> &newRule, size_t in, size_t out)
         : inputSize(in)
         , outputSize(out)
         , learningRule(newRule)
     {
-        initWeights();
     }
 
     virtual ~Layer() = default;
 
-    virtual void learn(const Pattern &) 
-    {
-        std::cerr << "Learn method not implemented for this layer type." << std::endl;
-        throw std::runtime_error("Learn method not implemented for this layer type.");
-    }
-
-    virtual void learn(const Pattern &, 
-                       const Pattern &,
-                       float)
-    {
-        std::cerr << "Learn method not implemented for this layer type." << std::endl;
-        throw std::runtime_error("Learn method not implemented for this layer type.");
-    }
-
-    void initWeights()
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-1.0, 1.0);
-
-        if (weights.empty()) {
-            weights.resize(outputSize, Pattern(inputSize, 0.0));
-
-            for (auto &row : weights)
-                for (auto &w : row)
-                    w = dis(gen);
-        }
-        if (biases.empty()) {
-            biases.resize(outputSize, 0.0);
-
-            for (auto &b : biases)
-                b = dis(gen);
-        }
-    }
+    virtual void initWeights(float value = 0.0f) = 0;
 
     size_t getInputSize() const { return inputSize; }
     size_t getOutputSize() const { return outputSize; }
@@ -91,7 +49,7 @@ public:
                                                    learningRate);
         }
     }
-
+    
     virtual Pattern infer(const Pattern &input) const
     {
         if (input.size() != inputSize) {

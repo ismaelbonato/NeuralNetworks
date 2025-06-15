@@ -29,16 +29,22 @@ public:
     ~Perceptron() override = default;
 
     void learn(const std::vector<Pattern> &inputs,
-                       const std::vector<Pattern> &labels,
-                       float learningRate = 0.1f,
-                       size_t epochs = 100000) override
+               const std::vector<Pattern> &labels,
+               float learningRate = 0.1f,
+               size_t epochs = 10000) override
     {
+        std::cout << "Training feedforward Network..." << std::endl;
         for (size_t epoch = 0; epoch < epochs; ++epoch) {
             for (size_t i = 0; i < inputs.size(); ++i) {
-                for (auto &layer : layers) {
-                    layer->learn(inputs[i], labels[i], learningRate);
-                }
+                Pattern activated = layers.front()->infer(inputs[i]);
+                Pattern error = computeError(labels[i], activated);
+                layers.front()->updateWeights(inputs[i], error, learningRate);
             }
         }
+    }
+
+    Pattern computeError(const Pattern &target, const Pattern &activated) const
+    {
+        return {target.front() - activated.front()};
     }
 };

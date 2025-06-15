@@ -13,7 +13,6 @@
 
 void feedForwardNetwork()
 {
-    
     std::vector<Pattern> inputs;
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
@@ -73,7 +72,6 @@ std::vector<Pattern> labels = {
 
 int main()
 {
-
     feedForwardNetwork();
     //perceptronNetwork();
     //hopfieldNetwork();

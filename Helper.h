@@ -33,7 +33,7 @@ void print(const Pattern &p)
 {
     size_t idx = 0;
     for (auto i : p) {
-        if (idx == 64) {
+        if (idx == 32) {
             std::cout << std::endl;
             idx = 0;
         }
@@ -48,17 +48,24 @@ void hopfieldNetwork()
 {
     std::vector<Pattern> patterns{};
 
-    patterns.emplace_back(png_to_bits("../Misc/bart.png"));
-    patterns.emplace_back(png_to_bits("../Misc/homer.png"));
-    patterns.emplace_back(png_to_bits("../Misc/marge.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/bart.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/homer.png"));
+    //patterns.emplace_back(png_to_bits("../Misc/marge.png"));
     //patterns.emplace_back(png_to_bits("../Misc/meg.png"));
     //patterns.emplace_back(png_to_bits("../Misc/grandpa.png"));
     //patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
-    Pattern p(png_to_bits("../Misc/homer_defect.png"));
+    //Pattern p(png_to_bits("../Misc/homer_defect.png"));
+
+    // Example: create a 4-bit pattern and add it to patterns
+    Pattern pattern4 = {1.0, -1.0, 1.0, -1.0};
+    patterns.push_back(pattern4);
+
+    // Use the same pattern as input for recall
+    Pattern p = pattern4;
 
     auto N = patterns.at(0).size();
 
-    Hopfield net(std::make_shared<HebbianRule>(), N);
+    Hopfield net(N);
 
     net.learn(patterns);
 

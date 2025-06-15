@@ -3,22 +3,40 @@
 #include "base/Layer.h"
 #include <stdexcept>
 #include <vector>
+#include <random>
 
 class PerceptronLayer : public Layer
 {
 public:
-    PerceptronLayer(size_t in, size_t out)
-        : Layer(in, out)
-    {
-        weights.resize(out, Pattern(out, 0.0));
-    }
-
+    PerceptronLayer() = delete; // Default constructor is not allowed
     PerceptronLayer(const std::shared_ptr<LearningRule> &newRule,
                     size_t in,
                     size_t out)
         : Layer(newRule, in, out)
     {
-        weights.resize(out, std::vector<float>(out, 0.0));
+        initWeights();
+    }
+    ~PerceptronLayer() override = default;
+
+    void initWeights(float value = 0.0f) override // each layer should initialize its weights
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> dis(-1.0, 1.0);
+
+        if (weights.empty()) {
+            weights.resize(outputSize, Pattern(inputSize, value));
+
+            for (auto &row : weights)
+                for (auto &w : row)
+                    w = dis(gen);
+        }
+        if (biases.empty()) {
+            biases.resize(outputSize, value);
+
+            for (auto &b : biases)
+                b = dis(gen);
+        }
     }
 
     float activation(float value) const override
@@ -26,31 +44,4 @@ public:
         return value > 0 ? 1 : 0; // Classic perceptron uses step function
     }
 
-    void learn(const Pattern &input,
-               const Pattern &label,
-               float learningRate = 0.1f) override
-    {
-        if (learningRule == nullptr) {
-            throw std::runtime_error(
-                "Learning rule is not set for this layer.");
-        }
-
-        for (size_t i = 0; i < outputSize; ++i) {
-            // Compute weighted sum (no bias)
-            float sum = 0.0f;
-            for (size_t j = 0; j < inputSize; ++j) {
-                sum += weights[i][j] * input[j];
-            }
-            // Apply activation
-            float output = activation(sum);
-            float error = label[i] - output;
-
-            // Update weights (no bias update)
-            for (size_t j = 0; j < inputSize; ++j) {
-                learningRule->updateWeight(weights[i][j],
-                                           learningRate * error * input[j],
-                                           learningRate);
-            }
-        }
-    }
 };
