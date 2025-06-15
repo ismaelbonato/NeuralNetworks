@@ -2,13 +2,15 @@
 #include "base/Layer.h"
 #include <random>
 
-
 class FeedforwardLayer : public Layer
 {
-
 public:
-    FeedforwardLayer(const std::shared_ptr<LearningRule> &rule, size_t in, size_t out)
-        : Layer(rule, in, out)
+    FeedforwardLayer(
+        const std::shared_ptr<LearningRule> &rule,
+        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        size_t in,
+        size_t out)
+        : Layer(rule, activationFunction, in, out)
     {
         initWeights();
     }
@@ -32,12 +34,6 @@ public:
             for (auto &b : biases)
                 b = dis(gen);
         }
-    }
-
-
-    float activation(float value) const override
-    {
-        return 1.0f / (1.0f + std::exp(-value));
     }
 
 };

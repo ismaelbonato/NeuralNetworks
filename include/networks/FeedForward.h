@@ -1,4 +1,5 @@
 #pragma once
+#include "base/Layer.h"
 #include "base/Model.h"
 #include "networks/FeedForwardLayer.h"
 
@@ -15,21 +16,25 @@ public:
 
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
-            layers.emplace_back(
-                std::make_unique<FeedforwardLayer>(std::make_shared<SGDRule>(),
-                                                   layerSizes[i - 1],
-                                                   layerSizes[i]));
+            layers.emplace_back(std::make_unique<FeedforwardLayer>(
+                std::make_shared<SGDRule>(),
+                std::make_shared<SigmoidActivation<float>>(),
+                layerSizes[i - 1],
+                layerSizes[i]));
         }
     }
 
-    FeedforwardNetwork(const std::shared_ptr<LearningRule> &rule,
-                       const std::vector<size_t> &layerSizes)
+    FeedforwardNetwork(
+        const std::shared_ptr<LearningRule> &rule,
+        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        const std::vector<size_t> &layerSizes)
         : activate(layerSizes.size())
         , preActivations(layerSizes.size() - 1)
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.emplace_back(
                 std::make_unique<FeedforwardLayer>(rule,
+                                                   activationFunction,
                                                    layerSizes[i - 1],
                                                    layerSizes[i]));
         }
@@ -48,7 +53,7 @@ public:
             for (size_t i = 0; i < inputs.size(); ++i) {
                 forward(inputs[i]);
                 Pattern delta = computeError(labels[i]);
-                backward(delta, learningRate);
+                backpropagation(delta, learningRate);
             }
         }
     }
@@ -68,22 +73,17 @@ public:
     Pattern computeError(const Pattern &target)
     {
         return elementwise_mul(lossDerivative(activate.back(), target),
-                               activationDerivative(preActivations.back()));
+                               layers.back()->activationDerivatives(
+                                   preActivations.back()));
     }
 
-    void backward(Pattern &delta, const float rate)
+    void backpropagation(Pattern &delta, const float rate)
     {
         // Backward pass: update weights and propagate error
         for (size_t l = layers.size(); l-- > 0;) {
-            layers[l]->updateWeights(activate[l],
-                                      delta,
-                                      rate); // Implement this
+            layers[l]->updateWeights(activate[l], delta, rate);
             if (l > 0) {
-                //auto layerWeightTranspose = layers[l]->transpose_weights(); // You need to implement this
-                auto multiplyResult = matvec_mul(layers[l]->weights, delta);
-                auto preActivation = activationDerivative(preActivations[l - 1]);
-
-                delta = elementwise_mul(multiplyResult, preActivation);
+                delta = layers[l]->backwardPass(delta, preActivations[l - 1]);
             }
         }
     }

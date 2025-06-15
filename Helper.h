@@ -22,7 +22,7 @@ Pattern png_to_bits(const std::string &filename)
             auto pixel = resizedImage.at<uchar>(static_cast<int>(r),
                                                 static_cast<int>(c));
             pattern.emplace_back(
-                //pixel > 128 ? 1.0 : -1.0); // Convert to bipolar representation   
+                //pixel > 128 ? 1.0 : -1.0); // Convert to bipolar representation
                 pixel > 128 ? 1.0f : 0.0f); // Convert to binary representation
         }
     }
@@ -91,7 +91,7 @@ void perceptronNetwork()
 
     size_t in = inputs.at(0).size();
     size_t out = labels.at(0).size();
-    Perceptron net(std::make_shared<PerceptronRule>(), in, out);
+    Perceptron net(in, out);
 
     net.learn(inputs, labels);
 
@@ -121,3 +121,4 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
         }
     }
 */
+

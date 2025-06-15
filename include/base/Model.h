@@ -36,21 +36,6 @@ public:
         }
     }
 
-    virtual float activation(float value) const
-    {
-        return 1.0f / (1.0f + std::exp(-value));
-    }
-
-    virtual Pattern activationDerivative(const Pattern &values) const
-    {
-        Pattern result(values.size());
-        for (size_t i = 0; i < values.size(); ++i) {
-            float sigmoid = activation(values[i]);
-            result[i] = sigmoid * (1.0f - sigmoid);
-        }
-        return result;
-    }
-
     Pattern lossDerivative(const Pattern &output, const Pattern &target)
     {
         Pattern result(output.size(), 0.0);
@@ -61,38 +46,8 @@ public:
         return result;
     }
 
-    // Element-wise multiplication of two Pattern vectors
-    static Pattern elementwise_mul(const Pattern &a, const Pattern &b)
-    {
-        if (a.size() != b.size())
-            throw std::runtime_error("Size mismatch in elementwise_mul.");
-        Pattern result(a.size());
 
-        for (size_t i = 0; i < a.size(); ++i) {
-            result[i] = a[i] * b[i];
-        }
 
-        return result;
-    }
-
-    // Matrix-vector multiplication: multiplies a matrix (vector of Pattern) by a Pattern vector
-    static Pattern matvec_mul(const std::vector<Pattern> &matrix,
-                              const Pattern &vec)
-    {
-        if (matrix.empty() || matrix.size() != vec.size())
-            throw std::runtime_error(
-                "Matrix and vector size mismatch in matvec_mul.");
-        auto size = matrix.at(0).size();
-        Pattern result(size, 0.0);
-
-        for (size_t i = 0; i < size; ++i) {
-            for (size_t j = 0; j < vec.size(); ++j) {
-                result[i] += matrix[j][i] * vec[j];
-            }
-        }
-
-        return result;
-    }
 
     // Apply the Hebbian learning rule to update weights
     virtual void learn(const std::vector<Pattern> &)

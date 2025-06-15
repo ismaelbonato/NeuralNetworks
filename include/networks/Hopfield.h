@@ -15,17 +15,21 @@ public:
     Hopfield(size_t n)
         : Model(n)
     {
-        layers.emplace_back(
-            std::make_unique<HopfieldLayer>(std::make_shared<HebbianRule>(),
-                                            n,
-                                            n));
+        layers.emplace_back(std::make_unique<HopfieldLayer>(
+            std::make_shared<HebbianRule>(),
+            std::make_shared<StepPolarActivation<float>>(),
+            n,
+            n));
     }
 
     // Constructor with custom learning rule
-    Hopfield(const std::shared_ptr<LearningRule> &newRule, size_t n)
+    Hopfield(const std::shared_ptr<LearningRule> &newRule,
+             const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+             size_t n)
         : Model(n)
     {
-        layers.emplace_back(std::make_unique<HopfieldLayer>(newRule, n, n));
+        layers.emplace_back(
+            std::make_unique<HopfieldLayer>(newRule, activationFunction, n, n));
     }
 
     ~Hopfield() override = default;
@@ -36,8 +40,7 @@ public:
             throw std::runtime_error("Patterns vector is empty.");
         }
 
-        for (auto &pattern : patterns)
-        {
+        for (auto &pattern : patterns) {
             for (auto &layer : layers) {
                 layer->updateWeights(pattern, {}, 1.0f);
             }
@@ -51,9 +54,9 @@ public:
     {
         std::cerr << "Learn method not implemented for Hopfield network."
                   << std::endl;
-        throw std::runtime_error("Learn method not implemented for Hopfield network.");
+        throw std::runtime_error(
+            "Learn method not implemented for Hopfield network.");
     }
-
 
 private:
 };

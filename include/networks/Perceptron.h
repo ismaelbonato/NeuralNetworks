@@ -11,19 +11,25 @@ public:
     Perceptron(const size_t in, const size_t out)
         : Model(in)
     {
-        layers.emplace_back(
-            std::make_unique<PerceptronLayer>(std::make_shared<PerceptronRule>(),
-                                              in,
-                                              out));
+        layers.emplace_back(std::make_unique<PerceptronLayer>(
+            std::make_shared<PerceptronRule>(),
+            std::make_shared<StepActivation<float>>(),
+            in,
+            out));
     }
 
     // Constructor with custom learning rule
-    Perceptron(const std::shared_ptr<LearningRule> &newRule,
-               size_t in,
-               size_t out)
+    Perceptron(
+        const std::shared_ptr<LearningRule> &newRule,
+        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        size_t in,
+        size_t out)
         : Model(in)
     {
-        layers.emplace_back(std::make_unique<PerceptronLayer>(newRule, in, out));
+        layers.emplace_back(std::make_unique<PerceptronLayer>(newRule,
+                                                              activationFunction,
+                                                              in,
+                                                              out));
     }
 
     ~Perceptron() override = default;

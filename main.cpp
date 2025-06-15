@@ -64,7 +64,7 @@ std::vector<Pattern> labels = {
         std::cout << "Output: " << "{ ";
         for (auto &i : output)
         {
-            std::cout << i << ", ";
+            std::cout << ((i > 0.5) ? 1 : 0) << ", ";
         }
         std::cout << "}" << std::endl;
     }

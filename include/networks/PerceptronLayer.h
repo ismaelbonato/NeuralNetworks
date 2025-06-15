@@ -10,9 +10,10 @@ class PerceptronLayer : public Layer
 public:
     PerceptronLayer() = delete; // Default constructor is not allowed
     PerceptronLayer(const std::shared_ptr<LearningRule> &newRule,
+        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
                     size_t in,
                     size_t out)
-        : Layer(newRule, in, out)
+        : Layer(newRule, activationFunction, in, out)
     {
         initWeights();
     }
@@ -38,10 +39,4 @@ public:
                 b = dis(gen);
         }
     }
-
-    float activation(float value) const override
-    {
-        return value > 0 ? 1 : 0; // Classic perceptron uses step function
-    }
-
 };

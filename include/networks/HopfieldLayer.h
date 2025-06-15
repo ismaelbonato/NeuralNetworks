@@ -1,29 +1,26 @@
 #pragma once
 #include "base/Layer.h"
 
+#include <algorithm> // for std::fill
 #include <stdexcept>
 #include <vector>
-#include <algorithm> // for std::fill
 
 class HopfieldLayer : public Layer
 {
 public:
     HopfieldLayer() = delete;
 
-    HopfieldLayer(const std::shared_ptr<LearningRule> &newRule,
-                  size_t in,
-                  size_t out)
-        : Layer(newRule, in, out)
+    HopfieldLayer(
+        const std::shared_ptr<LearningRule> &newRule,
+        const std::shared_ptr<ActivationFunction<float>> &activationFunction,
+        size_t in,
+        size_t out)
+        : Layer(newRule, activationFunction, in, out)
     {
         initWeights();
     }
 
     ~HopfieldLayer() override = default;
-
-    float activation(float value) const override
-    {
-        return (value >= 0) ? 1 : -1; // Bipolar activation function
-    }
 
     Pattern infer(const Pattern &input) const override
     {
@@ -39,11 +36,10 @@ public:
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 if (i != j) {
-                    weights[i][j] += pattern[i] * pattern[j];
-                    //weights[i][j]
-                    //    = learningRule->updateWeight(weights[i][j],
-                    //                                    pattern[i] * pattern[j],
-                    //                                    learningRate);
+                    weights[i][j]
+                        = learningRule->updateWeight(weights[i][j],
+                                                        pattern[i] * pattern[j],
+                                                        learningRate);
                 }
             }
         }
@@ -54,8 +50,12 @@ public:
         if (weights.empty()) {
             weights.resize(outputSize, Pattern(inputSize, value));
         }
+
+        if (biases.empty()) {
+            biases.resize(inputSize, value);
+        }
     }
-    
+
     // Overload infer: update until convergence
     Pattern recall(const Pattern &input) const
     {
