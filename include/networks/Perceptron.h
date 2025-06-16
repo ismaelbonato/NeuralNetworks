@@ -1,12 +1,12 @@
 #pragma once
 
-#include "base/Model.h"
+#include "base/LayeredModel.h"
 #include "networks/DenseLayer.h"
 #include "base/Types.h"
 
 #include <memory>
 
-class Perceptron : public Model
+class Perceptron : public LayeredModel
 {
 public:
     Perceptron(const size_t in, const size_t out)
@@ -28,7 +28,7 @@ public:
         layers.emplace_back(std::make_unique<DenseLayer>(newRule,
                                                               activationFunction,
                                                               in,
-                                                              out));
+                                          out));
     }
 
     ~Perceptron() override = default;

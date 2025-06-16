@@ -1,24 +1,19 @@
 #pragma once
 #include "base/Layer.h"
 #include "base/Model.h"
+#include "base/GradientBaseModel.h"
 #include "networks/DenseLayer.h"
 #include "base/Types.h"
 
-class FeedforwardNetwork : public Model
+class FeedforwardNetwork : public GradientBaseModel
 {
-protected:
-    Patterns activate;       // Store activations for each layer
-    Patterns preActivations; // Store pre-activations for each layer
-
 public:
 
     // Default constructor creates a network with a single layer
     FeedforwardNetwork() = default; // No layers by default, can be extended later
 
     FeedforwardNetwork(const std::vector<size_t> &layerSizes)
-        : activate(layerSizes.size())
-        , preActivations(layerSizes.size() - 1)
-
+    : GradientBaseModel(layerSizes.size())
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.emplace_back(std::make_unique<DenseLayer>(
@@ -33,8 +28,7 @@ public:
         const std::shared_ptr<LearningRule<Scalar>> &rule,
         const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
         const std::vector<size_t> &layerSizes)
-        : activate(layerSizes.size())
-        , preActivations(layerSizes.size() - 1)
+        : GradientBaseModel(layerSizes.size())
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.emplace_back(
@@ -56,10 +50,8 @@ public:
         activate.emplace_back(Pattern(layer->getOutputSize()));
         preActivations.emplace_back(Pattern(layer->getInputSize(), 0.0f));
 
-        Model::addLayer(std::move(layer));
+        GradientBaseModel::addLayer(std::move(layer));
     }
-
-
 
     // Call the learning rule's learn method supervised
     void learn(const Patterns &inputs,
@@ -73,36 +65,6 @@ public:
                 forward(inputs[i]);
                 Pattern delta = computeError(labels[i]);
                 backpropagation(delta, learningRate);
-            }
-        }
-    }
-
-    void forward(const Pattern &input)
-    {
-        // Forward pass: store activations and pre-activations
-        Pattern current = input;
-        activate[0] = current;
-        for (size_t i = 0; i < layers.size(); i++) {
-            preActivations[i] = layers[i]->weightedSum(current);
-            current = layers[i]->activate(preActivations[i]);
-            activate[i + 1] = current;
-        }
-    }
-
-    Pattern computeError(const Pattern &target)
-    {
-        return elementwise_mul(lossDerivative(activate.back(), target),
-                               layers.back()->activationDerivatives(
-                                   preActivations.back()));
-    }
-
-    void backpropagation(Pattern &delta, const Scalar rate)
-    {
-        // Backward pass: update weights and propagate error
-        for (size_t l = layers.size(); l-- > 0;) {
-            layers[l]->updateWeights(activate[l], delta, rate);
-            if (l > 0) {
-                delta = layers[l]->backwardPass(delta, preActivations[l - 1]);
             }
         }
     }

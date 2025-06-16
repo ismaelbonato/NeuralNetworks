@@ -31,28 +31,38 @@ public:
 
     ~Hopfield() override = default;
 
-    void learn(const Patterns &patterns) override
+    void learn(const Patterns &inputs)
     {
-        if (patterns.empty()) {
+        learn(inputs, {}, 1.0f, 10000); // Default learning rate and epochs
+    }
+
+    void learn(const Patterns &inputs,
+        const Patterns &labels,
+        Scalar learningRate = 0.1f,
+        size_t epochs = 100000) override
+    {
+        (void)(epochs); // Unused parameter
+        (void)(labels); // Unused parameter
+
+        if (inputs.empty()) {
             throw std::runtime_error("Patterns vector is empty.");
         }
 
-        for (auto &pattern : patterns) {
+        for (auto &pattern : inputs) {
             for (auto &layer : layers) {
-                layer->updateWeights(pattern, {}, 1.0f);
+                layer->updateWeights(pattern, {}, learningRate);
             }
         }
     }
 
-    void learn(const Patterns &,
-               const Patterns &,
-               Scalar,
-               size_t) override
+    virtual Pattern infer(const Pattern &input) override
     {
-        std::cerr << "Learn method not implemented for Hopfield network."
-                  << std::endl;
-        throw std::runtime_error(
-            "Learn method not implemented for Hopfield network.");
+        if (layers.empty()) {
+            throw std::runtime_error(
+                "No layers exist in the model to perform inference.");
+        }
+        ;
+        return layers.front()->infer(input);
     }
 
 private:

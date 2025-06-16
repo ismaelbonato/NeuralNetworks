@@ -56,12 +56,12 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << "Perceptron Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    //perceptronNetwork();
+    perceptronNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Hopfield Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    //hopfieldNetwork();
+    hopfieldNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
