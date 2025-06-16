@@ -38,11 +38,11 @@ public:
 };
 
 template<typename T>
-class PerceptronRule : public LearningRule<T>
+class LinearRule : public LearningRule<T>
 {
 public:
-    PerceptronRule() = default;
-    ~PerceptronRule() override = default;
+    LinearRule() = default;
+    ~LinearRule() override = default;
 
     T updateWeight(T weight, T gradient, T learningRate) const override
     {

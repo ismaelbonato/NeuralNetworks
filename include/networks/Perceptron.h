@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/Model.h"
-#include "networks/PerceptronLayer.h"
+#include "networks/DenseLayer.h"
 #include "base/Types.h"
 
 #include <memory>
@@ -11,8 +11,8 @@ class Perceptron : public Model
 public:
     Perceptron(const size_t in, const size_t out)
     {
-        layers.emplace_back(std::make_unique<PerceptronLayer>(
-            std::make_shared<PerceptronRule<Scalar>>(),
+        layers.emplace_back(std::make_unique<DenseLayer>(
+            std::make_shared<LinearRule<Scalar>>(),
             std::make_shared<StepActivation<Scalar>>(),
             in,
             out));
@@ -25,7 +25,7 @@ public:
         size_t in,
         size_t out)
     {
-        layers.emplace_back(std::make_unique<PerceptronLayer>(newRule,
+        layers.emplace_back(std::make_unique<DenseLayer>(newRule,
                                                               activationFunction,
                                                               in,
                                                               out));

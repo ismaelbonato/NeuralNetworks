@@ -1,7 +1,7 @@
 #pragma once
 #include "base/Layer.h"
 #include "base/Model.h"
-#include "networks/FeedForwardLayer.h"
+#include "networks/DenseLayer.h"
 #include "base/Types.h"
 
 class FeedforwardNetwork : public Model
@@ -21,7 +21,7 @@ public:
 
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
-            layers.emplace_back(std::make_unique<FeedforwardLayer>(
+            layers.emplace_back(std::make_unique<DenseLayer>(
                 std::make_shared<SGDRule<Scalar>>(),
                 std::make_shared<SigmoidActivation<Scalar>>(),
                 layerSizes[i - 1],
@@ -38,7 +38,7 @@ public:
     {
         for (size_t i = 1; i < layerSizes.size(); ++i) {
             layers.emplace_back(
-                std::make_unique<FeedforwardLayer>(rule,
+                std::make_unique<DenseLayer>(rule,
                                                    activationFunction,
                                                    layerSizes[i - 1],
                                                    layerSizes[i]));

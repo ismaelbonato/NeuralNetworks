@@ -10,27 +10,28 @@
 #include "networks/FeedForward.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
+#include "networks/DenseLayer.h"
 
 void feedforwardManual()
 {
     std::cout << "Manual Feedforward Network" << std::endl;
 
-    std::vector<size_t> layerSizes = {2, 4, 2, 1};
+    //std::vector<size_t> layerSizes = {2, 4, 2, 1};
     //FeedforwardNetwork net(layerSizes);
     FeedforwardNetwork net;
 
-    net.addLayer(std::make_unique<FeedforwardLayer>(
+    net.addLayer(std::make_unique<DenseLayer>(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
         2,
         4));
 
-    net.addLayer(std::make_unique<FeedforwardLayer>(
+    net.addLayer(std::make_unique<DenseLayer>(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
         4,
         2));
-    net.addLayer(std::make_unique<FeedforwardLayer>(
+    net.addLayer(std::make_unique<DenseLayer>(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
         2,
@@ -65,7 +66,7 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    //feedForwardNetwork();
+    feedForwardNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Manual Feed Forward Network" << std::endl;

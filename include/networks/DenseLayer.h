@@ -6,11 +6,11 @@
 #include <stdexcept>
 #include <random>
 
-class PerceptronLayer : public Layer
+class DenseLayer : public Layer
 {
 public:
-    PerceptronLayer() = delete; // Default constructor is not allowed
-    PerceptronLayer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
+    DenseLayer() = delete; // Default constructor is not allowed
+    DenseLayer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
         const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
                     size_t in,
                     size_t out)
@@ -18,7 +18,7 @@ public:
     {
         initWeights();
     }
-    ~PerceptronLayer() override = default;
+    ~DenseLayer() override = default;
 
     void initWeights(Scalar value = 0.0f) override // each layer should initialize its weights
     {
