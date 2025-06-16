@@ -40,7 +40,7 @@ static Pattern elementwise_mul(const Pattern &a, const Pattern &b)
 class Layer
 {
     //protected:
-public:
+protected:
     size_t inputSize;
     size_t outputSize;
     Patterns weights;

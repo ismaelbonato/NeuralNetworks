@@ -6,7 +6,7 @@
 
 class FeedforwardNetwork : public Model
 {
-private:
+protected:
     Patterns activate;       // Store activations for each layer
     Patterns preActivations; // Store pre-activations for each layer
 

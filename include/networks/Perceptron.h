@@ -12,7 +12,7 @@ public:
     Perceptron(const size_t in, const size_t out)
     {
         layers.emplace_back(std::make_unique<DenseLayer>(
-            std::make_shared<LinearRule<Scalar>>(),
+            std::make_shared<PerceptronRule<Scalar>>(),
             std::make_shared<StepActivation<Scalar>>(),
             in,
             out));

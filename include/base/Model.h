@@ -7,8 +7,6 @@
 #include <memory>
 #include <vector>
 
-#include <omp.h>
-
 class Model
 {
 public:
