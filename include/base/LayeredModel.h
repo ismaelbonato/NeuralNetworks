@@ -9,12 +9,23 @@ public:
     LayeredModel() = default;
     virtual ~LayeredModel() = default;    
 
-    Layers& getLayers()
+    inline Layers::value_type& getLayer(size_t index)
+    {
+        if (index >= layers.size()) {
+            throw std::out_of_range("Layer index out of range.");
+        }
+        return layers[index];
+    }
+
+    inline Layers& getLayers()
     {
         return layers;
     }
 
-    const Layers& getLayers() const;
+    inline const Layers& getLayers() const
+    {
+        return layers;
+    }
 
     size_t numLayers() const
     {

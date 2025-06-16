@@ -36,9 +36,10 @@ public:
         // Forward pass: store activations and pre-activations
         Pattern current = input;
         activate[0] = current;
-        for (size_t i = 0; i < layers.size(); i++) {
-            preActivations[i] = layers[i]->weightedSum(current);
-            current = layers[i]->activate(preActivations[i]);
+
+        for (size_t i = 0; i < numLayers(); i++) {
+            preActivations[i] = getLayer(i)->weightedSum(current);
+            current = getLayer(i)->activate(preActivations[i]);
             activate[i + 1] = current;
         }
     }
@@ -53,10 +54,10 @@ public:
     virtual void backpropagation(Pattern &delta, const Scalar rate)
     {
         // Backward pass: update weights and propagate error
-        for (size_t l = layers.size(); l-- > 0;) {
-            layers[l]->updateWeights(activate[l], delta, rate);
+        for (size_t l = numLayers(); l-- > 0;) {
+            getLayer(l)->updateWeights(activate[l], delta, rate);
             if (l > 0) {
-                delta = layers[l]->backwardPass(delta, preActivations[l - 1]);
+                delta = getLayer(l)->backwardPass(delta, preActivations[l - 1]);
             }
         }
     }
