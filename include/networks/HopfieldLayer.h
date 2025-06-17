@@ -22,6 +22,12 @@ public:
 
     ~HopfieldLayer() override = default;
 
+    virtual std::unique_ptr<Layer> clone() const override
+    {
+        return std::make_unique<HopfieldLayer>(
+            learningRule, activation, inputSize, outputSize);
+    }
+
     Pattern infer(const Pattern &input) const override
     {
         return recall(input); //  Return Value Optimization (RVO)

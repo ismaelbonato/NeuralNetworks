@@ -20,6 +20,12 @@ public:
     }
     ~DenseLayer() override = default;
 
+    std::unique_ptr<Layer> clone() const override
+    {
+        return std::make_unique<DenseLayer>(
+            learningRule, activation, inputSize, outputSize);
+    }
+
     void initWeights(Scalar value = 0.0f) override // each layer should initialize its weights
     {
         std::random_device rd;

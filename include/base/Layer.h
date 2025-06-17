@@ -65,6 +65,8 @@ public:
 
     virtual ~Layer() = default;
 
+    virtual std::unique_ptr<Layer> clone() const = 0;
+
     virtual void initWeights(Scalar value = 0.0f) = 0;
 
     size_t getInputSize() const { return inputSize; }

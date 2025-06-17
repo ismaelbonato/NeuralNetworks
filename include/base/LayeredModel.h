@@ -7,6 +7,11 @@ class LayeredModel : public Model
 {
 public:
     LayeredModel() = default;
+
+    LayeredModel(Layers newLayers)
+        : Model(std::move(newLayers))
+    {}
+
     virtual ~LayeredModel() = default;    
 
     inline Layers::value_type& getLayer(size_t index)

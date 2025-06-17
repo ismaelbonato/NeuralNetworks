@@ -17,6 +17,10 @@ public:
     Model() = default;
     virtual ~Model() = default;
 
+    Model(Layers newLayers)
+        : layers(std::move(newLayers))
+    {}
+    
     virtual void learn(const Patterns &inputs,
                        const Patterns &labels,
                        Scalar learningRate = 0.1f,

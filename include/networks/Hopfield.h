@@ -11,22 +11,17 @@
 class Hopfield : public Model
 {
 public:
-    Hopfield(size_t n)
-    {
-        layers.emplace_back(std::make_unique<HopfieldLayer>(
-            std::make_shared<HebbianRule<Scalar>>(),
-            std::make_shared<StepPolarActivation<Scalar>>(),
-            n,
-            n));
-    }
 
-    // Constructor with custom learning rule
-    Hopfield(const std::shared_ptr<LearningRule<Scalar>> &newRule,
-             const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
-             size_t n)
+    Hopfield() = default; // Default constructor creates a Hopfield network with no layers
+
+    Hopfield(std::unique_ptr<Layer> newLayer)
+        : Model(Layers{})
     {
-        layers.emplace_back(
-            std::make_unique<HopfieldLayer>(newRule, activationFunction, n, n));
+        if (newLayer) {
+            layers.push_back(std::move(newLayer));
+        } else {
+            throw std::runtime_error("Perceptron must have at least one layer.");
+        }
     }
 
     ~Hopfield() override = default;

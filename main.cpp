@@ -5,6 +5,7 @@
 #include <math.h>
 #include <memory>
 
+#include "base/Types.h"
 #include "base/Layer.h"
 #include "base/LearningRule.h"
 #include "networks/FeedForward.h"
@@ -12,30 +13,31 @@
 #include "networks/Perceptron.h"
 #include "networks/DenseLayer.h"
 
-void feedforwardManual()
+void feedforward_DependencyInversion()
 {
     std::cout << "Manual Feedforward Network" << std::endl;
-
-    //std::vector<size_t> layerSizes = {2, 4, 2, 1};
-    //FeedforwardNetwork net(layerSizes);
-    FeedforwardNetwork net;
-
-    net.addLayer(std::make_unique<DenseLayer>(
+    
+    DenseLayer layer1(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
-        2,
-        4));
+        2, 4);
 
-    net.addLayer(std::make_unique<DenseLayer>(
+    DenseLayer layer2(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
-        4,
-        2));
-    net.addLayer(std::make_unique<DenseLayer>(
+        4, 2);
+    DenseLayer layer3(
         std::make_shared<SGDRule<Scalar>>(),
         std::make_shared<SigmoidActivation<Scalar>>(),
-        2,
-        1));
+        2, 1);  
+    
+    Layers layers;
+    
+    layers.push_back(layer1.clone());
+    layers.push_back(layer2.clone());
+    layers.push_back(layer3.clone());
+
+    FeedforwardNetwork net(std::move(layers));
 
     Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
     Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
@@ -69,9 +71,9 @@ int main()
     feedForwardNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
-    std::cout << "Manual Feed Forward Network" << std::endl;
+    std::cout << "DependencyInversion Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    feedforwardManual();
+    feedforward_DependencyInversion();
     std::cout << std::endl;
 
     return 0;

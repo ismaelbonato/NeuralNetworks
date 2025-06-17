@@ -12,9 +12,10 @@ protected:
 public:
     GradientBaseModel() = default;
 
-    GradientBaseModel(size_t numLayers)
-        : activate(numLayers)
-        , preActivations(numLayers - 1)
+    GradientBaseModel(Layers newlayers)
+        : LayeredModel(std::move(newlayers))
+        , activate(layers.size() + 1) // +1 for the input layer
+        , preActivations(layers.size()) // No pre-activation for the input layer
     {}
 
     virtual ~GradientBaseModel() = default;

@@ -1,15 +1,14 @@
 #pragma once
 
 #include "base/Layer.h"
-#include "base/Types.h"
 #include "base/LearningRule.h"
+#include "base/Types.h"
+#include "networks/FeedForward.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
-#include "networks/FeedForward.h"
 #include <opencv2/opencv.hpp>
 
 #include "base/Types.h"
-
 
 Pattern png_to_bits(const std::string &filename)
 {
@@ -70,7 +69,12 @@ void hopfieldNetwork()
 
     auto N = patterns.at(0).size();
 
-    Hopfield net(N);
+    HopfieldLayer layer(
+        std::make_shared<HebbianRule<Scalar>>(),
+        std::make_shared<StepPolarActivation<Scalar>>(),
+        N, N);
+    
+    Hopfield net(layer.clone());
 
     net.learn(patterns);
 
@@ -84,8 +88,7 @@ void hopfieldNetwork()
 
 void perceptronNetwork()
 {
-    Patterns inputs
-        = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
     Patterns labels = {
         {0.0}, // 0 AND 0
@@ -96,7 +99,13 @@ void perceptronNetwork()
 
     size_t in = inputs.at(0).size();
     size_t out = labels.at(0).size();
-    Perceptron net(in, out);
+    
+    DenseLayer layer(
+        std::make_shared<PerceptronRule<Scalar>>(),
+        std::make_shared<SigmoidActivation<Scalar>>(),
+        in, out);
+
+    Perceptron net(layer.clone());
 
     net.learn(inputs, labels);
 
@@ -129,7 +138,7 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
 
 void feedForwardNetwork()
 {
-    Patterns inputs;
+    /*    Patterns inputs;
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
     inputs.emplace_back(png_to_bits("../Misc/homer.png"));
@@ -147,27 +156,39 @@ void feedForwardNetwork()
         {0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, //meg
         {0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, //grandpa
         {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
-
-/*
-Patterns inputs = {
-    {0.0f, 0.0f},
-    {0.0f, 1.0f},
-    {1.0f, 0.0f},
-    {1.0f, 1.0f}
-};
-
-Patterns labels = {
-    {0.0f}, // 0 XOR 0 = 0
-    {1.0f}, // 0 XOR 1 = 1
-    {1.0f}, // 1 XOR 0 = 1
-    {0.0f}  // 1 XOR 1 = 0
-};
 */
+
+    Patterns inputs = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}};
+
+    Patterns labels = {
+        {0.0f}, // 0 XOR 0 = 0
+        {1.0f}, // 0 XOR 1 = 1
+        {1.0f}, // 1 XOR 0 = 1
+        {0.0f}  // 1 XOR 1 = 0
+    };
+
     size_t N = inputs.at(0).size();
     size_t O = labels.at(0).size();
-    
-    std::vector<size_t> layers = { N, 16, 8, O};
-    FeedforwardNetwork mlp(layers);
+
+    FeedforwardNetwork mlp;
+
+    mlp.addLayer(
+        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
+                                     std::make_shared<SigmoidActivation<Scalar>>(),
+                                     N,
+                                     N*2));
+
+    mlp.addLayer(
+        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
+                                     std::make_shared<SigmoidActivation<Scalar>>(),
+                                     N*2,
+                                     N));
+
+    mlp.addLayer(
+        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
+                                     std::make_shared<SigmoidActivation<Scalar>>(),
+                                     N,
+                                     O));
 
     Scalar learningRate = 0.1f;
     size_t epochs = 10000;
@@ -178,8 +199,7 @@ Patterns labels = {
         Pattern output = mlp.infer(input);
         std::cout << "Input: " << index++ << " - ";
         std::cout << "Output: " << "{ ";
-        for (auto &i : output)
-        {
+        for (auto &i : output) {
             std::cout << ((i > 0.5) ? 1 : 0) << ", ";
         }
         std::cout << "}" << std::endl;

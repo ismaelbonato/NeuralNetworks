@@ -12,32 +12,9 @@ public:
     // Default constructor creates a network with a single layer
     FeedforwardNetwork() = default; // No layers by default, can be extended later
 
-    FeedforwardNetwork(const std::vector<size_t> &layerSizes)
-    : GradientBaseModel(layerSizes.size())
-    {
-        for (size_t i = 1; i < layerSizes.size(); ++i) {
-            layers.emplace_back(std::make_unique<DenseLayer>(
-                std::make_shared<SGDRule<Scalar>>(),
-                std::make_shared<SigmoidActivation<Scalar>>(),
-                layerSizes[i - 1],
-                layerSizes[i]));
-        }
-    }
-
-    FeedforwardNetwork(
-        const std::shared_ptr<LearningRule<Scalar>> &rule,
-        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
-        const std::vector<size_t> &layerSizes)
-        : GradientBaseModel(layerSizes.size())
-    {
-        for (size_t i = 1; i < layerSizes.size(); ++i) {
-            layers.emplace_back(
-                std::make_unique<DenseLayer>(rule,
-                                                   activationFunction,
-                                                   layerSizes[i - 1],
-                                                   layerSizes[i]));
-        }
-    }
+    FeedforwardNetwork(Layers newlayers)
+    : GradientBaseModel(std::move(newlayers))
+    {}
 
     ~FeedforwardNetwork() override = default;
 
