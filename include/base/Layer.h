@@ -35,7 +35,7 @@ public:
 
     virtual std::unique_ptr<Layer> clone() const = 0;
 
-    virtual void initWeights(Scalar value = 0.0f) = 0;
+    virtual void initWeights(Scalar value = Scalar{}) = 0;
 
     size_t getInputSize() const { return inputSize; }
     size_t getOutputSize() const { return outputSize; }

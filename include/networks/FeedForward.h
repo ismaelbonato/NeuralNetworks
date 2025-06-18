@@ -5,30 +5,32 @@
 #include "networks/DenseLayer.h"
 #include "base/Types.h"
 
-class FeedforwardNetwork : public GradientBaseModel
+#include <initializer_list>
+
+template<typename... Args>
+auto make_vector(Args&&... args) {
+    std::vector<std::unique_ptr<Layer>> v;
+    (v.push_back(std::make_unique<Layer>(std::forward<Args>(args))), ...);
+    return v;
+}
+
+class Feedforward : public GradientBaseModel
 {
 public:
 
     // Default constructor creates a network with a single layer
-    FeedforwardNetwork() = default; // No layers by default, can be extended later
+    Feedforward() = default; // No layers by default, can be extended later
 
-    FeedforwardNetwork(Layers newlayers)
-    : GradientBaseModel(std::move(newlayers))
+    Feedforward(Layers newlayers)
+        : GradientBaseModel(std::move(newlayers))
     {}
 
-    ~FeedforwardNetwork() override = default;
+    template<typename... Args>
+    Feedforward(Args&... ls)
+        : GradientBaseModel(ls...)
+    {}
 
-    void addLayer(std::unique_ptr<Layer> layer) override 
-    {
-        // Update the activate and preActivations vectors
-        if (activate.empty()) {
-            activate.emplace_back(Pattern(layer->getOutputSize(), 0.0f));
-        } 
-        activate.emplace_back(Pattern(layer->getOutputSize()));
-        preActivations.emplace_back(Pattern(layer->getInputSize(), 0.0f));
-
-        GradientBaseModel::addLayer(std::move(layer));
-    }
+    ~Feedforward() override = default;
 
     // Call the learning rule's learn method supervised
     void learn(const Patterns &inputs,
@@ -36,6 +38,18 @@ public:
                Scalar learningRate = 0.1f,
                size_t epochs = 100000) override
     {
+        // Update the activate and preActivations vectors
+        if (activate.empty()) {
+            activate.emplace_back(Pattern(layers.front()->getInputSize(), 0.0f));
+        }
+        
+        for (auto &&l : layers)
+        {
+            activate.emplace_back(Pattern(l->getOutputSize(), 0.0f));
+            preActivations.emplace_back(Pattern(l->getInputSize(), 0.0f));
+            l->initWeights();
+        }
+
         std::cout << "Training feedforward Network..." << std::endl;
         for (size_t epoch = 0; epoch < epochs; ++epoch) {
             for (size_t i = 0; i < inputs.size(); ++i) {

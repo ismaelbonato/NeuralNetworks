@@ -15,34 +15,45 @@
 
 #include "base/Tensor.h"
 
-void feedforward_DependencyInversion()
+void feedforwardExperiment()
 {
-    std::cout << "Manual Feedforward Network" << std::endl;
+
+    Patterns inputs;
+
+    inputs.emplace_back(png_to_bits("../Misc/bart.png"));
+    inputs.emplace_back(png_to_bits("../Misc/homer.png"));
+    inputs.emplace_back(png_to_bits("../Misc/marge.png"));
+    inputs.emplace_back(png_to_bits("../Misc/meg.png"));
+    inputs.emplace_back(png_to_bits("../Misc/grandpa.png"));
+    inputs.emplace_back(png_to_bits("../Misc/lisa.png"));
+
+    Pattern p(png_to_bits("../Misc/meg.png"));
+
+    Patterns labels = {
+        {1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, //bart
+        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, //homer
+        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, //marge
+        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, //meg
+        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, //grandpa
+        {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
+
+    auto col = inputs.at(0).size();
     
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
 
-    DenseLayer layer1(rule, activation, 2, 4);
-    DenseLayer layer2(rule, activation, 4, 2);
-    DenseLayer layer3(rule, activation, 2, 1);
-    
-    Layers layers;
-    
-    layers.push_back(layer1.clone());
-    layers.push_back(layer2.clone());
-    layers.push_back(layer3.clone());
+    DenseLayer layer1(rule, activation, col, 32);
+    DenseLayer layer2(rule, activation, 32, 16);
+    DenseLayer layer3(rule, activation, 16, 6);
 
-    FeedforwardNetwork net(std::move(layers));
-
-    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
-    Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
+    Feedforward net(layer1, layer2, layer3);
 
     net.learn(inputs, labels);
 
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
-        std::cout << input << std::endl;
-        std::cout << output << std::endl;
+        //std::cout << input << std::endl;
+        std::cout << output << std::endl;;
     }
 }
 
@@ -68,8 +79,9 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << "DependencyInversion Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    feedforward_DependencyInversion();
     std::cout << std::endl;
+
+    feedforwardExperiment();
 
     return 0;
 }

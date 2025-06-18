@@ -15,12 +15,18 @@ protected:
 public:
 
     Model() = default;
-    virtual ~Model() = default;
 
     Model(Layers newLayers)
         : layers(std::move(newLayers))
     {}
-    
+
+    virtual ~Model() = default;
+
+    virtual void addLayer(const Layer &l)
+    {
+        layers.emplace_back(l.clone());
+    }
+
     virtual void learn(const Patterns &inputs,
                        const Patterns &labels,
                        Scalar learningRate = 0.1f,

@@ -26,7 +26,7 @@ public:
             learningRule, activation, inputSize, outputSize);
     }
 
-    void initWeights(Scalar value = 0.0f) override // each layer should initialize its weights
+    void initWeights(Scalar value = Scalar{}) override // each layer should initialize its weights
     {
         std::random_device rd;
         std::mt19937 gen(rd());

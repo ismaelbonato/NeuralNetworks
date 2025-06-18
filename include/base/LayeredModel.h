@@ -12,7 +12,13 @@ public:
         : Model(std::move(newLayers))
     {}
 
-    virtual ~LayeredModel() = default;    
+    template<typename... Args>
+    LayeredModel(Args&... ls)
+    {
+        (layers.emplace_back(ls.clone()), ...);
+    }
+
+    virtual ~LayeredModel() = default;
 
     inline Layers::value_type& getLayer(size_t index)
     {
@@ -37,10 +43,10 @@ public:
         return layers.size();
     }
 
-    // Add a layer to the model
-    virtual void addLayer(std::unique_ptr<Layer> layer)
-    { 
-        layers.push_back(std::move(layer));
+    template<typename... Args>
+    void addLayers(Args&... ls)
+    {
+        (addLayer(ls), ...);
     }
 
     // Remove a layer by index

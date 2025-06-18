@@ -15,7 +15,7 @@ Pattern png_to_bits(const std::string &filename)
     cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE);
     cv::Mat resizedImage;
 
-    cv::resize(img, resizedImage, cv::Size(32, 32));
+    cv::resize(img, resizedImage, cv::Size(16, 16));
 
     Pattern pattern;
     pattern.reserve(static_cast<size_t>(resizedImage.rows)
@@ -27,12 +27,11 @@ Pattern png_to_bits(const std::string &filename)
                                                 static_cast<int>(c));
             pattern.emplace_back(
                 //pixel > 128 ? 1.0 : -1.0); // Convert to bipolar representation
-                pixel > 128 ? 1.0f : 0.0f); // Convert to binary representation
+                pixel > 128 ? Scalar{1.0f} : Scalar{}); // Convert to binary representation
         }
     }
     return pattern;
 }
-
 
 void hopfieldNetwork()
 {
@@ -55,11 +54,11 @@ void hopfieldNetwork()
 
     auto N = patterns.at(0).size();
 
-    HopfieldLayer layer(
-        std::make_shared<HebbianRule<Scalar>>(),
-        std::make_shared<StepPolarActivation<Scalar>>(),
-        N, N);
-    
+    HopfieldLayer layer(std::make_shared<HebbianRule<Scalar>>(),
+                        std::make_shared<StepPolarActivation<Scalar>>(),
+                        N,
+                        N);
+
     Hopfield net(layer.clone());
 
     net.learn(patterns);
@@ -85,11 +84,11 @@ void perceptronNetwork()
 
     size_t in = inputs.at(0).size();
     size_t out = labels.at(0).size();
-    
-    DenseLayer layer(
-        std::make_shared<PerceptronRule<Scalar>>(),
-        std::make_shared<SigmoidActivation<Scalar>>(),
-        in, out);
+
+    DenseLayer layer(std::make_shared<PerceptronRule<Scalar>>(),
+                     std::make_shared<SigmoidActivation<Scalar>>(),
+                     in,
+                     out);
 
     Perceptron net(layer.clone());
 
@@ -144,45 +143,31 @@ void feedForwardNetwork()
         {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
 */
 
-    Patterns inputs = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}};
+    std::cout << "Manual Feedforward Network" << std::endl;
 
-    Patterns labels = {
-        {0.0f}, // 0 XOR 0 = 0
-        {1.0f}, // 0 XOR 1 = 1
-        {1.0f}, // 1 XOR 0 = 1
-        {0.0f}  // 1 XOR 1 = 0
-    };
+    auto rule = std::make_shared<SGDRule<Scalar>>();
+    auto activation = std::make_shared<SigmoidActivation<Scalar>>();
 
-    size_t N = inputs.at(0).size();
-    size_t O = labels.at(0).size();
+    DenseLayer layer1(rule, activation, 2, 4);
+    DenseLayer layer2(rule, activation, 4, 2);
+    DenseLayer layer3(rule, activation, 2, 1);
 
-    FeedforwardNetwork mlp;
+    //FeedforwardNetwork net(std::move(layers));
+    Feedforward net(layer1);
 
-    mlp.addLayer(
-        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
-                                     std::make_shared<SigmoidActivation<Scalar>>(),
-                                     N,
-                                     N*2));
+    net.addLayers(layer2);
 
-    mlp.addLayer(
-        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
-                                     std::make_shared<SigmoidActivation<Scalar>>(),
-                                     N*2,
-                                     N));
+    net.addLayer(layer3);
 
-    mlp.addLayer(
-        std::make_unique<DenseLayer>(std::make_shared<SGDRule<Scalar>>(),
-                                     std::make_shared<SigmoidActivation<Scalar>>(),
-                                     N,
-                                     O));
+    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
 
-    Scalar learningRate = 0.1f;
-    size_t epochs = 50000;
-    mlp.learn(inputs, labels, learningRate, epochs);
+    net.learn(inputs, labels);
 
     for (const auto &input : inputs) {
-        Pattern output = mlp.infer(input);
+        Pattern output = net.infer(input);
         std::cout << input << std::endl;
         std::cout << output << std::endl;
+        ;
     }
 }

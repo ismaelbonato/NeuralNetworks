@@ -1,7 +1,7 @@
 #pragma once
 
 #include "LayeredModel.h"
-
+#include <vector>
 
 class GradientBaseModel : public LayeredModel
 {
@@ -14,23 +14,14 @@ public:
 
     GradientBaseModel(Layers newlayers)
         : LayeredModel(std::move(newlayers))
-        , activate(numLayers() + 1) // +1 for the input layer
-        , preActivations(numLayers()) // No pre-activation for the input layer
+    {}
+
+    template<typename... Args>
+    GradientBaseModel(Args&... ls)
+        : LayeredModel(ls...)
     {}
 
     virtual ~GradientBaseModel() = default;
-
-    // Add a layer to the model
-    void addLayer(std::unique_ptr<Layer> layer) override
-    {
-        LayeredModel::addLayer(std::move(layer));
-    }
-
-    // Remove a layer by index
-    void removeLayer(size_t index) override
-    {
-        LayeredModel::removeLayer(index);
-    }
 
     virtual void forward(const Pattern &input)
     {

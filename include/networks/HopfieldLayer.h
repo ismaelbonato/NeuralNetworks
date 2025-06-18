@@ -35,7 +35,7 @@ public:
 
     virtual void updateWeights(const Pattern &pattern,
                                const Pattern &,
-                               Scalar learningRate = 1.0f)
+                               Scalar learningRate = Scalar{1.0f})
     {
         size_t n = pattern.size();
 
@@ -51,7 +51,7 @@ public:
         }
     }
 
-    void initWeights(Scalar value = 0.0f) override
+    void initWeights(Scalar value = Scalar{}) override
     {
         if (weights.empty()) {
             weights.resize(outputSize, Pattern(inputSize, value));
