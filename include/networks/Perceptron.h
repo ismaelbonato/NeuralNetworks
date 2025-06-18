@@ -39,6 +39,6 @@ public:
 
     Pattern computeError(const Pattern &target, const Pattern &activated) const
     {
-        return {target.front() - activated.front()};
+        return Pattern{target.front() - activated.front()};
     }
 };

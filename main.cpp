@@ -13,23 +13,18 @@
 #include "networks/Perceptron.h"
 #include "networks/DenseLayer.h"
 
+#include "base/Tensor.h"
+
 void feedforward_DependencyInversion()
 {
     std::cout << "Manual Feedforward Network" << std::endl;
     
-    DenseLayer layer1(
-        std::make_shared<SGDRule<Scalar>>(),
-        std::make_shared<SigmoidActivation<Scalar>>(),
-        2, 4);
+    auto rule = std::make_shared<SGDRule<Scalar>>();
+    auto activation = std::make_shared<SigmoidActivation<Scalar>>();
 
-    DenseLayer layer2(
-        std::make_shared<SGDRule<Scalar>>(),
-        std::make_shared<SigmoidActivation<Scalar>>(),
-        4, 2);
-    DenseLayer layer3(
-        std::make_shared<SGDRule<Scalar>>(),
-        std::make_shared<SigmoidActivation<Scalar>>(),
-        2, 1);  
+    DenseLayer layer1(rule, activation, 2, 4);
+    DenseLayer layer2(rule, activation, 4, 2);
+    DenseLayer layer3(rule, activation, 2, 1);
     
     Layers layers;
     
@@ -46,8 +41,8 @@ void feedforward_DependencyInversion()
 
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
-        print(input);
-        print(output);
+        std::cout << input << std::endl;
+        std::cout << output << std::endl;
     }
 }
 

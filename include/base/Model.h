@@ -29,6 +29,4 @@ public:
 
     virtual Pattern infer(const Pattern &input) = 0;
 
-private:
-    // You can add private members or methods if needed
 };

@@ -14,8 +14,8 @@ public:
 
     GradientBaseModel(Layers newlayers)
         : LayeredModel(std::move(newlayers))
-        , activate(layers.size() + 1) // +1 for the input layer
-        , preActivations(layers.size()) // No pre-activation for the input layer
+        , activate(numLayers() + 1) // +1 for the input layer
+        , preActivations(numLayers()) // No pre-activation for the input layer
     {}
 
     virtual ~GradientBaseModel() = default;
@@ -45,11 +45,10 @@ public:
         }
     }
 
-    virtual Pattern computeError(const Pattern &target)
+    virtual inline Pattern computeError(const Pattern &target)
     {
-        return elementwise_mul(lossDerivative(activate.back(), target),
-                               layers.back()->activationDerivatives(
-                                   preActivations.back()));
+        return lossDerivative(activate.back(), target) * layers.back()->activationDerivatives(
+                                   preActivations.back());
     }
 
     virtual void backpropagation(Pattern &delta, const Scalar rate)
@@ -63,14 +62,9 @@ public:
         }
     }
 
-    virtual Pattern lossDerivative(const Pattern &output, const Pattern &target)
+    virtual inline Pattern lossDerivative(const Pattern &output, const Pattern &target)
     {
-        Pattern result(output.size(), 0.0);
-
-        for (size_t i = 0; i < output.size(); ++i) {
-            result[i] = output[i] - target[i];
-        }
-        return result;
+        return output - target;
     }
 
 };

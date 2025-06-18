@@ -1,45 +1,13 @@
 #pragma once
+#include "Tensor.h"
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
 #include "base/Types.h"
 
 #include <memory>
 
-// Matrix-vector multiplication: multiplies a matrix (vector of Pattern) by a Pattern vector
-static Pattern matvec_mul(const Patterns &matrix, const Pattern &vec)
-{
-    if (matrix.empty() || matrix.size() != vec.size())
-        throw std::runtime_error(
-            "Matrix and vector size mismatch in matvec_mul.");
-    auto size = matrix.at(0).size();
-    Pattern result(size, 0.0);
-
-    for (size_t i = 0; i < size; ++i) {
-        for (size_t j = 0; j < vec.size(); ++j) {
-            result[i] += matrix[j][i] * vec[j];
-        }
-    }
-
-    return result;
-}
-
-// Element-wise multiplication of two Pattern vectors
-static Pattern elementwise_mul(const Pattern &a, const Pattern &b)
-{
-    if (a.size() != b.size())
-        throw std::runtime_error("Size mismatch in elementwise_mul.");
-    Pattern result(a.size());
-
-    for (size_t i = 0; i < a.size(); ++i) {
-        result[i] = a[i] * b[i];
-    }
-
-    return result;
-}
-
 class Layer
 {
-    //protected:
 protected:
     size_t inputSize;
     size_t outputSize;
@@ -76,11 +44,14 @@ public:
                                const Pattern &delta,
                                Scalar learningRate)
     {
+
+        auto gradMatrix = delta.outer(prev_activations);
+
+
         for (size_t i = 0; i < outputSize; ++i) {
             for (size_t j = 0; j < inputSize; ++j) {
-                Scalar grad = delta[i] * prev_activations[j];
                 weights[i][j] = learningRule->updateWeight(weights[i][j],
-                                                           grad,
+                                                 gradMatrix[i][j],
                                                            learningRate);
             }
             biases[i] = learningRule->updateWeight(biases[i],
@@ -107,15 +78,7 @@ public:
             throw std::runtime_error("Input is empty");
         }
 
-        Scalar sum = 0.0;
-        for (size_t i = 0; i < outputSize; ++i) {
-            sum = biases[i];
-            for (size_t j = 0; j < inputSize; ++j) {
-                sum += weights[i][j] * input[j];
-            }
-            sums[i] = sum;
-        }
-        return sums;
+        return weights.matVecMul(input) + biases;
     }
 
     virtual Pattern activationDerivatives(const Pattern &values) const
@@ -137,7 +100,7 @@ public:
             throw std::runtime_error(
                 "Activation function is not set for this layer.");
         }
-        Pattern result(values.size(), 0.0);
+        Pattern result(values.size());
 
         for (size_t i = 0; i < values.size(); ++i) {
             result[i] = (*activation)(values[i]);
@@ -145,18 +108,12 @@ public:
         return result;
     }
 
-    Pattern backwardPass(const Pattern &delta,
-                         const Pattern &preActivation)
+    Pattern backwardPass(const Pattern &delta, const Pattern &preActivation)
     {
         if (weights.empty() || weights.size() != outputSize) {
             throw std::runtime_error(
                 "Weights are not initialized or size mismatch.");
         }
-        
-        auto multiplyResult = matvec_mul(weights, delta);
-        auto newPreActivation = activationDerivatives(preActivation);
-
-        return elementwise_mul(multiplyResult, newPreActivation);
+        return weights.matVecTransMul(delta) * activationDerivatives(preActivation);
     }
-
 };

@@ -33,20 +33,6 @@ Pattern png_to_bits(const std::string &filename)
     return pattern;
 }
 
-void print(const Pattern &p)
-{
-    size_t idx = 0;
-    for (auto i : p) {
-        if (idx == 32) {
-            std::cout << std::endl;
-            idx = 0;
-        }
-        idx++;
-        std::cout << i;
-        //std::cout << ((i > 0) ? " " : "x");
-    }
-    std::cout << std::endl;
-}
 
 void hopfieldNetwork()
 {
@@ -80,9 +66,9 @@ void hopfieldNetwork()
 
     auto ret = net.infer(p);
 
-    print(p);
+    std::cout << p << std::endl;
     std::cout << "Recall result: " << std::endl;
-    print(ret);
+    std::cout << ret << std::endl;
     std::cout << "Hello, Hopfield Network!" << std::endl;
 }
 
@@ -112,8 +98,8 @@ void perceptronNetwork()
     std::cout << "Perceptron Network trained!" << std::endl;
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
-        print(input);
-        print(output);
+        std::cout << input << std::endl;
+        std::cout << output << std::endl;
     }
 }
 
@@ -191,17 +177,12 @@ void feedForwardNetwork()
                                      O));
 
     Scalar learningRate = 0.1f;
-    size_t epochs = 10000;
+    size_t epochs = 50000;
     mlp.learn(inputs, labels, learningRate, epochs);
 
-    size_t index = 1;
     for (const auto &input : inputs) {
         Pattern output = mlp.infer(input);
-        std::cout << "Input: " << index++ << " - ";
-        std::cout << "Output: " << "{ ";
-        for (auto &i : output) {
-            std::cout << ((i > 0.5) ? 1 : 0) << ", ";
-        }
-        std::cout << "}" << std::endl;
+        std::cout << input << std::endl;
+        std::cout << output << std::endl;
     }
 }
