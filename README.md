@@ -9,10 +9,6 @@ This project implements classic neural network models in C++ for associative mem
 - **Perceptron:** Classic single-layer perceptron for supervised learning.
 - **Hopfield network:** Associative memory with Hebbian learning for binary pattern storage and recall.
 - **Flexible learning rules:** Learning algorithms (SGD, Hebbian, etc.) are implemented as separate classes and can be assigned per layer.
-- **Pattern visualization:** Print patterns and outputs as ASCII art in the terminal.
-- **OpenCV integration:** Load and convert PNG images as patterns.
-- **Hamming distance analysis:** Quantitatively compare pattern similarity.
-- **Flexible pattern loading:** Easily add new patterns from images or code.
 
 ## Supported Networks
 
@@ -33,15 +29,8 @@ This project implements classic neural network models in C++ for associative mem
 2. **Learning:**  
    - **Feedforward/Perceptron:**  
      Supervised learning using SGD or other rules.  
-     For MLP:  
-     \[
-     w_{ij} \leftarrow w_{ij} - \eta \frac{\partial L}{\partial w_{ij}}
-     \]
    - **Hopfield:**  
      Unsupervised Hebbian rule:  
-     \[
-     w_{ij} = \frac{1}{P} \sum_{p=1}^{P} s_i^p s_j^p
-     \]
 
 3. **Recall/Inference:**  
    - **Feedforward/Perceptron:**  
@@ -54,18 +43,22 @@ This project implements classic neural network models in C++ for associative mem
 
 ## Build Instructions
 
-### Prerequisites
+### Dependencies
 
-- C++20 compiler (e.g., g++ 10+)
-- [OpenCV 4](https://opencv.org/) (for image loading)
-- [CMake 3.10+](https://cmake.org/)
+- **C++23 compiler** (e.g., g++ 13+ or clang++ 16+)
+- **OpenCV 4** (for image loading)
+- **CMake 3.10+**
 
-### Build Steps
+## Building the Project
+
+This project builds both a reusable library (`NetworkLib`) and an executable (`Network`) when built directly.
+
+### Steps
 
 ```sh
 # Clone the repository
 git clone <your-repo-url>
-cd NeuralNetworks
+cd NeuralNetworksUI/NeuralNetwork
 
 # Create a build directory and compile
 mkdir build
@@ -74,44 +67,10 @@ cmake ..
 make
 ```
 
-This will produce an executable named `Network`.
+- The static/shared library `NetworkLib` will be built.
+- The executable `Network` will be built if you build this project directly.
 
-## Example
+## Notes
 
-```cpp
-Patterns inputs = {
-    png_to_bits("pattern1.png"),
-    png_to_bits("pattern2.png"),
-    // ...
-};
-Patterns labels = {
-    {1.0, 0.0},
-    {0.0, 1.0},
-    // ...
-};
-
-size_t N = inputs[0].size();
-size_t O = labels[0].size();
-std::vector<size_t> layers = { N, 16, 8, O };
-FeedforwardNetwork mlp(layers);
-
-Scalar learningRate = 0.1f;
-size_t epochs = 10000;
-mlp.learn(inputs, labels, learningRate, epochs);
-
-for (const auto &input : inputs) {
-    Pattern output = mlp.infer(input);
-    // Print or process output
-}
-```
-## License
-
-This project is open source and available under the MIT License.
-
-## Acknowledgements
-
-- [OpenCV](https://opencv.org/)
-- Classic Hopfield network theory
-- [stb_image](https://github.com/nothings/stb) (optional, for image loading)
-
-
+- When used as a dependency in another CMake project, only the library is built.
+- Make sure OpenCV is installed and discoverable by CMake.

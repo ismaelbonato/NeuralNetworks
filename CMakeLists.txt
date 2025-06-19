@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
-
-#set(CMAKE_C_COMPILER "clang-19")
-#set(CMAKE_CXX_COMPILER "clang++-19")
+cmake_minimum_required(VERSION 3.20)
 
 project(NetworkFramework)
 
@@ -26,7 +23,7 @@ set(LIBRARIES
 )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-file(GLOB_RECURSE HEADERS "include/*.cpp")
+file(GLOB_RECURSE HEADERS "include/*.h")
 
 
 add_library(NetworkLib
@@ -77,7 +74,3 @@ target_include_directories(NetworkLib PUBLIC
     ${OpenCV_INCLUDE_DIRS} 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-
-
-#target_link_libraries(NetworkLib PUBLIC ${LIBRARIES})
