@@ -17,7 +17,7 @@ public:
     {}
 
     template<typename... Args>
-    GradientBaseModel(Args&... ls)
+    GradientBaseModel(Args &... ls)
         : LayeredModel(ls...)
     {}
 
@@ -38,8 +38,8 @@ public:
 
     virtual inline Pattern computeError(const Pattern &target)
     {
-        return lossDerivative(activate.back(), target) * layers.back()->activationDerivatives(
-                                   preActivations.back());
+        return lossDerivative(activate.back(), target)
+               * layers.back()->activationDerivatives(preActivations.back());
     }
 
     virtual void backpropagation(Pattern &delta, const Scalar rate)
@@ -53,13 +53,9 @@ public:
         }
     }
 
-    virtual inline Pattern lossDerivative(const Pattern &output, const Pattern &target)
+    virtual inline Pattern lossDerivative(const Pattern &output,
+                                          const Pattern &target)
     {
         return output - target;
     }
-
 };
-
-
-
-

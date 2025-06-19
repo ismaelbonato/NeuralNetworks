@@ -47,7 +47,6 @@ public:
         {
             activate.emplace_back(Pattern(l->getOutputSize(), 0.0f));
             preActivations.emplace_back(Pattern(l->getInputSize(), 0.0f));
-            l->initWeights();
         }
 
         std::cout << "Training feedforward Network..." << std::endl;
