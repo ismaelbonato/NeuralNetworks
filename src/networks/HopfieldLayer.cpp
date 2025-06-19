@@ -1,1 +1,1 @@
-#include "networks/HopfieldLayer.h"
+#include "layers/HopfieldLayer.h"

@@ -11,7 +11,7 @@
 #include "networks/FeedForward.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
-#include "networks/DenseLayer.h"
+#include "layers/DenseLayer.h"
 
 #include "base/Tensor.h"
 

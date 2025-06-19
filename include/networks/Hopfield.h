@@ -2,7 +2,7 @@
 #include "base/Model.h"
 #include "base/Layer.h"
 #include "base/LearningRule.h"
-#include "networks/HopfieldLayer.h"
+#include "layers/HopfieldLayer.h"
 #include "base/Types.h"
 
 #include <cstddef> // for size_t

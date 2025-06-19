@@ -1,1 +1,1 @@
-#include "networks/DenseLayer.h"
+#include "layers/DenseLayer.h"

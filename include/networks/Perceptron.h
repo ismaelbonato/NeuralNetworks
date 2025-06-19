@@ -1,7 +1,7 @@
 #pragma once
 
 #include "base/LayeredModel.h"
-#include "networks/DenseLayer.h"
+#include "layers/DenseLayer.h"
 #include "base/Types.h"
 
 #include <memory>

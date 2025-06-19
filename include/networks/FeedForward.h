@@ -2,7 +2,7 @@
 #include "base/Layer.h"
 #include "base/Model.h"
 #include "base/GradientBaseModel.h"
-#include "networks/DenseLayer.h"
+#include "layers/DenseLayer.h"
 #include "base/Types.h"
 
 #include <initializer_list>
