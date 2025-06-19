@@ -33,9 +33,9 @@ public:
         return recall(input); //  Return Value Optimization (RVO)
     }
 
-    virtual void updateWeights(const Pattern &pattern,
+    void updateWeights(const Pattern &pattern,
                                const Pattern &,
-                               Scalar learningRate = Scalar{1.0f})
+                               Scalar learningRate = Scalar{1.0f}) override
     {
         size_t n = pattern.size();
 
