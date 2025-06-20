@@ -14,15 +14,9 @@ public:
 
     Hopfield() = default; // Default constructor creates a Hopfield network with no layers
 
-    Hopfield(std::unique_ptr<Layer> newLayer)
-        : Model(Layers{})
-    {
-        if (newLayer) {
-            layers.push_back(std::move(newLayer));
-        } else {
-            throw std::runtime_error("Perceptron must have at least one layer.");
-        }
-    }
+    Hopfield(const std::shared_ptr<Layer> &newLayer)
+        : Model({newLayer})
+    {}
 
     ~Hopfield() override = default;
 

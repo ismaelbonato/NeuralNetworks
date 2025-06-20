@@ -23,7 +23,7 @@ using Patterns = Tensor<Pattern>;
 
 //using PatternPair = std::pair<Pattern, Pattern>;
 
-using Layers = std::vector<std::unique_ptr<Layer>>;
+using Layers = std::vector<std::shared_ptr<Layer>>;
 
 /*
 class LayerManager {

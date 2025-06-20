@@ -12,13 +12,12 @@ protected:
 public:
     GradientBaseModel() = default;
 
-    GradientBaseModel(Layers newlayers)
-        : LayeredModel(std::move(newlayers))
+    GradientBaseModel(Layers &newlayers)
+        : LayeredModel(newlayers)
     {}
 
-    template<typename... Args>
-    GradientBaseModel(Args &... ls)
-        : LayeredModel(ls...)
+    GradientBaseModel(const std::initializer_list<std::shared_ptr<Layer>> &newlayers)
+        : LayeredModel(newlayers)
     {}
 
     virtual ~GradientBaseModel() = default;

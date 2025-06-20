@@ -10,22 +10,17 @@ class HopfieldLayer : public Layer
 public:
     HopfieldLayer() = delete;
 
-    HopfieldLayer(
-        const std::shared_ptr<LearningRule<Scalar>> &newRule,
-        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
-        size_t in,
-        size_t out)
-        : Layer(newRule, activationFunction, in, out)
+    HopfieldLayer(const LayerConfig &newConfig)
+        : Layer(newConfig)
     {
         initWeights();
     }
 
     ~HopfieldLayer() override = default;
 
-    virtual std::unique_ptr<Layer> clone() const override
+    virtual std::shared_ptr<Layer> clone() const override
     {
-        return std::make_unique<HopfieldLayer>(
-            learningRule, activation, inputSize, outputSize);
+        return std::make_shared<HopfieldLayer>(config);
     }
 
     Pattern infer(const Pattern &input) const override
@@ -34,18 +29,18 @@ public:
     }
 
     void updateWeights(const Pattern &pattern,
-                               const Pattern &,
-                               Scalar learningRate = Scalar{1.0f}) override
+                       const Pattern &,
+                       Scalar learningRate = Scalar{1.0f}) override
     {
         size_t n = pattern.size();
 
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 if (i != j) {
-                    weights[i][j]
-                        = learningRule->updateWeight(weights[i][j],
-                                                        pattern[i] * pattern[j],
-                                                        learningRate);
+                    weights[i][j] = config.learningRule->updateWeight(weights[i][j],
+                                                               pattern[i]
+                                                                   * pattern[j],
+                                                               learningRate);
                 }
             }
         }
@@ -54,11 +49,11 @@ public:
     void initWeights(Scalar value = Scalar{}) override
     {
         if (weights.empty()) {
-            weights.resize(outputSize, Pattern(inputSize, value));
+            weights.resize(config.outputSize, Pattern(config.inputSize, value));
         }
 
         if (biases.empty()) {
-            biases.resize(inputSize, value);
+            biases.resize(config.inputSize, value);
         }
     }
 

@@ -3,44 +3,43 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
-#include <stdexcept>
 #include <random>
+#include <stdexcept>
 
 class DenseLayer : public Layer
 {
 public:
     DenseLayer() = delete; // Default constructor is not allowed
-    DenseLayer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
-        const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
-                    size_t in,
-                    size_t out)
-        : Layer(newRule, activationFunction, in, out)
+
+    DenseLayer(const LayerConfig &newConfig)
+        : Layer(newConfig)
     {
         initWeights();
     }
+
     ~DenseLayer() override = default;
 
-    std::unique_ptr<Layer> clone() const override
+    std::shared_ptr<Layer> clone() const override
     {
-        return std::make_unique<DenseLayer>(
-            learningRule, activation, inputSize, outputSize);
+        return std::make_shared<DenseLayer>(config);
     }
 
-    void initWeights(Scalar value = Scalar{}) override // each layer should initialize its weights
+    // each layer should initialize its weights
+    void initWeights(Scalar value = Scalar{}) override
     {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<Scalar> dis(-1.0, 1.0);
 
         if (weights.empty()) {
-            weights.resize(outputSize, Pattern(inputSize, value));
+            weights.resize(config.outputSize, Pattern(config.inputSize, value));
 
             for (auto &row : weights)
                 for (auto &w : row)
                     w = dis(gen);
         }
         if (biases.empty()) {
-            biases.resize(outputSize, value);
+            biases.resize(config.outputSize, value);
 
             for (auto &b : biases)
                 b = dis(gen);

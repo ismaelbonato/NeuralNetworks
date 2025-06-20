@@ -8,19 +8,17 @@ class LayeredModel : public Model
 public:
     LayeredModel() = default;
 
-    LayeredModel(Layers newLayers)
-        : Model(std::move(newLayers))
+    LayeredModel(Layers &newLayers)
+        : Model(newLayers)
     {}
 
-    template<typename... Args>
-    LayeredModel(Args&... ls)
-    {
-        (layers.emplace_back(ls.clone()), ...);
-    }
+    LayeredModel(const std::initializer_list<std::shared_ptr<Layer>> &newLayers)
+        : Model(newLayers)
+    {}
 
     virtual ~LayeredModel() = default;
 
-    inline Layers::value_type& getLayer(size_t index)
+    inline Layers::value_type &getLayer(size_t index)
     {
         if (index >= layers.size()) {
             throw std::out_of_range("Layer index out of range.");
@@ -28,25 +26,18 @@ public:
         return layers[index];
     }
 
-    inline Layers& getLayers()
-    {
-        return layers;
-    }
+    inline Layers &getLayers() { return layers; }
 
-    inline const Layers& getLayers() const
-    {
-        return layers;
-    }
+    inline const Layers &getLayers() const { return layers; }
 
-    size_t numLayers() const
-    {
-        return layers.size();
-    }
+    size_t numLayers() const { return layers.size(); }
 
-    template<typename... Args>
-    void addLayers(Args&... ls)
+    virtual void addLayers(const std::initializer_list<std::shared_ptr<Layer>> &newLayers)
     {
-        (addLayer(ls), ...);
+        for (auto &layer : newLayers)
+        {
+            layers.push_back(layer);    
+        }
     }
 
     // Remove a layer by index
@@ -76,6 +67,4 @@ public:
     }
 
 protected:
-
-
 };

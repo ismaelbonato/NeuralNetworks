@@ -6,39 +6,57 @@
 
 #include <memory>
 
+struct LayerConfig{
+    std::shared_ptr<LearningRule<Scalar>> learningRule;
+    std::shared_ptr<ActivationFunction<Scalar>> activation;
+    size_t inputSize = 0;
+    size_t outputSize = 0;
+    std::string name;
+    std::string type;
+    std::string info;
+
+    // Optional parameters with defaults
+    bool useBias = true;
+    Scalar weightInitScale = Scalar{1.0};
+    Scalar biasInit = Scalar{0.0};
+
+    // Validation
+    inline bool isValid() const {
+        return learningRule && activation && inputSize > 0 && outputSize > 0;
+    }
+};
+
 class Layer
 {
 protected:
-    size_t inputSize;
-    size_t outputSize;
+    LayerConfig config;
+public:
     Patterns weights;
-    Pattern output;
-    std::shared_ptr<LearningRule<Scalar>> learningRule;
-    std::shared_ptr<ActivationFunction<Scalar>> activation;
-
     Pattern biases;
 
 public:
     Layer() = delete;
 
-    Layer(const std::shared_ptr<LearningRule<Scalar>> &newRule,
-          const std::shared_ptr<ActivationFunction<Scalar>> &activationFunction,
-          size_t in,
-          size_t out)
-        : inputSize(in)
-        , outputSize(out)
-        , learningRule(newRule)
-        , activation(activationFunction)
-    {}
+    Layer(const LayerConfig &newConfig)
+        : config(newConfig)
+    {
+        if (!config.isValid()) {
+            throw std::invalid_argument("Invalid layer configuration");
+        }
+        #pragma message("Do not forgot to deal with weights and bias initialization")
+        //initWeights();
+        if (config.useBias) {
+            //initBiases(config.biasInit);
+        }
+    }
 
     virtual ~Layer() = default;
 
-    virtual std::unique_ptr<Layer> clone() const = 0;
-
+    virtual std::shared_ptr<Layer> clone() const = 0;
     virtual void initWeights(Scalar value = Scalar{}) = 0;
 
-    size_t getInputSize() const { return inputSize; }
-    size_t getOutputSize() const { return outputSize; }
+    size_t getInputSize() const { return config.inputSize; }
+    size_t getOutputSize() const { return config.outputSize; }
 
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &delta,
@@ -48,13 +66,13 @@ public:
         auto gradMatrix = delta.outer(prev_activations);
 
 
-        for (size_t i = 0; i < outputSize; ++i) {
-            for (size_t j = 0; j < inputSize; ++j) {
-                weights[i][j] = learningRule->updateWeight(weights[i][j],
+        for (size_t i = 0; i < config.outputSize; ++i) {
+            for (size_t j = 0; j < config.inputSize; ++j) {
+                weights[i][j] = config.learningRule->updateWeight(weights[i][j],
                                                  gradMatrix[i][j],
                                                            learningRate);
             }
-            biases[i] = learningRule->updateWeight(biases[i],
+            biases[i] = config.learningRule->updateWeight(biases[i],
                                                    delta[i],
                                                    learningRate);
         }
@@ -62,7 +80,7 @@ public:
 
     virtual Pattern infer(const Pattern &input) const
     {
-        if (input.size() != inputSize) {
+        if (input.size() != config.inputSize) {
             throw std::runtime_error(
                 "Input size does not match layer input size.");
         }
@@ -72,7 +90,7 @@ public:
 
     virtual Pattern weightedSum(const Pattern &input) const
     {
-        Pattern sums(outputSize, 0.0);
+        Pattern sums(config.outputSize, 0.0);
 
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
@@ -85,32 +103,32 @@ public:
     {
         Pattern result(values.size());
         for (size_t i = 0; i < values.size(); ++i) {
-            result[i] = (*activation).derivative(values[i]);
+            result[i] = (*config.activation).derivative(values[i]);
         }
         return result;
     }
 
     virtual Pattern activate(const Pattern &values) const
     {
-        if (learningRule == nullptr) {
+        if (config.learningRule == nullptr) {
             throw std::runtime_error(
                 "Learning rule is not set for this layer.");
         }
-        if (activation == nullptr) {
+        if (config.activation == nullptr) {
             throw std::runtime_error(
                 "Activation function is not set for this layer.");
         }
         Pattern result(values.size());
 
         for (size_t i = 0; i < values.size(); ++i) {
-            result[i] = (*activation)(values[i]);
+            result[i] = (*config.activation)(values[i]);
         }
         return result;
     }
 
     Pattern backwardPass(const Pattern &delta, const Pattern &preActivation)
     {
-        if (weights.empty() || weights.size() != outputSize) {
+        if (weights.empty() || weights.size() != config.outputSize) {
             throw std::runtime_error(
                 "Weights are not initialized or size mismatch.");
         }

@@ -5,19 +5,18 @@
 #include <math.h>
 #include <memory>
 
-#include "base/Types.h"
 #include "base/Layer.h"
 #include "base/LearningRule.h"
+#include "base/Types.h"
+#include "layers/DenseLayer.h"
 #include "networks/FeedForward.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
-#include "layers/DenseLayer.h"
 
 #include "base/Tensor.h"
 
 void feedforwardExperiment()
 {
-
     Patterns inputs;
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
@@ -29,31 +28,76 @@ void feedforwardExperiment()
 
     Pattern p(png_to_bits("../Misc/meg.png"));
 
-    Patterns labels = {
-        {1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, //bart
-        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, //homer
-        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, //marge
-        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, //meg
-        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, //grandpa
-        {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
+    Patterns labels = {{1.0, 0.0, 0.0, 0.0, 0.0, 0.0},  //bart
+                       {0.0, 1.0, 0.0, 0.0, 0.0, 0.0},  //homer
+                       {0.0, 0.0, 1.0, 0.0, 0.0, 0.0},  //marge
+                       {0.0, 0.0, 0.0, 1.0, 0.0, 0.0},  //meg
+                       {0.0, 0.0, 0.0, 0.0, 1.0, 0.0},  //grandpa
+                       {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}}; //lisa
 
     auto col = inputs.at(0).size();
-    
+
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
 
-    DenseLayer layer1(rule, activation, col, 32);
-    DenseLayer layer2(rule, activation, 32, 16);
-    DenseLayer layer3(rule, activation, 16, 6);
+    LayerConfig config1{
+        .learningRule = rule,
+        .activation = activation,
+        .inputSize = col,
+        .outputSize = col,
+        .name = "Input",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
 
-    Feedforward net(layer1, layer2, layer3);
+    LayerConfig config2{
+        .learningRule = rule,
+        .activation = activation,
+        .inputSize = config1.outputSize,
+        .outputSize = config1.outputSize/2,
+        .name = "Hidden Layer",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+
+    LayerConfig config3{
+        .learningRule = rule,
+        .activation = activation,
+        .inputSize = config2.outputSize,
+        .outputSize = config2.outputSize,
+        .name = "Hidden Layer",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+    
+    LayerConfig config4{
+        .learningRule = rule,
+        .activation = activation,
+        .inputSize = config3.outputSize,
+        .outputSize = labels.size(),
+        .name = "Output",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+
+    auto l1 = std::make_shared<DenseLayer>(config1);
+    auto l2 = std::make_shared<DenseLayer>(config2);
+    auto l3 = std::make_shared<DenseLayer>(config3);
+    auto l4 = std::make_shared<DenseLayer>(config4);
+
+    Feedforward net({l1, l2, l3, l4});
 
     net.learn(inputs, labels);
 
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
         //std::cout << input << std::endl;
-        std::cout << output << std::endl;;
+        std::cout << output << std::endl;
+        ;
     }
 }
 
@@ -81,7 +125,9 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << std::endl;
 
-    //feedforwardExperiment();
+    feedforwardExperiment();
 
+
+    
     return 0;
 }

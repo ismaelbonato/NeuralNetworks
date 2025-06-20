@@ -11,15 +11,9 @@ class Perceptron : public LayeredModel
 public:
     Perceptron() = default; // No layers by default, can be extended later
     
-    Perceptron(std::unique_ptr<Layer> newLayer)
-        : LayeredModel(Layers{})
-    {
-        if (newLayer) {
-            layers.push_back(std::move(newLayer));
-        } else {
-            throw std::runtime_error("Perceptron must have at least one layer.");
-        }
-    }
+    Perceptron(const std::shared_ptr<Layer> &newLayer)
+        : LayeredModel({newLayer})
+    {}
 
     ~Perceptron() override = default;
 

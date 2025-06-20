@@ -27,7 +27,8 @@ Pattern png_to_bits(const std::string &filename)
                                                 static_cast<int>(c));
             pattern.emplace_back(
                 //pixel > 128 ? 1.0 : -1.0); // Convert to bipolar representation
-                pixel > 128 ? Scalar{1.0f} : Scalar{}); // Convert to binary representation
+                pixel > 128 ? Scalar{1.0f}
+                            : Scalar{}); // Convert to binary representation
         }
     }
     return pattern;
@@ -37,38 +38,34 @@ void hopfieldNetwork()
 {
     Patterns patterns{};
 
-    //patterns.emplace_back(png_to_bits("../Misc/bart.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/homer.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/marge.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/meg.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/grandpa.png"));
-    //patterns.emplace_back(png_to_bits("../Misc/lisa.png"));
-    //Pattern p(png_to_bits("../Misc/homer_defect.png"));
-
-    // Example: create a 4-bit pattern and add it to patterns
-    Pattern pattern4 = {1.0, -1.0, 1.0, -1.0};
-    patterns.push_back(pattern4);
+    Pattern pattern = {1.0, -1.0, 1.0, -1.0};
+    patterns.push_back(pattern);
 
     // Use the same pattern as input for recall
-    Pattern p = pattern4;
+    LayerConfig config{
+        .learningRule = std::make_shared<HebbianRule<Scalar>>(),
+        .activation = std::make_shared<StepPolarActivation<Scalar>>(),
+        .inputSize = patterns.at(0).size(),
+        .outputSize = patterns.at(0).size(),
+        .name = "Input",
+        .type = "HopfieldLayer",
+        .info = "info",
+        .useBias = false
+    };
 
-    auto N = patterns.at(0).size();
+    auto l = std::make_shared<HopfieldLayer>(config);
 
-    HopfieldLayer layer(std::make_shared<HebbianRule<Scalar>>(),
-                        std::make_shared<StepPolarActivation<Scalar>>(),
-                        N,
-                        N);
-
-    Hopfield net(layer.clone());
+    Hopfield net(l);
 
     net.learn(patterns);
 
-    auto ret = net.infer(p);
+    auto ret = net.infer(pattern);
 
-    std::cout << p << std::endl;
+    std::cout << pattern << std::endl;
     std::cout << "Recall result: " << std::endl;
     std::cout << ret << std::endl;
     std::cout << "Hello, Hopfield Network!" << std::endl;
+    
 }
 
 void perceptronNetwork()
@@ -85,12 +82,20 @@ void perceptronNetwork()
     size_t in = inputs.at(0).size();
     size_t out = labels.at(0).size();
 
-    DenseLayer layer(std::make_shared<PerceptronRule<Scalar>>(),
-                     std::make_shared<SigmoidActivation<Scalar>>(),
-                     in,
-                     out);
+    LayerConfig config{
+        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize =inputs.at(0).size(),
+        .outputSize = labels.at(0).size(),
+        .name = "Perceptron",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
 
-    Perceptron net(layer.clone());
+    auto l = std::make_shared<DenseLayer>(config);
+    
+    Perceptron net(l);
 
     net.learn(inputs, labels);
 
@@ -100,6 +105,7 @@ void perceptronNetwork()
         std::cout << input << std::endl;
         std::cout << output << std::endl;
     }
+        
 }
 
 /*
@@ -148,16 +154,50 @@ void feedForwardNetwork()
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
 
-    DenseLayer layer1(rule, activation, 2, 4);
-    DenseLayer layer2(rule, activation, 4, 2);
-    DenseLayer layer3(rule, activation, 2, 1);
+    LayerConfig config1{
+        .learningRule = std::make_shared<SGDRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize = 2,
+        .outputSize = 4,
+        .name = "Input",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+
+    LayerConfig config2{
+        .learningRule = std::make_shared<SGDRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize = 4,
+        .outputSize = 2,
+        .name = "Hidden Layer",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+
+    LayerConfig config3{
+        .learningRule = std::make_shared<SGDRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize = 2,
+        .outputSize = 1,
+        .name = "Output",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true
+    };
+
+
+    auto l1 = std::make_shared<DenseLayer>(config1);
+    auto l2 = std::make_shared<DenseLayer>(config2);
+    auto l3 = std::make_shared<DenseLayer>(config3);
 
     //FeedforwardNetwork net(std::move(layers));
-    Feedforward net(layer1);
+    Feedforward net({l1});
 
-    net.addLayers(layer2);
+    net.addLayers({l2});
 
-    net.addLayer(layer3);
+    net.addLayer(l3);
 
     Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
     Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
@@ -168,6 +208,5 @@ void feedForwardNetwork()
         Pattern output = net.infer(input);
         std::cout << input << std::endl;
         std::cout << output << std::endl;
-        ;
     }
 }

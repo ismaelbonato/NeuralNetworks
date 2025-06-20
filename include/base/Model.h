@@ -16,15 +16,19 @@ public:
 
     Model() = default;
 
-    Model(Layers newLayers)
-        : layers(std::move(newLayers))
+    Model(Layers &newLayers)
+        : layers(newLayers)
+    {}
+
+    Model(const std::initializer_list<std::shared_ptr<Layer>> newLayers)
+        : layers(newLayers)
     {}
 
     virtual ~Model() = default;
 
-    virtual void addLayer(const Layer &l)
+    virtual void addLayer(const std::shared_ptr<Layer> &layer)
     {
-        layers.emplace_back(l.clone());
+        layers.push_back(layer);
     }
 
     virtual void learn(const Patterns &inputs,

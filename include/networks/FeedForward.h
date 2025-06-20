@@ -7,13 +7,6 @@
 
 #include <initializer_list>
 
-template<typename... Args>
-auto make_vector(Args&&... args) {
-    std::vector<std::unique_ptr<Layer>> v;
-    (v.push_back(std::make_unique<Layer>(std::forward<Args>(args))), ...);
-    return v;
-}
-
 class Feedforward : public GradientBaseModel
 {
 public:
@@ -21,13 +14,13 @@ public:
     // Default constructor creates a network with a single layer
     Feedforward() = default; // No layers by default, can be extended later
 
-    Feedforward(Layers newlayers)
-        : GradientBaseModel(std::move(newlayers))
+
+    Feedforward(Layers &newlayers)
+        : GradientBaseModel(newlayers)
     {}
 
-    template<typename... Args>
-    Feedforward(Args&... ls)
-        : GradientBaseModel(ls...)
+    Feedforward(const std::initializer_list<std::shared_ptr<Layer>> &newlayers)
+        : GradientBaseModel(newlayers)
     {}
 
     ~Feedforward() override = default;
