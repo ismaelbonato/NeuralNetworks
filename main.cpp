@@ -97,7 +97,6 @@ void feedforwardExperiment()
         Pattern output = net.infer(input);
         //std::cout << input << std::endl;
         std::cout << output << std::endl;
-        ;
     }
 }
 

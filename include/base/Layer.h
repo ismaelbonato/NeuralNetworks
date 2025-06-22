@@ -58,6 +58,10 @@ public:
     size_t getInputSize() const { return config.inputSize; }
     size_t getOutputSize() const { return config.outputSize; }
 
+    std::string getName() const { return config.name; }
+    std::string getType() const { return config.type; }
+    std::string getInfo() const { return config.info; }
+
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &delta,
                                Scalar learningRate)
