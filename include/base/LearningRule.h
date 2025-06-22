@@ -28,7 +28,7 @@ public:
     HebbianRule() = default;
     ~HebbianRule() override = default;
 
-    T updateWeight(T weight, T gradient, T) const override
+    inline T updateWeight(T weight, T gradient, T) const override
     {
         // Hebbian learning doesn't use gradient or learning rate in the traditional sense.
         // Instead, weights are updated based on the correlation of inputs.
@@ -44,7 +44,7 @@ public:
     PerceptronRule() = default;
     ~PerceptronRule() override = default;
 
-    T updateWeight(T weight, T gradient, T learningRate) const override
+    inline T updateWeight(T weight, T gradient, T learningRate) const override
     {
         return weight + learningRate * gradient;
     }
@@ -57,7 +57,7 @@ public:
     SGDRule() = default;
     ~SGDRule() override = default;
 
-    T updateWeight(T weight, T gradient, T learningRate) const override
+    inline T updateWeight(T weight, T gradient, T learningRate) const override
     {
         return weight - learningRate * gradient;
     }

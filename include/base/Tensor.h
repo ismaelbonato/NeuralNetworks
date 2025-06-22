@@ -24,6 +24,7 @@ TensorTransposed<T> transpose(Tensor<T> &t)
     return TensorTransposed<T>(t);
 }
 */
+
 template<typename T>
 bool operator==(const Tensor<T> &lhs, const Tensor<T> &rhs)
 {
@@ -179,6 +180,7 @@ public:
         }
         return result;
     }
+    
 
     Tensor<Tensor<T>> outer(const Tensor<T> &b) const
     {

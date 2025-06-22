@@ -6,6 +6,8 @@
 
 #include <memory>
 
+#include <ranges>
+
 struct LayerConfig{
     std::shared_ptr<LearningRule<Scalar>> learningRule;
     std::shared_ptr<ActivationFunction<Scalar>> activation;
@@ -55,26 +57,28 @@ public:
     virtual std::shared_ptr<Layer> clone() const = 0;
     virtual void initWeights(Scalar value = Scalar{}) = 0;
 
-    size_t getInputSize() const { return config.inputSize; }
-    size_t getOutputSize() const { return config.outputSize; }
+    inline size_t getInputSize() const { return config.inputSize; }
+    inline size_t getOutputSize() const { return config.outputSize; }
 
     virtual void updateWeights(const Pattern &prev_activations,
-                               const Pattern &delta,
-                               Scalar learningRate)
+                          const Pattern &delta,
+                          Scalar learningRate)
     {
-
-        auto gradMatrix = delta.outer(prev_activations);
-
-
+        // 
+        // Direct loops - maximum performance
         for (size_t i = 0; i < config.outputSize; ++i) {
             for (size_t j = 0; j < config.inputSize; ++j) {
-                weights[i][j] = config.learningRule->updateWeight(weights[i][j],
-                                                 gradMatrix[i][j],
-                                                           learningRate);
+                // Compute gradient on-demand, no allocation
+                Scalar gradient = delta[i] * prev_activations[j];
+                weights[i][j] = config.learningRule->updateWeight(
+                    weights[i][j], gradient, learningRate);
             }
-            biases[i] = config.learningRule->updateWeight(biases[i],
-                                                   delta[i],
-                                                   learningRate);
+        }
+
+        // Direct bias updates
+        for (size_t i = 0; i < config.outputSize; ++i) {
+            biases[i] = config.learningRule->updateWeight(
+                biases[i], delta[i], learningRate);
         }
     }
 

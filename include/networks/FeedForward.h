@@ -45,9 +45,9 @@ public:
         std::cout << "Training feedforward Network..." << std::endl;
         for (size_t epoch = 0; epoch < epochs; ++epoch) {
             for (size_t i = 0; i < inputs.size(); ++i) {
-                forward(inputs[i]);
-                Pattern delta = computeError(labels[i]);
-                backpropagation(delta, learningRate);
+                    forward(inputs[i]);
+                    Pattern delta = computeError(labels[i]);
+                    backpropagation(delta, learningRate);
             }
         }
     }
