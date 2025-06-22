@@ -55,3 +55,6 @@ CMakeLists.txt.*
 
 # Temporary files
 *.swp
+
+#clangd cache
+.cache/*
