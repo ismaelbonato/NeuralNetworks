@@ -15,7 +15,7 @@ Pattern png_to_bits(const std::string &filename)
     cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE);
     cv::Mat resizedImage;
 
-    cv::resize(img, resizedImage, cv::Size(16, 16));
+    cv::resize(img, resizedImage, cv::Size(32, 32));
 
     Pattern pattern;
     pattern.reserve(static_cast<size_t>(resizedImage.rows)
@@ -158,7 +158,7 @@ void feedForwardNetwork()
         .learningRule = std::make_shared<SGDRule<Scalar>>(),
         .activation = std::make_shared<SigmoidActivation<Scalar>>(),
         .inputSize = 2,
-        .outputSize = 4,
+        .outputSize = 8,
         .name = "Input",
         .type = "DenseLayer",
         .info = "info",
@@ -168,8 +168,8 @@ void feedForwardNetwork()
     LayerConfig config2{
         .learningRule = std::make_shared<SGDRule<Scalar>>(),
         .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 4,
-        .outputSize = 2,
+        .inputSize = 8,
+        .outputSize = 4,
         .name = "Hidden Layer",
         .type = "DenseLayer",
         .info = "info",
@@ -179,7 +179,7 @@ void feedForwardNetwork()
     LayerConfig config3{
         .learningRule = std::make_shared<SGDRule<Scalar>>(),
         .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 2,
+        .inputSize = 4,
         .outputSize = 1,
         .name = "Output",
         .type = "DenseLayer",

@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 
+
+# Use Clang 19 if available
+#set(CMAKE_C_COMPILER "clang-19" CACHE STRING "C compiler" FORCE)
+#set(CMAKE_CXX_COMPILER "clang++-19" CACHE STRING "C++ compiler" FORCE)
+
 project(NetworkFramework)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -9,9 +14,8 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 find_package(OpenCV REQUIRED)
-#find_package(OpenMP REQUIRED REQUIRED)
+#find_package(OpenMP REQUIRED)
 
 #if(NOT OpenMP_CXX_FOUND)
 #    message(FATAL_ERROR "OpenMP C++ support not found. Please ensure OpenMP is installed and configured correctly.")
@@ -19,7 +23,7 @@ find_package(OpenCV REQUIRED)
 
 set(LIBRARIES
     ${OpenCV_LIBS}
- #   OpenMP::OpenMP_CXX
+  #  OpenMP::OpenMP_CXX
 )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")

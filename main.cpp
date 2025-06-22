@@ -44,7 +44,7 @@ void feedforwardExperiment()
         .learningRule = rule,
         .activation = activation,
         .inputSize = col,
-        .outputSize = col,
+        .outputSize = 32,
         .name = "Input",
         .type = "DenseLayer",
         .info = "info",
@@ -54,8 +54,8 @@ void feedforwardExperiment()
     LayerConfig config2{
         .learningRule = rule,
         .activation = activation,
-        .inputSize = config1.outputSize,
-        .outputSize = config1.outputSize/2,
+        .inputSize = 32,
+        .outputSize = 16,
         .name = "Hidden Layer",
         .type = "DenseLayer",
         .info = "info",
@@ -65,8 +65,8 @@ void feedforwardExperiment()
     LayerConfig config3{
         .learningRule = rule,
         .activation = activation,
-        .inputSize = config2.outputSize,
-        .outputSize = config2.outputSize,
+        .inputSize = 16,
+        .outputSize = 8,
         .name = "Hidden Layer",
         .type = "DenseLayer",
         .info = "info",
@@ -76,7 +76,7 @@ void feedforwardExperiment()
     LayerConfig config4{
         .learningRule = rule,
         .activation = activation,
-        .inputSize = config3.outputSize,
+        .inputSize = 8,
         .outputSize = labels.size(),
         .name = "Output",
         .type = "DenseLayer",
@@ -104,21 +104,20 @@ void feedforwardExperiment()
 int main()
 {
     std::cout << "Hello, Neural Networks!" << std::endl;
-
     std::cout << "==========================" << std::endl;
     std::cout << "Perceptron Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    perceptronNetwork();
+    //perceptronNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Hopfield Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    hopfieldNetwork();
+    //hopfieldNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    feedForwardNetwork();
+    //feedForwardNetwork();
     std::cout << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "DependencyInversion Feed Forward Network" << std::endl;
