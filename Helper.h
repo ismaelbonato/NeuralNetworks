@@ -6,6 +6,7 @@
 #include "networks/FeedForward.h"
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
+#include <memory>
 #include <opencv2/opencv.hpp>
 
 #include "base/Types.h"

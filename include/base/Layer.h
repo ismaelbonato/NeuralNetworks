@@ -62,6 +62,10 @@ public:
     std::string getType() const { return config.type; }
     std::string getInfo() const { return config.info; }
 
+    const Patterns& getWeights() const {
+        return weights;
+    }
+
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &delta,
                                Scalar learningRate)
