@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMI xmlns="http://www.omg.org/XMI" xmi.version="1.2">
+  <UML:Model xmi.id="m1" name="NeuralNetworks">
+    <!-- Model -->
+    <UML:Class xmi.id="c1" name="Model" isAbstract="true">
+      <UML:Attribute name="layers" type="std::vector<std::unique_ptr<Layer>>"/>
+      <UML:Operation name="addLayer" />
+      <UML:Operation name="removeLayer" />
+      <UML:Operation name="learn" isAbstract="true"/>
+      <UML:Operation name="lossDerivative"/>
+    </UML:Class>
+    <!-- Layer -->
+    <UML:Class xmi.id="c2" name="Layer" isAbstract="true">
+      <UML:Attribute name="inputSize" type="size_t"/>
+      <UML:Attribute name="outputSize" type="size_t"/>
+      <UML:Attribute name="weights" type="Patterns"/>
+      <UML:Attribute name="biases" type="Pattern"/>
+      <UML:Attribute name="learningRule" type="std::shared_ptr<LearningRule<Scalar>>"/>
+      <UML:Attribute name="activation" type="std::shared_ptr<ActivationFunction<Scalar>>"/>
+      <UML:Operation name="infer"/>
+      <UML:Operation name="updateWeights"/>
+      <UML:Operation name="activate"/>
+      <UML:Operation name="activationDerivatives"/>
+      <UML:Operation name="initWeights"/>
+      <UML:Operation name="weightedSum"/>
+    </UML:Class>
+    <!-- DenseLayer -->
+    <UML:Class xmi.id="c3" name="DenseLayer">
+      <UML:Generalization parent="c2"/>
+      <UML:Operation name="initWeights"/>
+    </UML:Class>
+    <!-- HopfieldLayer -->
+    <UML:Class xmi.id="c4" name="HopfieldLayer">
+      <UML:Generalization parent="c2"/>
+      <UML:Operation name="recall"/>
+      <UML:Operation name="updateWeights"/>
+      <UML:Operation name="initWeights"/>
+    </UML:Class>
+    <!-- Perceptron -->
+    <UML:Class xmi.id="c5" name="Perceptron">
+      <UML:Generalization parent="c1"/>
+      <UML:Operation name="learn"/>
+      <UML:Operation name="computeError"/>
+    </UML:Class>
+    <!-- FeedforwardNetwork -->
+    <UML:Class xmi.id="c6" name="FeedforwardNetwork">
+      <UML:Generalization parent="c5"/>
+      <UML:Attribute name="activate" type="Patterns"/>
+      <UML:Attribute name="preActivations" type="Patterns"/>
+      <UML:Operation name="forward"/>
+      <UML:Operation name="computeError"/>
+      <UML:Operation name="backpropagation"/>
+      <UML:Operation name="learn"/>
+    </UML:Class>
+    <!-- LearningRule -->
+    <UML:Class xmi.id="c7" name="LearningRule&lt;T&gt;" isAbstract="true">
+      <UML:Operation name="updateWeight" isAbstract="true"/>
+    </UML:Class>
+    <UML:Class xmi.id="c8" name="HebbianRule&lt;T&gt;">
+      <UML:Generalization parent="c7"/>
+      <UML:Operation name="updateWeight"/>
+    </UML:Class>
+    <UML:Class xmi.id="c9" name="LinearRule&lt;T&gt;">
+      <UML:Generalization parent="c7"/>
+      <UML:Operation name="updateWeight"/>
+    </UML:Class>
+    <UML:Class xmi.id="c10" name="SGDRule&lt;T&gt;">
+      <UML:Generalization parent="c7"/>
+      <UML:Operation name="updateWeight"/>
+    </UML:Class>
+    <!-- ActivationFunction -->
+    <UML:Class xmi.id="c11" name="ActivationFunction&lt;T&gt;" isAbstract="true">
+      <UML:Operation name="operator()"/>
+      <UML:Operation name="derivative"/>
+    </UML:Class>
+    <UML:Class xmi.id="c12" name="SigmoidActivation&lt;T&gt;">
+      <UML:Generalization parent="c11"/>
+      <UML:Operation name="operator()"/>
+      <UML:Operation name="derivative"/>
+    </UML:Class>
+    <UML:Class xmi.id="c13" name="StepActivation&lt;T&gt;">
+      <UML:Generalization parent="c11"/>
+      <UML:Operation name="operator()"/>
+      <UML:Operation name="derivative"/>
+    </UML:Class>
+    <UML:Class xmi.id="c14" name="ReLUActivation&lt;T&gt;">
+      <UML:Generalization parent="c11"/>
+      <UML:Operation name="operator()"/>
+      <UML:Operation name="derivative"/>
+    </UML:Class>
+    <UML:Class xmi.id="c15" name="TanhActivation&lt;T&gt;">
+      <UML:Generalization parent="c11"/>
+      <UML:Operation name="operator()"/>
+      <UML:Operation name="derivative"/>
+    </UML:Class>
+    <!-- Associations -->
+    <UML:Association>
+      <UML:Association.connection>
+        <UML:AssociationEnd type="c1" aggregation="none"/>
+        <UML:AssociationEnd type="c2" aggregation="none"/>
+      </UML:Association.connection>
+    </UML:Association>
+    <UML:Association>
+      <UML:Association.connection>
+        <UML:AssociationEnd type="c2" aggregation="none"/>
+        <UML:AssociationEnd type="c7" aggregation="none"/>
+      </UML:Association.connection>
+    </UML:Association>
+    <UML:Association>
+      <UML:Association.connection>
+        <UML:AssociationEnd type="c2" aggregation="none"/>
+        <UML:AssociationEnd type="c11" aggregation="none"/>
+      </UML:Association.connection>
+    </UML:Association>
+  </UML:Model>
+</XMI>

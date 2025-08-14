@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/ActivationFunction.h"
 #include "base/Layer.h"
 #include "base/LearningRule.h"
 #include "base/Types.h"
@@ -7,6 +8,8 @@
 #include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
 #include <opencv2/opencv.hpp>
+
+#include "networks/PerceptronNaturalSelection.h"
 
 #include "base/Types.h"
 
@@ -65,7 +68,7 @@ void hopfieldNetwork()
     std::cout << "Recall result: " << std::endl;
     std::cout << ret << std::endl;
     std::cout << "Hello, Hopfield Network!" << std::endl;
-    
+
 }
 
 void perceptronNetwork()
@@ -96,6 +99,48 @@ void perceptronNetwork()
     auto l = std::make_shared<DenseLayer>(config);
     
     Perceptron net(l);
+
+    net.learn(inputs, labels);
+
+    std::cout << "Perceptron Network trained!" << std::endl;
+    for (const auto &input : inputs) {
+        Pattern output = net.infer(input);
+        std::cout << input << std::endl;
+        std::cout << output << std::endl;
+    }
+        
+}
+
+
+void perceptronNaturalSelection()
+{
+    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+
+    Patterns labels = {
+        {0.0}, // 0 AND 0
+        {1.0}, // 0 AND 1
+        {1.0}, // 1 AND 0
+        {1.0}  // 1 AND 1
+    };
+
+    size_t in = inputs.at(0).size();
+    size_t out = labels.at(0).size();
+
+    LayerConfig config{
+        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize = 2,
+        .outputSize = 1,
+        .name = "Perceptron",
+        .type = "DenseLayer",
+        .info = "info",
+        .useBias = true,
+        .initWeights = false
+    };
+
+    auto l = std::make_shared<DenseLayer>(config);
+    
+    PerceptronNaturalSelection net(l);
 
     net.learn(inputs, labels);
 

@@ -34,15 +34,19 @@ public:
         if (weights.empty()) {
             weights.resize(config.outputSize, Pattern(config.inputSize, value));
 
-            for (auto &row : weights)
-                for (auto &w : row)
-                    w = dis(gen);
+            if (config.initWeights) {
+                for (auto &row : weights)
+                    for (auto &w : row)
+                        w = dis(gen);
+            }
         }
         if (biases.empty()) {
             biases.resize(config.outputSize, value);
 
-            for (auto &b : biases)
-                b = dis(gen);
+            if (config.initWeights) {
+                for (auto &b : biases)
+                    b = dis(gen);
+            }
         }
     }
 };

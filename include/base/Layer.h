@@ -5,10 +5,11 @@
 #include "base/Types.h"
 
 #include <memory>
-
+#include <random>
 #include <ranges>
 
-struct LayerConfig{
+struct LayerConfig
+{
     std::shared_ptr<LearningRule<Scalar>> learningRule;
     std::shared_ptr<ActivationFunction<Scalar>> activation;
     size_t inputSize = 0;
@@ -19,11 +20,13 @@ struct LayerConfig{
 
     // Optional parameters with defaults
     bool useBias = true;
+    bool initWeights = true;
     Scalar weightInitScale = Scalar{1.0};
     Scalar biasInit = Scalar{0.0};
 
     // Validation
-    inline bool isValid() const {
+    inline bool isValid() const
+    {
         return learningRule && activation && inputSize > 0 && outputSize > 0;
     }
 };
@@ -32,6 +35,7 @@ class Layer
 {
 protected:
     LayerConfig config;
+
 public:
     Patterns weights;
     Pattern biases;
@@ -45,7 +49,7 @@ public:
         if (!config.isValid()) {
             throw std::invalid_argument("Invalid layer configuration");
         }
-        #pragma message("Do not forgot to deal with weights and bias initialization")
+#pragma message("Do not forgot to deal with weights and bias initialization")
         //initWeights();
         if (config.useBias) {
             //initBiases(config.biasInit);
@@ -61,24 +65,26 @@ public:
     inline size_t getOutputSize() const { return config.outputSize; }
 
     virtual void updateWeights(const Pattern &prev_activations,
-                          const Pattern &delta,
-                          Scalar learningRate)
+                               const Pattern &delta,
+                               Scalar learningRate)
     {
-        // 
+        //
         // Direct loops - maximum performance
         for (size_t i = 0; i < config.outputSize; ++i) {
             for (size_t j = 0; j < config.inputSize; ++j) {
                 // Compute gradient on-demand, no allocation
                 Scalar gradient = delta[i] * prev_activations[j];
-                weights[i][j] = config.learningRule->updateWeight(
-                    weights[i][j], gradient, learningRate);
+                weights[i][j] = config.learningRule->updateWeight(weights[i][j],
+                                                                  gradient,
+                                                                  learningRate);
             }
         }
 
         // Direct bias updates
         for (size_t i = 0; i < config.outputSize; ++i) {
-            biases[i] = config.learningRule->updateWeight(
-                biases[i], delta[i], learningRate);
+            biases[i] = config.learningRule->updateWeight(biases[i],
+                                                          delta[i],
+                                                          learningRate);
         }
     }
 
@@ -99,7 +105,7 @@ public:
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
         }
-
+#pragma message("revert here")
         return weights.matVecMul(input) + biases;
     }
 
@@ -136,6 +142,27 @@ public:
             throw std::runtime_error(
                 "Weights are not initialized or size mismatch.");
         }
-        return weights.matVecTransMul(delta) * activationDerivatives(preActivation);
+        return weights.matVecTransMul(delta)
+               * activationDerivatives(preActivation);
+    }
+
+    void naturalUpdateWeights(const Layer &l)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
+
+        // Mutate weights - ONLY if this is the best performer
+        for (size_t i = 0; i < config.outputSize; ++i) {
+            for (size_t j = 0; j < config.inputSize; ++j) {
+                weights[i][j] = l.weights[i][j] + dis(gen); // Direct mutation
+            }
+        }
+
+        // Mutate weights - ONLY if this is the best performer
+        for (size_t i = 0; i < config.outputSize; ++i) {
+            biases[i] = l.biases[i] + dis(gen); // Direct mutation
+        }
+
     }
 };

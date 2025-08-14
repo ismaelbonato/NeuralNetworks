@@ -112,7 +112,6 @@ class Tensor
     friend Tensor<T> operator+ <T>(const Tensor<T> &a, const Tensor<T> &b);
     friend Tensor<T> operator- <T>(const Tensor<T> &a, const Tensor<T> &b);
 
-
     //  friend Tensor<T> operator* <T>(const TensorTransposed<T> &a,
     //                                 const Tensor<T> &b);
     //  friend Tensor<T> operator* <T>(const Tensor<Tensor<T>> &a,
