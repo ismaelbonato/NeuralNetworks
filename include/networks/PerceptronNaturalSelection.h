@@ -20,7 +20,7 @@ public:
     void learn(const Patterns &inputs,
                const Patterns &labels,
                Scalar learningRate = 0.1f,
-               size_t epochs = 5000) override
+               size_t epochs = 100000) override
     {
 
         Layers ls;
