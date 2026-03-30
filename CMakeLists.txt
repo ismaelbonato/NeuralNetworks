@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 
 # Use Clang 19 if available
-#set(CMAKE_C_COMPILER "clang-19" CACHE STRING "C compiler" FORCE)
-#set(CMAKE_CXX_COMPILER "clang++-19" CACHE STRING "C++ compiler" FORCE)
+set(CMAKE_C_COMPILER "clang-20" CACHE STRING "C compiler" FORCE)
+set(CMAKE_CXX_COMPILER "clang++-20" CACHE STRING "C++ compiler" FORCE)
 
 project(NetworkFramework)
 
