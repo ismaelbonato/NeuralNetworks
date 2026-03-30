@@ -1,0 +1,17 @@
+services:
+  dev-cpp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USER}
+        UID: ${USER_ID}
+        GID: ${GROUP_ID}
+    container_name: dev-cpp-container
+    volumes:
+      - .:/home/${USER}/workspace
+      - ~/.ssh:/home/${USER}/.ssh:ro
+    working_dir: /home/${USER}/workspace
+    command: sleep infinity
+    hostname: NeuralNetworks
+    restart: "no"

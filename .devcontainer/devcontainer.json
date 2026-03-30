@@ -1,0 +1,67 @@
+{
+  "name": "Neural Networks Dev Container",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev-cpp",
+  "workspaceFolder": "/home/${localEnv:USER}/workspace",
+  "initializeCommand": "bash setEnv.sh",
+  "shutdownAction": "stopCompose",
+  "updateRemoteUserUID": false,
+  "containerEnv": {
+    "CC": "/usr/bin/clang-20",
+    "CXX": "/usr/bin/clang++-20",
+    "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+  },
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": false, 
+        "editor.rulers": [80],
+        "cmake.configureOnOpen": true,
+        "cmake.generator": "Ninja",
+        "cmake.cmakePath": "/usr/bin/cmake",
+        "C_Cpp.default.compilerPath": "/usr/bin/clang++-20",
+        "cmake.configureSettings": {
+          "CMAKE_C_COMPILER": "/usr/bin/clang-20",
+          "CMAKE_CXX_COMPILER": "/usr/bin/clang++-20"
+        },
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "clangd.path": "/usr/bin/clangd-20",
+        "clangd.arguments": [
+          "--background-index",
+          "--clang-tidy",
+          "--completion-style=detailed",
+          "--header-insertion=iwyu",
+          "--compile-commands-dir=${workspaceFolder}/build"
+        ],
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+        "testMate.cpp.test.executables": "**/{build,Build,BUILD}/**/*{Test,test,TEST}*",
+        "testMate.cpp.log.logpanel": true,
+        "testMate.cpp.discovery.loadOnStartup": true,
+        "testMate.cpp.test.workingDirectory": "${absDirpath}",
+        "coverage-gutters.coverageFileNames": [
+          "coverage.lcov",
+          "lcov.info",
+          "coverage.info",
+          "cov.xml",
+          "coverage.xml"
+        ],
+        "coverage-gutters.showLineCoverage": true,
+        "coverage-gutters.showRulerCoverage": true,
+        "coverage-gutters.showGutterCoverage": true,
+        "coverage-gutters.coverageBaseDir": ""
+      },
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "vadimcn.vscode-lldb",
+        "matepek.vscode-catch2-test-adapter",
+        "alefragnani.bookmarks",
+        "xaver.clang-format",
+        "streetsidesoftware.code-spell-checker",
+        "bierner.markdown-preview-github-styles",
+        "ryanluker.vscode-coverage-gutters"
+      ]
+    }
+  }
+}
