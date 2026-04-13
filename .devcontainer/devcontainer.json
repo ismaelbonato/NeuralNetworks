@@ -49,10 +49,15 @@
         "coverage-gutters.showLineCoverage": true,
         "coverage-gutters.showRulerCoverage": true,
         "coverage-gutters.showGutterCoverage": true,
-        "coverage-gutters.coverageBaseDir": ""
+        "coverage-gutters.coverageBaseDir": "",
+        "cppcheck-official.path": "/usr/bin/cppcheck",
+        "cppcheck-official.standard": "c++23",
+        "cppcheck-official.minSeverity": "info",
+        "cppcheck-official.arguments": "--enable=warning,style,performance,portability --inline-suppr --language=c++ --suppress=missingIncludeSystem -I ${workspaceFolder}/include"
       },
       "extensions": [
         "llvm-vs-code-extensions.vscode-clangd",
+        "CppcheckSolutionsAB.cppcheck-official",
         "ms-vscode.cmake-tools",
         "vadimcn.vscode-lldb",
         "matepek.vscode-catch2-test-adapter",
