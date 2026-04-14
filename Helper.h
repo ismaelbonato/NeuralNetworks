@@ -15,7 +15,7 @@
 
 #include "base/Types.h"
 
-Pattern png_to_bits(const std::string &filename)
+inline Pattern png_to_bits(const std::string &filename)
 {
     cv::Mat img = cv::imread(filename, cv::IMREAD_GRAYSCALE);
     cv::Mat resizedImage;
@@ -39,7 +39,7 @@ Pattern png_to_bits(const std::string &filename)
     return pattern;
 }
 
-void hopfieldNetwork()
+inline void hopfieldNetwork()
 {
     Patterns patterns{};
 
@@ -73,7 +73,7 @@ void hopfieldNetwork()
 
 }
 
-void perceptronNetwork()
+inline void perceptronNetwork()
 {
     Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
@@ -83,9 +83,6 @@ void perceptronNetwork()
         {0.0}, // 1 AND 0
         {1.0}  // 1 AND 1
     };
-
-    size_t in = inputs.at(0).size();
-    size_t out = labels.at(0).size();
 
     LayerConfig config{
         .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
@@ -114,7 +111,7 @@ void perceptronNetwork()
 }
 
 
-void perceptronNaturalSelection()
+inline void perceptronNaturalSelection()
 {
     Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
@@ -124,9 +121,6 @@ void perceptronNaturalSelection()
         {1.0}, // 1 AND 0
         {1.0}  // 1 AND 1
     };
-
-    size_t in = inputs.at(0).size();
-    size_t out = labels.at(0).size();
 
     LayerConfig config{
         .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
@@ -174,7 +168,7 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
     }
 */
 
-void feedForwardNetwork()
+inline void feedForwardNetwork()
 {
     /*    Patterns inputs;
 
@@ -258,7 +252,7 @@ void feedForwardNetwork()
     }
 }
 
-void feedforwardExperiment()
+inline void feedforwardExperiment()
 {
     Patterns inputs;
 
