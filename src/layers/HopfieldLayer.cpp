@@ -28,15 +28,14 @@ void HopfieldLayer::updateWeights(const Pattern &pattern,
         throw std::runtime_error("Pattern size does not match Hopfield layer size.");
     }
 
-    for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < n; ++j) {
-            if (i != j) {
-                weights[i][j] = config.learningRule->updateWeight(weights[i][j],
-                                                                  pattern[i] * pattern[j],
-                                                                  learningRate);
-            }
-        }
-    }
+    Patterns weightGradients = pattern.outer(pattern);
+    weightGradients.setDiagonal(Scalar{});
+
+    weights = weights.zipValues(weightGradients, [this, learningRate](Scalar weight,
+                                                                      Scalar gradient) {
+        return config.learningRule->updateWeight(weight, gradient, learningRate);
+    });
+    weights.setDiagonal(Scalar{});
 }
 
 void HopfieldLayer::initWeights(Scalar value)

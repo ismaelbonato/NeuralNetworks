@@ -27,11 +27,7 @@ void DenseLayer::initWeights(Scalar value)
         weights.resize(config.outputSize, Pattern(config.inputSize, value));
 
         if (config.initWeights) {
-            for (auto &row : weights) {
-                for (auto &w : row) {
-                    w = dis(gen);
-                }
-            }
+            weights.generate([&dis, &gen]() { return dis(gen); });
         }
     }
 
@@ -39,9 +35,7 @@ void DenseLayer::initWeights(Scalar value)
         biases.resize(config.outputSize, config.biasInit);
 
         if (config.initWeights) {
-            for (auto &b : biases) {
-                b = dis(gen);
-            }
+            biases.generate([&dis, &gen]() { return dis(gen); });
         }
     }
 }
