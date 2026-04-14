@@ -83,7 +83,6 @@ if(CPPCHECK_EXECUTABLE)
 endif()
 
 add_library(NetworkLib
-    Helper.h
     ${SOURCES}
     ${HEADERS}
 )

@@ -162,6 +162,16 @@ TEST_CASE("feedforward learn rejects wrong input and label shapes", "[feedforwar
                       std::runtime_error);
     REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
+    REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}, {1.0F}},
+                                    {{1.0F, 0.0F}, {0.0F, 1.0F}},
+                                    0.1F,
+                                    1),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}, {0.0F, 1.0F}},
+                                    {{1.0F, 0.0F}, {1.0F}},
+                                    0.1F,
+                                    1),
+                      std::runtime_error);
 }
 
 TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")

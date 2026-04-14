@@ -26,6 +26,14 @@ void Feedforward::learn(const Patterns &inputs,
     if (inputs.empty() || inputs.size() != labels.size()) {
         throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
     }
+    for (size_t i = 0; i < inputs.size(); ++i) {
+        if (inputs[i].size() != layers.front()->getInputSize()) {
+            throw std::runtime_error("Training input size does not match network input size.");
+        }
+        if (labels[i].size() != layers.back()->getOutputSize()) {
+            throw std::runtime_error("Training label size does not match network output size.");
+        }
+    }
 
     activate = Patterns(numLayers() + 1);
     preActivations = Patterns(numLayers());

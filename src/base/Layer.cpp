@@ -28,10 +28,34 @@ size_t Layer::getOutputSize() const
     return config.outputSize;
 }
 
+bool Layer::isInitialized() const
+{
+    if (weights.size() != config.outputSize) {
+        return false;
+    }
+
+    for (const auto &row : weights) {
+        if (row.size() != config.inputSize) {
+            return false;
+        }
+    }
+
+    return !config.useBias || biases.size() == config.outputSize;
+}
+
+void Layer::requireInitialized() const
+{
+    if (!isInitialized()) {
+        throw std::runtime_error("Layer weights are not initialized.");
+    }
+}
+
 void Layer::updateWeights(const Pattern &prev_activations,
                           const Pattern &layerDelta,
                           Scalar learningRate)
 {
+    requireInitialized();
+
     if (prev_activations.size() != config.inputSize) {
         throw std::runtime_error("Previous activation size does not match layer input size.");
     }
@@ -68,6 +92,8 @@ Pattern Layer::infer(const Pattern &input) const
 
 Pattern Layer::weightedSum(const Pattern &input) const
 {
+    requireInitialized();
+
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
@@ -103,14 +129,15 @@ Pattern Layer::activate(const Pattern &values) const
 
 Pattern Layer::backwardPass(const Pattern &layerDelta, const Pattern &preActivation)
 {
-    if (weights.empty() || weights.size() != config.outputSize) {
-        throw std::runtime_error("Weights are not initialized or size mismatch.");
-    }
+    requireInitialized();
     return weights.matVecTransMul(layerDelta) * activationDerivatives(preActivation);
 }
 
 void Layer::naturalUpdateWeights(const Layer &l)
 {
+    requireInitialized();
+    l.requireInitialized();
+
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
