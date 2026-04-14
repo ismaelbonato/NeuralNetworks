@@ -11,7 +11,7 @@
 #include "networks/Perceptron.h"
 #include <opencv2/opencv.hpp>
 
-#include "networks/PerceptronNaturalSelection.h"
+#include "experimental/PerceptronNaturalSelection.h"
 
 #include "base/Types.h"
 
@@ -37,41 +37,6 @@ inline Pattern png_to_bits(const std::string &filename)
         }
     }
     return pattern;
-}
-
-inline void hopfieldNetwork()
-{
-    Patterns patterns{};
-
-    Pattern pattern = {1.0, -1.0, 1.0, -1.0};
-    patterns.push_back(pattern);
-
-    // Use the same pattern as input for recall
-    LayerConfig config{
-        .learningRule = std::make_shared<HebbianRule<Scalar>>(),
-        .activation = std::make_shared<StepPolarActivation<Scalar>>(),
-        .inputSize = patterns.at(0).size(),
-        .outputSize = patterns.at(0).size(),
-        .name = "Input",
-        .type = "HopfieldLayer",
-        .info = "info",
-        .useBias = false
-    };
-
-    auto l = std::make_shared<HopfieldLayer>(config);
-
-    Hopfield net(l);
-    l->initWeights();
-
-    net.learn(patterns);
-
-    auto ret = net.infer(pattern);
-
-    std::cout << pattern << std::endl;
-    std::cout << "Recall result: " << std::endl;
-    std::cout << ret << std::endl;
-    std::cout << "Hello, Hopfield Network!" << std::endl;
-
 }
 
 inline void perceptronNetwork()
@@ -139,7 +104,7 @@ inline void perceptronNaturalSelection()
     auto l = std::make_shared<DenseLayer>(config);
     l->initWeights();
 
-    PerceptronNaturalSelection net(l);
+    experimental::PerceptronNaturalSelection net(l);
 
     net.learn(inputs, labels);
 
@@ -170,95 +135,6 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
         }
     }
 */
-
-inline void feedForwardNetwork()
-{
-    /*    Patterns inputs;
-
-    inputs.emplace_back(png_to_bits("../Misc/bart.png"));
-    inputs.emplace_back(png_to_bits("../Misc/homer.png"));
-    inputs.emplace_back(png_to_bits("../Misc/marge.png"));
-    inputs.emplace_back(png_to_bits("../Misc/meg.png"));
-    inputs.emplace_back(png_to_bits("../Misc/grandpa.png"));
-    inputs.emplace_back(png_to_bits("../Misc/lisa.png"));
-
-    Pattern p(png_to_bits("../Misc/meg.png"));
-
-    Patterns labels = {
-        {1.0, 0.0, 0.0, 0.0, 0.0, 0.0}, //bart
-        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0}, //homer
-        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0}, //marge
-        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0}, //meg
-        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, //grandpa
-        {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}};  //lisa
-*/
-
-    std::cout << "Manual Feedforward Network" << std::endl;
-
-    auto rule = std::make_shared<SGDRule<Scalar>>();
-    auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-
-    LayerConfig config1{
-        .learningRule = std::make_shared<SGDRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 2,
-        .outputSize = 8,
-        .name = "Input",
-        .type = "DenseLayer",
-        .info = "info",
-        .useBias = true
-    };
-
-    LayerConfig config2{
-        .learningRule = std::make_shared<SGDRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 8,
-        .outputSize = 4,
-        .name = "Hidden Layer",
-        .type = "DenseLayer",
-        .info = "info",
-        .useBias = true
-    };
-
-    LayerConfig config3{
-        .learningRule = std::make_shared<SGDRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 4,
-        .outputSize = 1,
-        .name = "Output",
-        .type = "DenseLayer",
-        .info = "info",
-        .useBias = true
-    };
-
-
-    auto l1 = std::make_shared<DenseLayer>(config1);
-    auto l2 = std::make_shared<DenseLayer>(config2);
-    auto l3 = std::make_shared<DenseLayer>(config3);
-
-    l1->initWeights();
-    l2->initWeights();
-    l3->initWeights();
-
-    //FeedforwardNetwork net(std::move(layers));
-    Feedforward net({l1});
-
-    net.addLayers({l2});
-
-    net.addLayer(l3);
-
-
-    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
-    Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
-
-    net.learn(inputs, labels);
-
-    for (const auto &input : inputs) {
-        Pattern output = net.infer(input);
-        std::cout << input << std::endl;
-        std::cout << output << std::endl;
-    }
-}
 
 inline void feedforwardExperiment()
 {

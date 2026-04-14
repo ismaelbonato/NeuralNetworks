@@ -65,3 +65,16 @@ TEST_CASE("hopfield learning keeps diagonal zero and weights symmetric", "[hopfi
         }
     }
 }
+
+TEST_CASE("hopfield recalls a learned pattern", "[hopfield]")
+{
+    auto layer = makeHopfieldLayer(4);
+    layer->initWeights();
+    Hopfield network(layer);
+
+    const Pattern pattern = {1.0F, -1.0F, 1.0F, -1.0F};
+
+    network.learn({pattern});
+
+    REQUIRE(network.infer(pattern) == pattern);
+}
