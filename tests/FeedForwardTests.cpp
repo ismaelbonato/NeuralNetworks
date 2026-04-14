@@ -163,3 +163,47 @@ TEST_CASE("feedforward learn rejects wrong input and label shapes", "[feedforwar
     REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
+
+TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    layer->weights = {{0.0F, 0.0F}};
+    layer->biases = {0.0F};
+
+    Feedforward network({layer});
+
+    const Patterns inputs = {{0.0F, 0.0F},
+                             {0.0F, 1.0F},
+                             {1.0F, 0.0F},
+                             {1.0F, 1.0F}};
+    const Patterns labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
+
+    network.learn(inputs, labels, 0.5F, 5000);
+
+    REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
+    REQUIRE(network.infer({0.0F, 1.0F})[0] > 0.5F);
+    REQUIRE(network.infer({1.0F, 0.0F})[0] > 0.5F);
+    REQUIRE(network.infer({1.0F, 1.0F})[0] > 0.5F);
+}
+
+TEST_CASE("feedforward learns AND gate", "[feedforward][learning]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    layer->weights = {{0.0F, 0.0F}};
+    layer->biases = {0.0F};
+
+    Feedforward network({layer});
+
+    const Patterns inputs = {{0.0F, 0.0F},
+                             {0.0F, 1.0F},
+                             {1.0F, 0.0F},
+                             {1.0F, 1.0F}};
+    const Patterns labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
+
+    network.learn(inputs, labels, 0.5F, 5000);
+
+    REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
+    REQUIRE(network.infer({0.0F, 1.0F})[0] < 0.5F);
+    REQUIRE(network.infer({1.0F, 0.0F})[0] < 0.5F);
+    REQUIRE(network.infer({1.0F, 1.0F})[0] > 0.5F);
+}

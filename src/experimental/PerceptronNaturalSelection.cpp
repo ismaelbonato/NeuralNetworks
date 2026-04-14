@@ -1,7 +1,10 @@
-#include "networks/PerceptronNaturalSelection.h"
+#include "experimental/PerceptronNaturalSelection.h"
 
 #include <limits>
 #include <stdexcept>
+
+namespace experimental
+{
 
 PerceptronNaturalSelection::PerceptronNaturalSelection() = default;
 
@@ -68,4 +71,6 @@ size_t PerceptronNaturalSelection::findClosestPerceptron(const Patterns &ret,
         }
     }
     return bestIdx;
+}
+
 }

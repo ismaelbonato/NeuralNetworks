@@ -1,11 +1,16 @@
 #pragma once
 
-#include "Perceptron.h"
 #include "base/Types.h"
+#include "networks/Perceptron.h"
 
 #include <cstddef>
 #include <memory>
 
+namespace experimental
+{
+
+// Experimental evolutionary search over perceptron weights.
+// Not intended as a stable training API.
 class PerceptronNaturalSelection : public Perceptron
 {
 public:
@@ -20,3 +25,5 @@ public:
 
     size_t findClosestPerceptron(const Patterns &ret, const Patterns &labels) const;
 };
+
+}
