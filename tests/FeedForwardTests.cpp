@@ -31,7 +31,9 @@ std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
         .initWeights = initWeights,
     };
 
-    return std::make_shared<DenseLayer>(config);
+    auto layer = std::make_shared<DenseLayer>(config);
+    layer->initWeights();
+    return layer;
 }
 
 void requireClose(const Scalar actual, const Scalar expected)

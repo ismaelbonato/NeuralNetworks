@@ -74,7 +74,8 @@ TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
         .biasInit = 0.25F,
     };
 
-    const DenseLayer layer(config);
+    DenseLayer layer(config);
+    layer.initWeights();
 
     REQUIRE(layer.biases == Pattern{0.25F, 0.25F});
 }

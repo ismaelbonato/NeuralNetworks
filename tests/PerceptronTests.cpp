@@ -24,7 +24,9 @@ std::shared_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
         .initWeights = false,
     };
 
-    return std::make_shared<DenseLayer>(config);
+    auto layer = std::make_shared<DenseLayer>(config);
+    layer->initWeights();
+    return layer;
 }
 }
 
