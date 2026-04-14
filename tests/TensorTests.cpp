@@ -28,6 +28,20 @@ TEST_CASE("tensor transposed matrix vector multiplication rejects mismatched sha
     REQUIRE_THROWS_AS(matrix.matVecTransMul({1.0F}), std::runtime_error);
 }
 
+TEST_CASE("tensor matrix vector multiplication rejects ragged matrices", "[tensor]")
+{
+    const Patterns matrix = {{1.0F, 2.0F}, {3.0F}};
+
+    REQUIRE_THROWS_AS(matrix.matVecMul({1.0F, 2.0F}), std::runtime_error);
+}
+
+TEST_CASE("tensor transposed matrix vector multiplication rejects ragged matrices", "[tensor]")
+{
+    const Patterns matrix = {{1.0F, 2.0F}, {3.0F}};
+
+    REQUIRE_THROWS_AS(matrix.matVecTransMul({1.0F, 2.0F}), std::runtime_error);
+}
+
 TEST_CASE("tensor computes dot product and matrix vector products", "[tensor]")
 {
     const Pattern a = {1.0F, 2.0F, 3.0F};
