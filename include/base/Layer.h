@@ -7,6 +7,8 @@
 #include <memory>
 #include <random>
 #include <ranges>
+#include <stdexcept>
+#include <string>
 
 struct LayerConfig
 {
@@ -49,11 +51,6 @@ public:
         if (!config.isValid()) {
             throw std::invalid_argument("Invalid layer configuration");
         }
-#pragma message("Do not forgot to deal with weights and bias initialization")
-        //initWeights();
-        if (config.useBias) {
-            //initBiases(config.biasInit);
-        }
     }
 
     virtual ~Layer() = default;
@@ -68,6 +65,13 @@ public:
                                const Pattern &layerDelta,
                                Scalar learningRate)
     {
+        if (prev_activations.size() != config.inputSize) {
+            throw std::runtime_error("Previous activation size does not match layer input size.");
+        }
+        if (layerDelta.size() != config.outputSize) {
+            throw std::runtime_error("Layer delta size does not match layer output size.");
+        }
+
         //
         // Direct loops - maximum performance
         for (size_t i = 0; i < config.outputSize; ++i) {
@@ -80,11 +84,12 @@ public:
             }
         }
 
-        // Direct bias updates
-        for (size_t i = 0; i < config.outputSize; ++i) {
-            biases[i] = config.learningRule->updateWeight(biases[i],
-                                                          layerDelta[i],
-                                                          learningRate);
+        if (config.useBias) {
+            for (size_t i = 0; i < config.outputSize; ++i) {
+                biases[i] = config.learningRule->updateWeight(biases[i],
+                                                              layerDelta[i],
+                                                              learningRate);
+            }
         }
     }
 
@@ -100,13 +105,12 @@ public:
 
     virtual Pattern weightedSum(const Pattern &input) const
     {
-        Pattern sums(config.outputSize, 0.0);
-
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
         }
-#pragma message("revert here")
-        return weights.matVecMul(input) + biases;
+
+        Pattern sums = weights.matVecMul(input);
+        return config.useBias ? sums + biases : sums;
     }
 
     virtual Pattern activationDerivatives(const Pattern &values) const

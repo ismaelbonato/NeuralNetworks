@@ -21,7 +21,10 @@ public:
 
     std::shared_ptr<Layer> clone() const override
     {
-        return std::make_shared<DenseLayer>(config);
+        auto cloned = std::make_shared<DenseLayer>(config);
+        cloned->weights = weights;
+        cloned->biases = biases;
+        return cloned;
     }
 
     // each layer should initialize its weights
@@ -40,8 +43,8 @@ public:
                         w = dis(gen);
             }
         }
-        if (biases.empty()) {
-            biases.resize(config.outputSize, value);
+        if (config.useBias && biases.empty()) {
+            biases.resize(config.outputSize, config.biasInit);
 
             if (config.initWeights) {
                 for (auto &b : biases)

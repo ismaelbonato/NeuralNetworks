@@ -6,6 +6,7 @@
 #include "base/Types.h"
 
 #include <initializer_list>
+#include <stdexcept>
 
 class Feedforward : public GradientBaseModel
 {
@@ -31,15 +32,20 @@ public:
                Scalar learningRate = 0.1f,
                size_t epochs = 100000) override
     {
-        // Update the activate and preActivations vectors
-        if (activate.empty()) {
-            activate.emplace_back(Pattern(layers.front()->getInputSize(), 0.0f));
+        if (layers.empty()) {
+            throw std::runtime_error("Cannot train feedforward network without layers.");
         }
-        
-        for (auto &&l : layers)
-        {
-            activate.emplace_back(Pattern(l->getOutputSize(), 0.0f));
-            preActivations.emplace_back(Pattern(l->getInputSize(), 0.0f));
+        if (inputs.empty() || inputs.size() != labels.size()) {
+            throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
+        }
+
+        activate = Patterns(numLayers() + 1);
+        preActivations = Patterns(numLayers());
+        activate[0] = Pattern(layers.front()->getInputSize(), 0.0f);
+
+        for (size_t l = 0; l < numLayers(); ++l) {
+            activate[l + 1] = Pattern(layers[l]->getOutputSize(), 0.0f);
+            preActivations[l] = Pattern(layers[l]->getOutputSize(), 0.0f);
         }
 
         std::cout << "Training feedforward Network..." << std::endl;

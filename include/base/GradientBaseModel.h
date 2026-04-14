@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LayeredModel.h"
+#include <stdexcept>
 #include <vector>
 
 class GradientBaseModel : public LayeredModel
@@ -42,24 +43,25 @@ public:
 
     virtual void backpropagation(const Pattern &outputError, const Scalar rate)
     {
-        Pattern currentLayerDelta =
+        if (layers.empty()) {
+            throw std::runtime_error("Cannot backpropagate without layers.");
+        }
+
+        Patterns layerDeltas(numLayers());
+
+        // delta^L = dC/da^L * sigma'(z^L)
+        layerDeltas.back() =
             outputError * layers.back()->activationDerivatives(preActivations.back());
 
-        // Backward pass: propagate error and update weights
-        for (size_t l = numLayers(); l-- > 0;) {
-            Pattern previousLayerDelta;
+        // delta^l = ((W^(l+1))^T * delta^(l+1)) * sigma'(z^l)
+        for (size_t l = numLayers() - 1; l > 0; --l) {
+            layerDeltas[l - 1] =
+                getLayer(l)->backwardPass(layerDeltas[l], preActivations[l - 1]);
+        }
 
-            if (l > 0) {
-                previousLayerDelta =
-                    getLayer(l)->backwardPass(currentLayerDelta,
-                                              preActivations[l - 1]);
-            }
-
-            getLayer(l)->updateWeights(activate[l], currentLayerDelta, rate);
-
-            if (l > 0) {
-                currentLayerDelta = previousLayerDelta;
-            }
+        // dC/dW^l = delta^l * (a^(l-1))^T, dC/db^l = delta^l
+        for (size_t l = 0; l < numLayers(); ++l) {
+            getLayer(l)->updateWeights(activate[l], layerDeltas[l], rate);
         }
     }
 
