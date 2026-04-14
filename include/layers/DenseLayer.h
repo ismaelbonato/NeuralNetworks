@@ -3,53 +3,13 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
-#include <random>
-#include <stdexcept>
-
 class DenseLayer : public Layer
 {
 public:
-    DenseLayer() = delete; // Default constructor is not allowed
+    DenseLayer() = delete;
+    DenseLayer(const LayerConfig &newConfig);
+    ~DenseLayer() override;
 
-    DenseLayer(const LayerConfig &newConfig)
-        : Layer(newConfig)
-    {
-        initWeights();
-    }
-
-    ~DenseLayer() override = default;
-
-    std::shared_ptr<Layer> clone() const override
-    {
-        auto cloned = std::make_shared<DenseLayer>(config);
-        cloned->weights = weights;
-        cloned->biases = biases;
-        return cloned;
-    }
-
-    // each layer should initialize its weights
-    void initWeights(Scalar value = Scalar{}) override
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<Scalar> dis(-1.0, 1.0);
-
-        if (weights.empty()) {
-            weights.resize(config.outputSize, Pattern(config.inputSize, value));
-
-            if (config.initWeights) {
-                for (auto &row : weights)
-                    for (auto &w : row)
-                        w = dis(gen);
-            }
-        }
-        if (config.useBias && biases.empty()) {
-            biases.resize(config.outputSize, config.biasInit);
-
-            if (config.initWeights) {
-                for (auto &b : biases)
-                    b = dis(gen);
-            }
-        }
-    }
+    std::shared_ptr<Layer> clone() const override;
+    void initWeights(Scalar value = Scalar{}) override;
 };
