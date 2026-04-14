@@ -61,6 +61,7 @@ inline void hopfieldNetwork()
     auto l = std::make_shared<HopfieldLayer>(config);
 
     Hopfield net(l);
+    l->initWeights();
 
     net.learn(patterns);
 
@@ -96,7 +97,8 @@ inline void perceptronNetwork()
     };
 
     auto l = std::make_shared<DenseLayer>(config);
-    
+    l->initWeights();
+
     Perceptron net(l);
 
     net.learn(inputs, labels);
@@ -135,7 +137,8 @@ inline void perceptronNaturalSelection()
     };
 
     auto l = std::make_shared<DenseLayer>(config);
-    
+    l->initWeights();
+
     PerceptronNaturalSelection net(l);
 
     net.learn(inputs, labels);
@@ -233,12 +236,17 @@ inline void feedForwardNetwork()
     auto l2 = std::make_shared<DenseLayer>(config2);
     auto l3 = std::make_shared<DenseLayer>(config3);
 
+    l1->initWeights();
+    l2->initWeights();
+    l3->initWeights();
+
     //FeedforwardNetwork net(std::move(layers));
     Feedforward net({l1});
 
     net.addLayers({l2});
 
     net.addLayer(l3);
+
 
     Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
     Patterns labels = {{0.0}, {1.0}, {1.0}, {0.0}};
@@ -325,6 +333,11 @@ inline void feedforwardExperiment()
     auto l2 = std::make_shared<DenseLayer>(config2);
     auto l3 = std::make_shared<DenseLayer>(config3);
     auto l4 = std::make_shared<DenseLayer>(config4);
+    
+    l1->initWeights();
+    l2->initWeights();
+    l3->initWeights();
+    l4->initWeights();
 
     Feedforward net({l1, l2, l3, l4});
 

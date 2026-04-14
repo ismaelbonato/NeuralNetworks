@@ -53,6 +53,7 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 TEST_CASE("hopfield learning keeps diagonal zero and weights symmetric", "[hopfield]")
 {
     auto layer = makeHopfieldLayer(3);
+    layer->initWeights();
     Hopfield network(layer);
 
     network.learn({{1.0F, -1.0F, 1.0F}});
