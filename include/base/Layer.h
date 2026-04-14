@@ -45,6 +45,8 @@ public:
 
     size_t getInputSize() const;
     size_t getOutputSize() const;
+    bool isInitialized() const;
+    void requireInitialized() const;
 
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &layerDelta,

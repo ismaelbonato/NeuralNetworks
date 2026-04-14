@@ -91,3 +91,18 @@ TEST_CASE("layer update rejects mismatched activation and delta sizes", "[layer]
     REQUIRE_THROWS_AS(layer->updateWeights({1.0F, 1.0F}, {1.0F}, 0.1F),
                       std::runtime_error);
 }
+TEST_CASE("layer reports and rejects missing initialization", "[layer][errors]")
+{
+    auto layer = makeDenseLayer(2, 1);
+
+    REQUIRE_FALSE(layer->isInitialized());
+    REQUIRE_THROWS_AS(layer->requireInitialized(), std::runtime_error);
+    REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
+    REQUIRE_THROWS_AS(layer->updateWeights({1.0F, 1.0F}, {1.0F}, 0.1F),
+                      std::runtime_error);
+
+    layer->initWeights();
+
+    REQUIRE(layer->isInitialized());
+    REQUIRE_NOTHROW(layer->requireInitialized());
+}
