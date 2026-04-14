@@ -3,7 +3,9 @@
 #include "Perceptron.h"
 #include "base/Types.h"
 #include <cstddef>
+#include <limits>
 #include <map>
+#include <stdexcept>
 
 class PerceptronNaturalSelection : public Perceptron
 {
@@ -23,6 +25,10 @@ public:
                size_t epochs = 100000) override
     {
 
+        if (layers.empty()) {
+            throw std::runtime_error("Cannot train natural-selection perceptron without a layer.");
+        }
+
         Layers ls;
         ls.push_back(layers.front()->clone());
         ls.push_back(layers.front()->clone());
@@ -41,7 +47,7 @@ public:
                 ret[3].push_back(ls[3]->infer(inputs[i]).front());
             }
 
-            size_t bestIdx = findClosestPerceptron(ret, labels);
+            bestIdx = findClosestPerceptron(ret, labels);
 
             ls[0]->naturalUpdateWeights(*ls[bestIdx]);
             ls[1]->naturalUpdateWeights(*ls[bestIdx]);

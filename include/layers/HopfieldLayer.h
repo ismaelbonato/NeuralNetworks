@@ -33,6 +33,9 @@ public:
                        Scalar learningRate = Scalar{1.0f}) override
     {
         size_t n = pattern.size();
+        if (n != config.inputSize || n != config.outputSize) {
+            throw std::runtime_error("Pattern size does not match Hopfield layer size.");
+        }
 
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
@@ -60,13 +63,17 @@ public:
     // Overload infer: update until convergence
     Pattern recall(const Pattern &input) const
     {
+        if (input.size() != config.inputSize) {
+            throw std::runtime_error("Input size does not match Hopfield layer size.");
+        }
+
         Pattern state = input;
         Pattern prev_state;
         do {
             prev_state = state;
-            auto sum = weightedSum(input);
+            auto sum = weightedSum(state);
             state = activate(sum);
-        } while (state != prev_state); // Repeat until state does not change
+        } while (state != prev_state);
         return state;
     }
 };

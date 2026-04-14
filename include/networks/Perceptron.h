@@ -5,6 +5,7 @@
 #include "base/Types.h"
 
 #include <memory>
+#include <stdexcept>
 
 class Perceptron : public LayeredModel
 {
@@ -22,6 +23,16 @@ public:
                Scalar learningRate = 0.1f,
                size_t epochs = 10000) override
     {
+        if (layers.empty()) {
+            throw std::runtime_error("Cannot train perceptron without a layer.");
+        }
+        if (layers.front()->getOutputSize() != 1) {
+            throw std::runtime_error("Perceptron supports exactly one output.");
+        }
+        if (inputs.empty() || inputs.size() != labels.size()) {
+            throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
+        }
+
         for (size_t epoch = 0; epoch < epochs; ++epoch) {
             for (size_t i = 0; i < inputs.size(); ++i) {
                 Pattern activated = layers.front()->infer(inputs[i]);

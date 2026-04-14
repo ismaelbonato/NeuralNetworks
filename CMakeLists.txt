@@ -117,8 +117,15 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
         find_package(Catch2 3 REQUIRED)
 
         add_executable(NetworkTests
+            tests/ActivationTests.cpp
             tests/FeedForwardTests.cpp
+            tests/HopfieldTests.cpp
+            tests/LayerTests.cpp
+            tests/LearningRuleTests.cpp
+            tests/PerceptronNaturalSelectionTests.cpp
+            tests/PerceptronTests.cpp
             tests/SmokeTests.cpp
+            tests/TensorTests.cpp
         )
 
         target_link_libraries(NetworkTests PRIVATE

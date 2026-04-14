@@ -2,6 +2,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <limits>
+#include <algorithm>
 
 template<typename T>
 class ActivationFunction
