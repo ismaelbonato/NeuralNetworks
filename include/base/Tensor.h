@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 template<typename T>
@@ -120,7 +121,7 @@ class Tensor
 public:
     Tensor() = default;
 
-    Tensor(size_t size, const T &value = T{})
+    explicit Tensor(size_t size, const T &value = T{})
         : data(size, value)
     {}
 
@@ -154,6 +155,11 @@ public:
                 "Matrix and vector size mismatch in matvec_mul.");
 
         auto dataSize = data.at(0).size();
+        for (const auto &row : data) {
+            if (row.size() != dataSize)
+                throw std::runtime_error(
+                    "Inconsistent row size in matrix vector multiplication.");
+        }
 
         T result(dataSize);
         // it makes the transposition and dot product at the same time.
@@ -168,14 +174,21 @@ public:
     T matVecMul(const T &b) const
     {
         if (data.empty() || data.at(0).size() != b.size())
-        throw std::runtime_error(
-            "Matrix and vector size mismatch in matvec_mul.");
+            throw std::runtime_error(
+                "Matrix and vector size mismatch in matvec_mul.");
+
+        auto rowSize = data.at(0).size();
+        for (const auto &row : data) {
+            if (row.size() != rowSize)
+                throw std::runtime_error(
+                    "Inconsistent row size in matrix vector multiplication.");
+        }
 
         auto dataSize = data.size();
 
         T result(dataSize);
         for (size_t i = 0; i < dataSize; ++i) {
-                result[i] = data[i].dot(b);
+            result[i] = data[i].dot(b);
         }
         return result;
     }
@@ -270,7 +283,7 @@ public:
 
     inline void resize(const size_t t) { data.resize(t, T{}); }
 
-    inline void resize(const size_t t, const T s) { data.resize(t, s); }
+    inline void resize(const size_t t, const T &s) { data.resize(t, s); }
 
 protected:
     std::vector<T> data; // Store the tensor data
