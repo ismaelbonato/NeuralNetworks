@@ -119,6 +119,8 @@ class Tensor
     //                                 const Tensor<T> &b);
 
 public:
+    using value_type = T;
+
     Tensor() = default;
 
     explicit Tensor(size_t size, const T &value = T{})
@@ -135,6 +137,96 @@ public:
     {}
 
     ~Tensor() = default;
+
+    template<typename UnaryOperation>
+    Tensor<T> map(UnaryOperation operation) const
+    {
+        Tensor<T> result(size());
+        for (size_t i = 0; i < size(); ++i) {
+            result[i] = operation(data[i]);
+        }
+        return result;
+    }
+
+    template<typename UnaryOperation>
+    Tensor<T> mapValues(UnaryOperation operation) const
+    {
+        Tensor<T> result(size());
+        for (size_t i = 0; i < size(); ++i) {
+            if constexpr (requires { data[i].mapValues(operation); }) {
+                result[i] = data[i].mapValues(operation);
+            } else {
+                result[i] = operation(data[i]);
+            }
+        }
+        return result;
+    }
+
+    template<typename BinaryOperation>
+    Tensor<T> zip(const Tensor<T> &other, BinaryOperation operation) const
+    {
+        if (size() != other.size())
+            throw std::runtime_error("Size mismatch in tensor zip.");
+
+        Tensor<T> result(size());
+        for (size_t i = 0; i < size(); ++i) {
+            result[i] = operation(data[i], other[i]);
+        }
+        return result;
+    }
+
+    template<typename BinaryOperation>
+    Tensor<T> zipValues(const Tensor<T> &other, BinaryOperation operation) const
+    {
+        if (size() != other.size())
+            throw std::runtime_error("Size mismatch in tensor zip values.");
+
+        Tensor<T> result(size());
+        for (size_t i = 0; i < size(); ++i) {
+            if constexpr (requires { data[i].zipValues(other[i], operation); }) {
+                result[i] = data[i].zipValues(other[i], operation);
+            } else {
+                result[i] = operation(data[i], other[i]);
+            }
+        }
+        return result;
+    }
+
+    bool hasShape(const size_t outerSize, const size_t innerSize) const
+    {
+        if (size() != outerSize) {
+            return false;
+        }
+
+        for (const auto &item : data) {
+            if (item.size() != innerSize) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void setDiagonal(Scalar value)
+    {
+        for (size_t i = 0; i < size(); ++i) {
+            if (i < data[i].size()) {
+                data[i][i] = value;
+            }
+        }
+    }
+
+    template<typename Generator>
+    void generate(Generator generator)
+    {
+        for (auto &item : data) {
+            if constexpr (requires { item.generate(generator); }) {
+                item.generate(generator);
+            } else {
+                item = generator();
+            }
+        }
+    }
 
     T dot(const Tensor<T> &b) const
     {

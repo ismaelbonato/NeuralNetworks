@@ -30,17 +30,8 @@ size_t Layer::getOutputSize() const
 
 bool Layer::isInitialized() const
 {
-    if (weights.size() != config.outputSize) {
-        return false;
-    }
-
-    for (const auto &row : weights) {
-        if (row.size() != config.inputSize) {
-            return false;
-        }
-    }
-
-    return !config.useBias || biases.size() == config.outputSize;
+    return weights.hasShape(config.outputSize, config.inputSize)
+           && (!config.useBias || biases.size() == config.outputSize);
 }
 
 void Layer::requireInitialized() const
@@ -57,27 +48,23 @@ void Layer::updateWeights(const Pattern &prev_activations,
     requireInitialized();
 
     if (prev_activations.size() != config.inputSize) {
-        throw std::runtime_error("Previous activation size does not match layer input size.");
+        throw std::runtime_error(
+            "Previous activation size does not match layer input size.");
     }
     if (layerDelta.size() != config.outputSize) {
-        throw std::runtime_error("Layer delta size does not match layer output size.");
+        throw std::runtime_error(
+            "Layer delta size does not match layer output size.");
     }
 
-    for (size_t i = 0; i < config.outputSize; ++i) {
-        for (size_t j = 0; j < config.inputSize; ++j) {
-            Scalar gradient = layerDelta[i] * prev_activations[j];
-            weights[i][j] = config.learningRule->updateWeight(weights[i][j],
-                                                              gradient,
-                                                              learningRate);
-        }
-    }
+    const Patterns weightGradients = layerDelta.outer(prev_activations);
+    const auto updateValue = [this, learningRate](Scalar value, Scalar gradient) {
+        return config.learningRule->updateWeight(value, gradient, learningRate);
+    };
+
+    weights = weights.zipValues(weightGradients, updateValue);
 
     if (config.useBias) {
-        for (size_t i = 0; i < config.outputSize; ++i) {
-            biases[i] = config.learningRule->updateWeight(biases[i],
-                                                          layerDelta[i],
-                                                          learningRate);
-        }
+        biases = biases.zipValues(layerDelta, updateValue);
     }
 }
 
@@ -104,11 +91,9 @@ Pattern Layer::weightedSum(const Pattern &input) const
 
 Pattern Layer::activationDerivatives(const Pattern &values) const
 {
-    Pattern result(values.size());
-    for (size_t i = 0; i < values.size(); ++i) {
-        result[i] = (*config.activation).derivative(values[i]);
-    }
-    return result;
+    return values.map([this](Scalar value) {
+        return (*config.activation).derivative(value);
+    });
 }
 
 Pattern Layer::activate(const Pattern &values) const
@@ -117,20 +102,20 @@ Pattern Layer::activate(const Pattern &values) const
         throw std::runtime_error("Learning rule is not set for this layer.");
     }
     if (config.activation == nullptr) {
-        throw std::runtime_error("Activation function is not set for this layer.");
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
     }
 
-    Pattern result(values.size());
-    for (size_t i = 0; i < values.size(); ++i) {
-        result[i] = (*config.activation)(values[i]);
-    }
-    return result;
+    return values.map(
+        [this](Scalar value) { return (*config.activation)(value); });
 }
 
-Pattern Layer::backwardPass(const Pattern &layerDelta, const Pattern &preActivation)
+Pattern Layer::backwardPass(const Pattern &layerDelta,
+                            const Pattern &preActivation)
 {
     requireInitialized();
-    return weights.matVecTransMul(layerDelta) * activationDerivatives(preActivation);
+    return weights.matVecTransMul(layerDelta)
+           * activationDerivatives(preActivation);
 }
 
 void Layer::naturalUpdateWeights(const Layer &l)
@@ -142,13 +127,13 @@ void Layer::naturalUpdateWeights(const Layer &l)
     std::mt19937 gen(rd());
     std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
 
-    for (size_t i = 0; i < config.outputSize; ++i) {
-        for (size_t j = 0; j < config.inputSize; ++j) {
-            weights[i][j] = l.weights[i][j] + dis(gen);
-        }
-    }
+    weights = l.weights.mapValues([&dis, &gen](Scalar value) {
+        return value + dis(gen);
+    });
 
-    for (size_t i = 0; i < config.outputSize; ++i) {
-        biases[i] = l.biases[i] + dis(gen);
+    if (config.useBias) {
+        biases = l.biases.mapValues([&dis, &gen](Scalar value) {
+            return value + dis(gen);
+        });
     }
 }
