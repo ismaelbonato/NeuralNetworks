@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     ninja-build \
     cppcheck \
+    catch2 \
     sudo \
     gcc-14 \
     g++-14 \
@@ -40,18 +41,6 @@ RUN apt-get update && apt-get install -y \
     && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-20 100 \
     && update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Download and install Google Test from source
-RUN cd /tmp \
-    && wget https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz \
-    && tar -xzf v1.15.2.tar.gz \
-    && cd googletest-1.15.2 \
-    && mkdir build && cd build \
-    && cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local \
-    && make -j$(nproc) \
-    && make install \
-    && cd /tmp \
-    && rm -rf v1.15.2.tar.gz googletest-1.15.2
 
 # Verify installations
 RUN gcc --version && g++ --version && clang --version && clang++ --version && cmake --version

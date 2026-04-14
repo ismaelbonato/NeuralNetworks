@@ -7,6 +7,8 @@ set(CMAKE_CXX_COMPILER "clang++-20" CACHE STRING "C++ compiler" FORCE)
 
 project(NetworkFramework)
 
+include(CTest)
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 endif()
@@ -109,7 +111,24 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     target_include_directories(Network PRIVATE 
         ${OpenCV_INCLUDE_DIRS} 
         ${CMAKE_SOURCE_DIR}/include
-    )   
+    )
+
+    if(BUILD_TESTING)
+        find_package(Catch2 3 REQUIRED)
+
+        add_executable(NetworkTests
+            tests/FeedForwardTests.cpp
+            tests/SmokeTests.cpp
+        )
+
+        target_link_libraries(NetworkTests PRIVATE
+            NetworkLib
+            Catch2::Catch2WithMain
+        )
+
+        include(Catch)
+        catch_discover_tests(NetworkTests)
+    endif()
 
 endif()
 
