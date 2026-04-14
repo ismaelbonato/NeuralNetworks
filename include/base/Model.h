@@ -1,11 +1,11 @@
 #pragma once
 
-#include "base/Layer.h" // Include the header file where Layer is defined
-#include "base/LearningRule.h"
-#include "base/Types.h" // Include for Pattern and Scalar types
-#include <cstddef> // Include for size_t
+#include "base/Layer.h"
+#include "base/Types.h"
+
+#include <cstddef>
+#include <initializer_list>
 #include <memory>
-#include <vector>
 
 class Model
 {
@@ -13,23 +13,12 @@ protected:
     Layers layers;
 
 public:
+    Model();
+    Model(Layers &newLayers);
+    Model(std::initializer_list<std::shared_ptr<Layer>> newLayers);
+    virtual ~Model();
 
-    Model() = default;
-
-    Model(Layers &newLayers)
-        : layers(newLayers)
-    {}
-
-    Model(const std::initializer_list<std::shared_ptr<Layer>> newLayers)
-        : layers(newLayers)
-    {}
-
-    virtual ~Model() = default;
-
-    virtual void addLayer(const std::shared_ptr<Layer> &layer)
-    {
-        layers.push_back(layer);
-    }
+    virtual void addLayer(const std::shared_ptr<Layer> &layer);
 
     virtual void learn(const Patterns &inputs,
                        const Patterns &labels,
@@ -38,5 +27,4 @@ public:
         = 0;
 
     virtual Pattern infer(const Pattern &input) = 0;
-
 };

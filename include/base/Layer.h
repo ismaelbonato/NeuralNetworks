@@ -1,13 +1,12 @@
 #pragma once
+
 #include "Tensor.h"
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
 #include "base/Types.h"
 
+#include <cstddef>
 #include <memory>
-#include <random>
-#include <ranges>
-#include <stdexcept>
 #include <string>
 
 struct LayerConfig
@@ -20,17 +19,12 @@ struct LayerConfig
     std::string type;
     std::string info;
 
-    // Optional parameters with defaults
     bool useBias = true;
     bool initWeights = true;
     Scalar weightInitScale = Scalar{1.0};
     Scalar biasInit = Scalar{0.0};
 
-    // Validation
-    inline bool isValid() const
-    {
-        return learningRule && activation && inputSize > 0 && outputSize > 0;
-    }
+    bool isValid() const;
 };
 
 class Layer
@@ -42,131 +36,25 @@ public:
     Patterns weights;
     Pattern biases;
 
-public:
     Layer() = delete;
-
-    Layer(const LayerConfig &newConfig)
-        : config(newConfig)
-    {
-        if (!config.isValid()) {
-            throw std::invalid_argument("Invalid layer configuration");
-        }
-    }
-
-    virtual ~Layer() = default;
+    Layer(const LayerConfig &newConfig);
+    virtual ~Layer();
 
     virtual std::shared_ptr<Layer> clone() const = 0;
     virtual void initWeights(Scalar value = Scalar{}) = 0;
 
-    inline size_t getInputSize() const { return config.inputSize; }
-    inline size_t getOutputSize() const { return config.outputSize; }
+    size_t getInputSize() const;
+    size_t getOutputSize() const;
 
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &layerDelta,
-                               Scalar learningRate)
-    {
-        if (prev_activations.size() != config.inputSize) {
-            throw std::runtime_error("Previous activation size does not match layer input size.");
-        }
-        if (layerDelta.size() != config.outputSize) {
-            throw std::runtime_error("Layer delta size does not match layer output size.");
-        }
+                               Scalar learningRate);
 
-        //
-        // Direct loops - maximum performance
-        for (size_t i = 0; i < config.outputSize; ++i) {
-            for (size_t j = 0; j < config.inputSize; ++j) {
-                // Compute gradient on-demand, no allocation
-                Scalar gradient = layerDelta[i] * prev_activations[j];
-                weights[i][j] = config.learningRule->updateWeight(weights[i][j],
-                                                                  gradient,
-                                                                  learningRate);
-            }
-        }
+    virtual Pattern infer(const Pattern &input) const;
+    virtual Pattern weightedSum(const Pattern &input) const;
+    virtual Pattern activationDerivatives(const Pattern &values) const;
+    virtual Pattern activate(const Pattern &values) const;
 
-        if (config.useBias) {
-            for (size_t i = 0; i < config.outputSize; ++i) {
-                biases[i] = config.learningRule->updateWeight(biases[i],
-                                                              layerDelta[i],
-                                                              learningRate);
-            }
-        }
-    }
-
-    virtual Pattern infer(const Pattern &input) const
-    {
-        if (input.size() != config.inputSize) {
-            throw std::runtime_error(
-                "Input size does not match layer input size.");
-        }
-        Pattern sums = weightedSum(input);
-        return activate(sums);
-    }
-
-    virtual Pattern weightedSum(const Pattern &input) const
-    {
-        if (input.empty()) {
-            throw std::runtime_error("Input is empty");
-        }
-
-        Pattern sums = weights.matVecMul(input);
-        return config.useBias ? sums + biases : sums;
-    }
-
-    virtual Pattern activationDerivatives(const Pattern &values) const
-    {
-        Pattern result(values.size());
-        for (size_t i = 0; i < values.size(); ++i) {
-            result[i] = (*config.activation).derivative(values[i]);
-        }
-        return result;
-    }
-
-    virtual Pattern activate(const Pattern &values) const
-    {
-        if (config.learningRule == nullptr) {
-            throw std::runtime_error(
-                "Learning rule is not set for this layer.");
-        }
-        if (config.activation == nullptr) {
-            throw std::runtime_error(
-                "Activation function is not set for this layer.");
-        }
-        Pattern result(values.size());
-
-        for (size_t i = 0; i < values.size(); ++i) {
-            result[i] = (*config.activation)(values[i]);
-        }
-        return result;
-    }
-
-    Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation)
-    {
-        if (weights.empty() || weights.size() != config.outputSize) {
-            throw std::runtime_error(
-                "Weights are not initialized or size mismatch.");
-        }
-        return weights.matVecTransMul(layerDelta)
-               * activationDerivatives(preActivation);
-    }
-
-    void naturalUpdateWeights(const Layer &l)
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
-
-        // Mutate weights - ONLY if this is the best performer
-        for (size_t i = 0; i < config.outputSize; ++i) {
-            for (size_t j = 0; j < config.inputSize; ++j) {
-                weights[i][j] = l.weights[i][j] + dis(gen); // Direct mutation
-            }
-        }
-
-        // Mutate weights - ONLY if this is the best performer
-        for (size_t i = 0; i < config.outputSize; ++i) {
-            biases[i] = l.biases[i] + dis(gen); // Direct mutation
-        }
-
-    }
+    Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation);
+    void naturalUpdateWeights(const Layer &l);
 };
