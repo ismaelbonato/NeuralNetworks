@@ -65,7 +65,7 @@ public:
     inline size_t getOutputSize() const { return config.outputSize; }
 
     virtual void updateWeights(const Pattern &prev_activations,
-                               const Pattern &delta,
+                               const Pattern &layerDelta,
                                Scalar learningRate)
     {
         //
@@ -73,7 +73,7 @@ public:
         for (size_t i = 0; i < config.outputSize; ++i) {
             for (size_t j = 0; j < config.inputSize; ++j) {
                 // Compute gradient on-demand, no allocation
-                Scalar gradient = delta[i] * prev_activations[j];
+                Scalar gradient = layerDelta[i] * prev_activations[j];
                 weights[i][j] = config.learningRule->updateWeight(weights[i][j],
                                                                   gradient,
                                                                   learningRate);
@@ -83,7 +83,7 @@ public:
         // Direct bias updates
         for (size_t i = 0; i < config.outputSize; ++i) {
             biases[i] = config.learningRule->updateWeight(biases[i],
-                                                          delta[i],
+                                                          layerDelta[i],
                                                           learningRate);
         }
     }
@@ -136,13 +136,13 @@ public:
         return result;
     }
 
-    Pattern backwardPass(const Pattern &delta, const Pattern &preActivation)
+    Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation)
     {
         if (weights.empty() || weights.size() != config.outputSize) {
             throw std::runtime_error(
                 "Weights are not initialized or size mismatch.");
         }
-        return weights.matVecTransMul(delta)
+        return weights.matVecTransMul(layerDelta)
                * activationDerivatives(preActivation);
     }
 

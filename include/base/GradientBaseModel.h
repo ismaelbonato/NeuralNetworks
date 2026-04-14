@@ -35,19 +35,30 @@ public:
         }
     }
 
-    virtual inline Pattern computeError(const Pattern &target)
+    virtual inline Pattern computeOutputError(const Pattern &target)
     {
-        return lossDerivative(activate.back(), target)
-               * layers.back()->activationDerivatives(preActivations.back());
+        return lossDerivative(activate.back(), target);
     }
 
-    virtual void backpropagation(Pattern &delta, const Scalar rate)
+    virtual void backpropagation(const Pattern &outputError, const Scalar rate)
     {
-        // Backward pass: update weights and propagate error
+        Pattern currentLayerDelta =
+            outputError * layers.back()->activationDerivatives(preActivations.back());
+
+        // Backward pass: propagate error and update weights
         for (size_t l = numLayers(); l-- > 0;) {
-            getLayer(l)->updateWeights(activate[l], delta, rate);
+            Pattern previousLayerDelta;
+
             if (l > 0) {
-                delta = getLayer(l)->backwardPass(delta, preActivations[l - 1]);
+                previousLayerDelta =
+                    getLayer(l)->backwardPass(currentLayerDelta,
+                                              preActivations[l - 1]);
+            }
+
+            getLayer(l)->updateWeights(activate[l], currentLayerDelta, rate);
+
+            if (l > 0) {
+                currentLayerDelta = previousLayerDelta;
             }
         }
     }
