@@ -18,6 +18,44 @@ Layer::Layer(const LayerConfig &newConfig)
 
 Layer::~Layer() = default;
 
+Shape Layer::expectedWeightShape() const
+{
+    return {config.outputSize, config.inputSize};
+}
+
+Shape Layer::expectedBiasShape() const
+{
+    return {config.outputSize};
+}
+
+void Layer::initWeights(Scalar value)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<Scalar> dis(-config.weightInitScale,
+                                               config.weightInitScale);
+
+    if (weights.empty()) {
+        Pattern newWeights = Pattern::withShape(expectedWeightShape(), value);
+
+        if (config.initWeights) {
+            newWeights.generate([&dis, &gen]() { return dis(gen); });
+        }
+
+        setWeights(newWeights);
+    }
+
+    if (config.useBias && biases.empty()) {
+        Pattern newBiases = Pattern::withShape(expectedBiasShape(), config.biasInit);
+
+        if (config.initWeights) {
+            newBiases.generate([&dis, &gen]() { return dis(gen); });
+        }
+
+        setBiases(newBiases);
+    }
+}
+
 size_t Layer::getInputSize() const
 {
     return config.inputSize;

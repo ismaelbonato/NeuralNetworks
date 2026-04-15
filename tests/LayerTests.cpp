@@ -80,6 +80,40 @@ TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
     REQUIRE(layer.getBiases() == Pattern{0.25F, 0.25F});
 }
 
+TEST_CASE("layer initializes weights through base implementation", "[layer][dense]")
+{
+    auto layer = makeDenseLayer(2, 2);
+
+    layer->initWeights();
+
+    REQUIRE(layer->getWeights().hasShape({2, 2}));
+    REQUIRE(layer->getBiases().shape() == std::vector<size_t>{2});
+}
+
+TEST_CASE("layer initializes weights using configured scale", "[layer][dense]")
+{
+    LayerConfig config{
+        .learningRule = std::make_shared<SGDRule<Scalar>>(),
+        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
+        .inputSize = 2,
+        .outputSize = 2,
+        .name = "scaled init layer",
+        .type = "DenseLayer",
+        .info = "deterministic test layer",
+        .useBias = true,
+        .initWeights = true,
+        .weightInitScale = 0.25F,
+    };
+
+    DenseLayer layer(config);
+    layer.initWeights();
+
+    for (const Scalar weight : layer.getWeights()) {
+        REQUIRE(weight >= -0.25F);
+        REQUIRE(weight <= 0.25F);
+    }
+}
+
 TEST_CASE("layer update rejects mismatched activation and delta sizes", "[layer][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
