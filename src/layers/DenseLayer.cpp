@@ -4,7 +4,9 @@
 
 DenseLayer::DenseLayer(const LayerConfig &newConfig)
     : Layer(newConfig)
-{}
+{
+    initWeights();
+}
 
 DenseLayer::~DenseLayer() = default;
 

@@ -1,9 +1,27 @@
+#include "base/Initializer.h"
 #include "base/Tensor.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 #include <stdexcept>
 #include <vector>
+
+TEST_CASE("initializers fill tensors through the shared strategy interface", "[initializer]")
+{
+    Pattern values = Pattern::vector(3, 1.0F);
+
+    ZeroInitializer<Scalar>{}.fill(values);
+    REQUIRE(values == Pattern{0.0F, 0.0F, 0.0F});
+
+    ConstantInitializer<Scalar>{2.5F}.fill(values);
+    REQUIRE(values == Pattern{2.5F, 2.5F, 2.5F});
+
+    UniformInitializer<Scalar>{-0.25F, 0.25F}.fill(values);
+    for (const Scalar value : values) {
+        REQUIRE(value >= -0.25F);
+        REQUIRE(value <= 0.25F);
+    }
+}
 
 TEST_CASE("tensor keeps value initializer lists as one-dimensional data", "[tensor]")
 {
