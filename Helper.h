@@ -4,10 +4,8 @@
 #include "base/Layer.h"
 #include "base/LearningRule.h"
 #include "layers/DenseLayer.h"
-#include "layers/HopfieldLayer.h"
 #include "base/Types.h"
 #include "networks/FeedForward.h"
-#include "networks/Hopfield.h"
 #include "networks/Perceptron.h"
 #include <opencv2/opencv.hpp>
 
