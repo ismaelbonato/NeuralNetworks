@@ -31,10 +31,10 @@ class Layer
 {
 protected:
     LayerConfig config;
-
-public:
     Pattern weights;
     Pattern biases;
+
+public:
 
     Layer() = delete;
     Layer(const LayerConfig &newConfig);
@@ -45,6 +45,10 @@ public:
 
     size_t getInputSize() const;
     size_t getOutputSize() const;
+    const Pattern &getWeights() const;
+    const Pattern &getBiases() const;
+    void setWeights(const Pattern &newWeights);
+    void setBiases(const Pattern &newBiases);
     bool isInitialized() const;
     void requireInitialized() const;
 
