@@ -30,7 +30,7 @@ size_t Layer::getOutputSize() const
 
 bool Layer::isInitialized() const
 {
-    return weights.hasShape(config.outputSize, config.inputSize)
+    return weights.hasShape({config.outputSize, config.inputSize})
            && (!config.useBias || biases.size() == config.outputSize);
 }
 
@@ -56,12 +56,12 @@ void Layer::updateWeights(const Pattern &prev_activations,
             "Layer delta size does not match layer output size.");
     }
 
-    const Patterns weightGradients = layerDelta.outer(prev_activations);
+    const Pattern weightGradients = layerDelta.outer(prev_activations);
     const auto updateValue = [this, learningRate](Scalar value, Scalar gradient) {
         return config.learningRule->updateWeight(value, gradient, learningRate);
     };
 
-    weights = weights.zipValues(weightGradients, updateValue);
+    weights = weights.zip(weightGradients, updateValue);
 
     if (config.useBias) {
         biases = biases.zipValues(layerDelta, updateValue);
@@ -85,7 +85,7 @@ Pattern Layer::weightedSum(const Pattern &input) const
         throw std::runtime_error("Input is empty");
     }
 
-    Pattern sums = weights.matVecMul(input);
+    Pattern sums = weights.matVec(input);
     return config.useBias ? sums + biases : sums;
 }
 
@@ -114,7 +114,7 @@ Pattern Layer::backwardPass(const Pattern &layerDelta,
                             const Pattern &preActivation)
 {
     requireInitialized();
-    return weights.matVecTransMul(layerDelta)
+    return weights.transposedMatVec(layerDelta)
            * activationDerivatives(preActivation);
 }
 
@@ -127,7 +127,7 @@ void Layer::naturalUpdateWeights(const Layer &l)
     std::mt19937 gen(rd());
     std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
 
-    weights = l.weights.mapValues([&dis, &gen](Scalar value) {
+    weights = l.weights.map([&dis, &gen](Scalar value) {
         return value + dis(gen);
     });
 

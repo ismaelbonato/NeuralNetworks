@@ -1,12 +1,23 @@
 #pragma once
 
 #include "base/Types.h"
+#include <cstddef>
 #include <initializer_list>
 #include <iostream>
-#include <iterator>
-#include <memory>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
+
+struct Shape
+{
+    std::vector<size_t> dimensions;
+
+    Shape() = default;
+
+    Shape(std::initializer_list<size_t> newDimensions)
+        : dimensions(newDimensions)
+    {}
+};
 
 template<typename T>
 class Tensor;
@@ -62,6 +73,8 @@ Tensor<T> operator*(const Tensor<T> &a, const Tensor<T> &b)
         throw std::runtime_error("Size mismatch in elementwise_mul.");
 
     Tensor<T> result(b.size());
+    result.dimensions = a.dimensions;
+    result.updateStrides();
 
     for (size_t i = 0; i < a.size(); ++i) {
         result[i] = a[i] * b[i];
@@ -78,6 +91,8 @@ Tensor<T> operator+(const Tensor<T> &a, const Tensor<T> &b)
         throw std::runtime_error("Size mismatch in elementwise_sum.");
 
     Tensor<T> result(a.size());
+    result.dimensions = a.dimensions;
+    result.updateStrides();
 
     for (size_t i = 0; i < a.size(); ++i) {
         result[i] = a[i] + b[i];
@@ -94,6 +109,8 @@ Tensor<T> operator-(const Tensor<T> &a, const Tensor<T> &b)
         throw std::runtime_error("Size mismatch in elementwise_sum.");
 
     Tensor<T> result(a.size());
+    result.dimensions = a.dimensions;
+    result.updateStrides();
 
     for (size_t i = 0; i < a.size(); ++i) {
         result[i] = a[i] - b[i];
@@ -124,24 +141,121 @@ public:
     Tensor() = default;
 
     explicit Tensor(size_t size, const T &value = T{})
-        : data(size, value)
-    {}
+        : data(size, value), dimensions{size}
+    {
+        updateStrides();
+    }
 
     template<typename IT>
     Tensor(IT begin, IT end)
-        : data(begin, end)
-    {}
+        : data(begin, end), dimensions{data.size()}
+    {
+        updateStrides();
+    }
 
     Tensor(const std::initializer_list<T> &init)
-        : data(init)
-    {}
+        : data(init), dimensions{init.size()}
+    {
+        updateStrides();
+    }
 
     ~Tensor() = default;
+
+    static Tensor<T> withShape(const Shape &shape, const T &value = T{})
+    {
+        if (shape.dimensions.empty()) {
+            throw std::runtime_error("Tensor shape cannot be empty.");
+        }
+
+        size_t count = 1;
+        for (const size_t dimension : shape.dimensions) {
+            if (dimension == 0) {
+                throw std::runtime_error("Tensor shape dimensions must be greater than zero.");
+            }
+            count *= dimension;
+        }
+
+        Tensor<T> result(count, value);
+        result.dimensions = shape.dimensions;
+        result.updateStrides();
+        return result;
+    }
+
+    static Tensor<T> vector(const size_t size, const T &value = T{})
+    {
+        return withShape({size}, value);
+    }
+
+    static Tensor<T> matrix(const size_t rows, const size_t cols, const T &value = T{})
+    {
+        return withShape({rows, cols}, value);
+    }
+
+    static Tensor<T> matrix(const std::initializer_list<std::initializer_list<T>> rows)
+    {
+        if (rows.size() == 0) {
+            throw std::runtime_error("Tensor matrix rows cannot be empty.");
+        }
+
+        const size_t cols = rows.begin()->size();
+        if (cols == 0) {
+            throw std::runtime_error("Tensor matrix columns cannot be empty.");
+        }
+
+        Tensor<T> result = matrix(rows.size(), cols);
+        size_t rowIndex = 0;
+        for (const auto &row : rows) {
+            if (row.size() != cols) {
+                throw std::runtime_error("Tensor matrix rows must have the same size.");
+            }
+
+            size_t colIndex = 0;
+            for (const auto &value : row) {
+                result.at({rowIndex, colIndex}) = value;
+                ++colIndex;
+            }
+            ++rowIndex;
+        }
+
+        return result;
+    }
+
+    const std::vector<size_t> &shape() const { return dimensions; }
+
+    const std::vector<size_t> &strides() const { return dimensionStrides; }
+
+    size_t rank() const { return dimensions.size(); }
+
+    size_t elementCount() const { return data.size(); }
+
+    void reshape(const Shape &shape)
+    {
+        if (shape.dimensions.empty()) {
+            throw std::runtime_error("Tensor shape cannot be empty.");
+        }
+
+        size_t count = 1;
+        for (const size_t dimension : shape.dimensions) {
+            if (dimension == 0) {
+                throw std::runtime_error("Tensor shape dimensions must be greater than zero.");
+            }
+            count *= dimension;
+        }
+
+        if (count != data.size()) {
+            throw std::runtime_error("Tensor shape does not match element count.");
+        }
+
+        dimensions = shape.dimensions;
+        updateStrides();
+    }
 
     template<typename UnaryOperation>
     Tensor<T> map(UnaryOperation operation) const
     {
         Tensor<T> result(size());
+        result.dimensions = dimensions;
+        result.updateStrides();
         for (size_t i = 0; i < size(); ++i) {
             result[i] = operation(data[i]);
         }
@@ -152,6 +266,8 @@ public:
     Tensor<T> mapValues(UnaryOperation operation) const
     {
         Tensor<T> result(size());
+        result.dimensions = dimensions;
+        result.updateStrides();
         for (size_t i = 0; i < size(); ++i) {
             if constexpr (requires { data[i].mapValues(operation); }) {
                 result[i] = data[i].mapValues(operation);
@@ -169,6 +285,8 @@ public:
             throw std::runtime_error("Size mismatch in tensor zip.");
 
         Tensor<T> result(size());
+        result.dimensions = dimensions;
+        result.updateStrides();
         for (size_t i = 0; i < size(); ++i) {
             result[i] = operation(data[i], other[i]);
         }
@@ -182,6 +300,8 @@ public:
             throw std::runtime_error("Size mismatch in tensor zip values.");
 
         Tensor<T> result(size());
+        result.dimensions = dimensions;
+        result.updateStrides();
         for (size_t i = 0; i < size(); ++i) {
             if constexpr (requires { data[i].zipValues(other[i], operation); }) {
                 result[i] = data[i].zipValues(other[i], operation);
@@ -192,27 +312,21 @@ public:
         return result;
     }
 
-    bool hasShape(const size_t outerSize, const size_t innerSize) const
+    bool hasShape(const Shape &shape) const
     {
-        if (size() != outerSize) {
-            return false;
-        }
-
-        for (const auto &item : data) {
-            if (item.size() != innerSize) {
-                return false;
-            }
-        }
-
-        return true;
+        return dimensions == shape.dimensions;
     }
 
-    void setDiagonal(Scalar value)
+    template<typename Value>
+    void setDiagonal(const Value &value)
     {
-        for (size_t i = 0; i < size(); ++i) {
-            if (i < data[i].size()) {
-                data[i][i] = value;
-            }
+        if (rank() != 2) {
+            throw std::runtime_error("Tensor diagonal requires a rank-2 tensor.");
+        }
+
+        const size_t diagonalSize = dimensions[0] < dimensions[1] ? dimensions[0] : dimensions[1];
+        for (size_t i = 0; i < diagonalSize; ++i) {
+            at({i, i}) = value;
         }
     }
 
@@ -240,107 +354,80 @@ public:
         return result;
     }
 
-    T matVecTransMul(const T &b) const
+    Tensor<T> matVec(const Tensor<T> &b) const
     {
-        if (data.empty() || data.size() != b.size())
-            throw std::runtime_error(
-                "Matrix and vector size mismatch in matvec_mul.");
-
-        auto dataSize = data.at(0).size();
-        for (const auto &row : data) {
-            if (row.size() != dataSize)
-                throw std::runtime_error(
-                    "Inconsistent row size in matrix vector multiplication.");
+        if (rank() != 2) {
+            throw std::runtime_error("Matrix-vector multiplication requires a rank-2 matrix.");
+        }
+        if (b.rank() != 1) {
+            throw std::runtime_error("Matrix-vector multiplication requires a rank-1 vector.");
         }
 
-        T result(dataSize);
-        // it makes the transposition and dot product at the same time.
-        for (size_t i = 0; i < dataSize; ++i) {
-            for (size_t j = 0; j < b.size(); ++j) {
-                result[i] += data[j][i] * b[j];
+        const size_t rows = dimensions[0];
+        const size_t cols = dimensions[1];
+        if (b.size() != cols) {
+            throw std::runtime_error("Matrix columns must match vector size.");
+        }
+
+        Tensor<T> result = Tensor<T>::withShape({rows});
+        for (size_t row = 0; row < rows; ++row) {
+            T sum = T{};
+            for (size_t col = 0; col < cols; ++col) {
+                sum += at({row, col}) * b[col];
             }
+            result[row] = sum;
         }
+
         return result;
     }
 
-    T matVecMul(const T &b) const
+    Tensor<T> transposedMatVec(const Tensor<T> &b) const
     {
-        if (data.empty() || data.at(0).size() != b.size())
+        if (rank() != 2) {
             throw std::runtime_error(
-                "Matrix and vector size mismatch in matvec_mul.");
-
-        auto rowSize = data.at(0).size();
-        for (const auto &row : data) {
-            if (row.size() != rowSize)
-                throw std::runtime_error(
-                    "Inconsistent row size in matrix vector multiplication.");
+                "Transposed matrix-vector multiplication requires a rank-2 matrix.");
+        }
+        if (b.rank() != 1) {
+            throw std::runtime_error(
+                "Transposed matrix-vector multiplication requires a rank-1 vector.");
         }
 
-        auto dataSize = data.size();
-
-        T result(dataSize);
-        for (size_t i = 0; i < dataSize; ++i) {
-            result[i] = data[i].dot(b);
+        const size_t rows = dimensions[0];
+        const size_t cols = dimensions[1];
+        if (b.size() != rows) {
+            throw std::runtime_error("Matrix rows must match vector size.");
         }
+
+        Tensor<T> result = Tensor<T>::withShape({cols});
+        for (size_t col = 0; col < cols; ++col) {
+            T sum = T{};
+            for (size_t row = 0; row < rows; ++row) {
+                sum += at({row, col}) * b[row];
+            }
+            result[col] = sum;
+        }
+
         return result;
     }
-    
 
-    Tensor<Tensor<T>> outer(const Tensor<T> &b) const
+    Tensor<T> outer(const Tensor<T> &b) const
     {
-        // Outer product: result[i][j] = this[i] * b[j]
-        Tensor<Tensor<T>> result(this->size(), Tensor<T>(b.size(), T{}));
-        for (size_t i = 0; i < this->size(); ++i) {
-            for (size_t j = 0; j < b.size(); ++j) {
-                result[i][j] = data[i] * b[j];
+        if (rank() != 1 || b.rank() != 1) {
+            throw std::runtime_error("Outer product requires rank-1 tensors.");
+        }
+
+        Tensor<T> result = Tensor<T>::withShape({size(), b.size()});
+        for (size_t row = 0; row < size(); ++row) {
+            for (size_t col = 0; col < b.size(); ++col) {
+                result.at({row, col}) = data[row] * b[col];
             }
         }
+
         return result;
     }
 
     // element wise
     Tensor<T> mul(const Tensor<T> &b) { return operator* <T>(data, b); }
-
-
-    //Matrix Multiplication
-    Tensor<T> matMul(const Tensor<T> &b)
-    {
-        // Matrix multiplication for 2D tensors (Tensor<Tensor<T>>)
-        // 'this' is assumed to be a matrix (Tensor<Tensor<T>>)
-        // 'b' is also a matrix (Tensor<Tensor<T>>)
-        // Result is a matrix of size (rows of this) x (cols of b)
-        if (this->size() == 0 || b.size() == 0)
-            throw std::runtime_error("Empty matrices in matMul.");
-
-        size_t rows = this->size();
-        size_t cols = b[0].size();
-        size_t inner = (*this)[0].size();
-
-        // Check dimensions
-        for (size_t i = 0; i < rows; ++i) {
-            if ((*this)[i].size() != inner)
-                throw std::runtime_error(
-                    "Inconsistent row size in lhs matrix.");
-        }
-        for (size_t i = 0; i < b.size(); ++i) {
-            if (b[i].size() != cols)
-                throw std::runtime_error(
-                    "Inconsistent row size in rhs matrix.");
-        }
-        if (inner != b.size())
-            throw std::runtime_error(
-                "Matrix size mismatch for multiplication.");
-
-        Tensor<Tensor<T>> result(rows, Tensor<T>(cols, T{}));
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                for (size_t k = 0; k < inner; ++k) {
-                    result[i][j] += (*this)[i][k] * b[k][j];
-                }
-            }
-        }
-        return result;
-    }
 
     typename std::vector<T>::iterator begin() { return data.begin(); }
     typename std::vector<T>::iterator end() { return data.end(); }
@@ -357,14 +444,54 @@ public:
 
     inline const T &operator[](size_t index) const { return data[index]; }
 
-    void push_back(const T &t) { return data.push_back(t); }
+    void push_back(const T &t)
+    {
+        data.push_back(t);
+        dimensions = {data.size()};
+        updateStrides();
+    }
 
-    void emplace_back(const T &t) { data.emplace_back(t); }
+    void emplace_back(const T &t)
+    {
+        data.emplace_back(t);
+        dimensions = {data.size()};
+        updateStrides();
+    }
 
     void reserve(const size_t size) { return data.reserve(size); }
 
     T &at(const size_t i) { return data.at(i); }
     const T &at(const size_t i) const { return data.at(i); }
+
+    T &at(const std::initializer_list<size_t> indices)
+    {
+        return data.at(offsetOf(indices));
+    }
+
+    const T &at(const std::initializer_list<size_t> indices) const
+    {
+        return data.at(offsetOf(indices));
+    }
+
+    size_t offsetOf(const std::initializer_list<size_t> indices) const
+    {
+        if (indices.size() != dimensions.size()) {
+            throw std::runtime_error("Tensor index rank does not match tensor rank.");
+        }
+
+        size_t offset = 0;
+        size_t axis = 0;
+        for (const size_t index : indices) {
+            if (index >= dimensions[axis]) {
+                throw std::runtime_error("Tensor index is out of bounds.");
+            }
+
+            offset += index * dimensionStrides[axis];
+            ++axis;
+        }
+
+        return offset;
+    }
 
     T &back() { return data.back(); }
     T &front() { return data.front(); }
@@ -373,10 +500,34 @@ public:
 
     bool empty() const { return data.empty(); }
 
-    inline void resize(const size_t t) { data.resize(t, T{}); }
+    inline void resize(const size_t t)
+    {
+        data.resize(t, T{});
+        dimensions = {t};
+        updateStrides();
+    }
 
-    inline void resize(const size_t t, const T &s) { data.resize(t, s); }
+    inline void resize(const size_t t, const T &s)
+    {
+        data.resize(t, s);
+        dimensions = {t};
+        updateStrides();
+    }
 
 protected:
+    void updateStrides()
+    {
+        dimensionStrides = std::vector<size_t>(dimensions.size(), 1);
+        if (dimensions.empty()) {
+            return;
+        }
+
+        for (size_t i = dimensions.size() - 1; i > 0; --i) {
+            dimensionStrides[i - 1] = dimensionStrides[i] * dimensions[i];
+        }
+    }
+
     std::vector<T> data; // Store the tensor data
+    std::vector<size_t> dimensions;
+    std::vector<size_t> dimensionStrides;
 };

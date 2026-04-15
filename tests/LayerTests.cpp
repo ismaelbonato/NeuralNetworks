@@ -39,7 +39,7 @@ void requireClose(const Scalar actual, const Scalar expected)
 TEST_CASE("dense layer without bias computes weighted sum only", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1, false);
-    layer->weights = {{1.0F, 1.0F}};
+    layer->weights = Pattern::matrix({{1.0F, 1.0F}});
     layer->biases = {10.0F};
 
     const Pattern output = layer->infer({1.0F, 1.0F});
@@ -50,7 +50,7 @@ TEST_CASE("dense layer without bias computes weighted sum only", "[layer][dense]
 TEST_CASE("dense layer clone preserves weights and biases", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->weights = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    layer->weights = Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}});
     layer->biases = {0.5F, -0.5F};
 
     auto cloned = layer->clone();
@@ -83,7 +83,7 @@ TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
 TEST_CASE("layer update rejects mismatched activation and delta sizes", "[layer][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->weights = {{0.0F, 0.0F}, {0.0F, 0.0F}};
+    layer->weights = Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}});
     layer->biases = {0.0F, 0.0F};
 
     REQUIRE_THROWS_AS(layer->updateWeights({1.0F}, {1.0F, 1.0F}, 0.1F),
