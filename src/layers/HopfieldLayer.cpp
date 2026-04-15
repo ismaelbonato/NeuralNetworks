@@ -38,16 +38,6 @@ void HopfieldLayer::updateWeights(const Pattern &pattern,
     weights.setDiagonal(Scalar{});
 }
 
-void HopfieldLayer::initWeights(Scalar value)
-{
-    if (weights.empty()) {
-        weights = Pattern::matrix(config.outputSize, config.inputSize, value);
-    }
-
-    if (biases.empty()) {
-        biases = Pattern::vector(config.inputSize, value);
-    }
-}
 
 Pattern HopfieldLayer::recall(const Pattern &input) const
 {

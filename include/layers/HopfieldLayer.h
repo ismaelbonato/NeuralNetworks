@@ -15,6 +15,5 @@ public:
     void updateWeights(const Pattern &pattern,
                        const Pattern &layerDelta,
                        Scalar learningRate = Scalar{1.0f}) override;
-    void initWeights(Scalar value = Scalar{}) override;
     Pattern recall(const Pattern &input) const;
 };

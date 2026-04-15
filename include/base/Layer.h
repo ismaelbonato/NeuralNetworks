@@ -34,6 +34,9 @@ protected:
     Pattern weights;
     Pattern biases;
 
+    virtual Shape expectedWeightShape() const;
+    virtual Shape expectedBiasShape() const;
+
 public:
 
     Layer() = delete;
@@ -41,7 +44,7 @@ public:
     virtual ~Layer();
 
     virtual std::shared_ptr<Layer> clone() const = 0;
-    virtual void initWeights(Scalar value = Scalar{}) = 0;
+    virtual void initWeights(Scalar value = Scalar{});
 
     size_t getInputSize() const;
     size_t getOutputSize() const;

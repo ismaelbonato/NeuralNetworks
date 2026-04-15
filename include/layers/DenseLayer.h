@@ -11,5 +11,4 @@ public:
     ~DenseLayer() override;
 
     std::shared_ptr<Layer> clone() const override;
-    void initWeights(Scalar value = Scalar{}) override;
 };
