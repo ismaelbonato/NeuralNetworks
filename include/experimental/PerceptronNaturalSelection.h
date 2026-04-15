@@ -18,12 +18,12 @@ public:
     PerceptronNaturalSelection(const std::shared_ptr<Layer> &newLayer);
     ~PerceptronNaturalSelection() override;
 
-    void learn(const Patterns &inputs,
-               const Patterns &labels,
+    void learn(const Batch &inputs,
+               const Batch &labels,
                Scalar learningRate = 0.1f,
                size_t epochs = 100000) override;
 
-    size_t findClosestPerceptron(const Patterns &ret, const Patterns &labels) const;
+    size_t findClosestPerceptron(const Batch &ret, const Batch &labels) const;
 };
 
 }

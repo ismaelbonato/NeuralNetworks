@@ -20,8 +20,8 @@ public:
 
     virtual void addLayer(const std::shared_ptr<Layer> &layer);
 
-    virtual void learn(const Patterns &inputs,
-                       const Patterns &labels,
+    virtual void learn(const Batch &inputs,
+                       const Batch &labels,
                        Scalar learningRate = 0.1f,
                        size_t epochs = 100000)
         = 0;

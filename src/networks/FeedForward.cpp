@@ -15,8 +15,8 @@ Feedforward::Feedforward(const std::initializer_list<std::shared_ptr<Layer>> &ne
 
 Feedforward::~Feedforward() = default;
 
-void Feedforward::learn(const Patterns &inputs,
-                        const Patterns &labels,
+void Feedforward::learn(const Batch &inputs,
+                        const Batch &labels,
                         Scalar learningRate,
                         size_t epochs)
 {
@@ -35,8 +35,8 @@ void Feedforward::learn(const Patterns &inputs,
         }
     }
 
-    activate = Patterns(numLayers() + 1);
-    preActivations = Patterns(numLayers());
+    activate = Batch(numLayers() + 1);
+    preActivations = Batch(numLayers());
     activate[0] = Pattern::vector(layers.front()->getInputSize(), 0.0f);
 
     for (size_t l = 0; l < numLayers(); ++l) {

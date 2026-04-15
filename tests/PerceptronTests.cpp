@@ -37,8 +37,8 @@ TEST_CASE("perceptron learns AND gate", "[perceptron]")
     layer->biases = {0.0F};
 
     Perceptron network(layer);
-    const Patterns inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
-    const Patterns labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
+    const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
+    const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
     network.learn(inputs, labels, 0.1F, 20);
 

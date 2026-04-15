@@ -12,8 +12,8 @@ public:
     Perceptron(const std::shared_ptr<Layer> &newLayer);
     ~Perceptron() override;
 
-    void learn(const Patterns &inputs,
-               const Patterns &labels,
+    void learn(const Batch &inputs,
+               const Batch &labels,
                Scalar learningRate = 0.1f,
                size_t epochs = 10000) override;
 
