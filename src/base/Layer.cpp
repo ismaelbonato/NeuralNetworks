@@ -1,6 +1,5 @@
 #include "base/Layer.h"
 
-#include <random>
 #include <stdexcept>
 
 bool LayerConfig::isValid() const
@@ -30,26 +29,21 @@ Shape Layer::expectedBiasShape() const
 
 void Layer::initWeights(Scalar value)
 {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<Scalar> dis(-config.weightInitScale,
-                                               config.weightInitScale);
-
     if (weights.empty()) {
         Pattern newWeights = Pattern::withShape(expectedWeightShape(), value);
 
-        if (config.initWeights) {
-            newWeights.generate([&dis, &gen]() { return dis(gen); });
+        if (config.weightInitializer) {
+            config.weightInitializer->fill(newWeights);
         }
 
         setWeights(newWeights);
     }
 
     if (config.useBias && biases.empty()) {
-        Pattern newBiases = Pattern::withShape(expectedBiasShape(), config.biasInit);
+        Pattern newBiases = Pattern::withShape(expectedBiasShape(), Scalar{});
 
-        if (config.initWeights) {
-            newBiases.generate([&dis, &gen]() { return dis(gen); });
+        if (config.biasInitializer) {
+            config.biasInitializer->fill(newBiases);
         }
 
         setBiases(newBiases);
@@ -78,7 +72,7 @@ const Pattern &Layer::getBiases() const
 
 void Layer::setWeights(const Pattern &newWeights)
 {
-    if (!newWeights.hasShape({config.outputSize, config.inputSize})) {
+    if (!newWeights.hasShape(expectedWeightShape())) {
         throw std::runtime_error("Layer weights shape does not match layer configuration.");
     }
 
@@ -87,7 +81,7 @@ void Layer::setWeights(const Pattern &newWeights)
 
 void Layer::setBiases(const Pattern &newBiases)
 {
-    if (newBiases.size() != config.outputSize) {
+    if (!newBiases.hasShape(expectedBiasShape())) {
         throw std::runtime_error("Layer bias size does not match layer output size.");
     }
 
@@ -96,8 +90,8 @@ void Layer::setBiases(const Pattern &newBiases)
 
 bool Layer::isInitialized() const
 {
-    return weights.hasShape({config.outputSize, config.inputSize})
-           && (!config.useBias || biases.size() == config.outputSize);
+    return weights.hasShape(expectedWeightShape())
+           && (!config.useBias || biases.hasShape(expectedBiasShape()));
 }
 
 void Layer::requireInitialized() const

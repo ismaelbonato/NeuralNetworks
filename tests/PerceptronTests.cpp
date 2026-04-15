@@ -21,11 +21,11 @@ std::shared_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
         .type = "DenseLayer",
         .info = "deterministic test layer",
         .useBias = true,
-        .initWeights = false,
+        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
     auto layer = std::make_shared<DenseLayer>(config);
-    layer->initWeights();
     return layer;
 }
 }

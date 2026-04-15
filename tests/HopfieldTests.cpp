@@ -21,7 +21,8 @@ std::shared_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
         .type = "HopfieldLayer",
         .info = "deterministic test layer",
         .useBias = false,
-        .initWeights = false,
+        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
     return std::make_shared<HopfieldLayer>(config);
@@ -53,7 +54,6 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 TEST_CASE("hopfield learning keeps diagonal zero and weights symmetric", "[hopfield]")
 {
     auto layer = makeHopfieldLayer(3);
-    layer->initWeights();
     Hopfield network(layer);
 
     network.learn({{1.0F, -1.0F, 1.0F}});
@@ -69,7 +69,6 @@ TEST_CASE("hopfield learning keeps diagonal zero and weights symmetric", "[hopfi
 TEST_CASE("hopfield recalls a learned pattern", "[hopfield]")
 {
     auto layer = makeHopfieldLayer(4);
-    layer->initWeights();
     Hopfield network(layer);
 
     const Pattern pattern = {1.0F, -1.0F, 1.0F, -1.0F};

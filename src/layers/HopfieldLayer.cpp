@@ -5,7 +5,9 @@
 
 HopfieldLayer::HopfieldLayer(const LayerConfig &newConfig)
     : Layer(newConfig)
-{}
+{
+    initWeights();
+}
 
 HopfieldLayer::~HopfieldLayer() = default;
 

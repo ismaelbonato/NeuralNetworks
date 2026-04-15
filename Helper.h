@@ -56,11 +56,12 @@ inline void perceptronNetwork()
         .name = "Perceptron",
         .type = "DenseLayer",
         .info = "info",
-        .useBias = true
+        .useBias = true,
+        .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0}),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
     auto l = std::make_shared<DenseLayer>(config);
-    l->initWeights();
 
     Perceptron net(l);
 
@@ -96,11 +97,11 @@ inline void perceptronNaturalSelection()
         .type = "DenseLayer",
         .info = "info",
         .useBias = true,
-        .initWeights = false
+        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
     auto l = std::make_shared<DenseLayer>(config);
-    l->initWeights();
 
     experimental::PerceptronNaturalSelection net(l);
 
@@ -158,6 +159,8 @@ inline void feedforwardExperiment()
 
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
+    auto weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
+    auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
     LayerConfig config1{
         .learningRule = rule,
@@ -167,7 +170,9 @@ inline void feedforwardExperiment()
         .name = "Input",
         .type = "DenseLayer",
         .info = "info",
-        .useBias = true
+        .useBias = true,
+        .weightInitializer = weightInitializer,
+        .biasInitializer = biasInitializer,
     };
 
     LayerConfig config2{
@@ -178,7 +183,9 @@ inline void feedforwardExperiment()
         .name = "Hidden Layer",
         .type = "DenseLayer",
         .info = "info",
-        .useBias = true
+        .useBias = true,
+        .weightInitializer = weightInitializer,
+        .biasInitializer = biasInitializer,
     };
 
     LayerConfig config3{
@@ -189,7 +196,9 @@ inline void feedforwardExperiment()
         .name = "Hidden Layer",
         .type = "DenseLayer",
         .info = "info",
-        .useBias = true
+        .useBias = true,
+        .weightInitializer = weightInitializer,
+        .biasInitializer = biasInitializer,
     };
     
     LayerConfig config4{
@@ -200,7 +209,9 @@ inline void feedforwardExperiment()
         .name = "Output",
         .type = "DenseLayer",
         .info = "info",
-        .useBias = true
+        .useBias = true,
+        .weightInitializer = weightInitializer,
+        .biasInitializer = biasInitializer,
     };
 
     auto l1 = std::make_shared<DenseLayer>(config1);
@@ -208,10 +219,6 @@ inline void feedforwardExperiment()
     auto l3 = std::make_shared<DenseLayer>(config3);
     auto l4 = std::make_shared<DenseLayer>(config4);
     
-    l1->initWeights();
-    l2->initWeights();
-    l3->initWeights();
-    l4->initWeights();
 
     Feedforward net({l1, l2, l3, l4});
 

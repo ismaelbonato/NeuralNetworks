@@ -15,7 +15,7 @@ constexpr Scalar tolerance = 0.0001F;
 
 std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
                                            const size_t outputSize,
-                                           const bool initWeights = false)
+                                           const bool randomInitialize = false)
 {
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
@@ -28,11 +28,14 @@ std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
         .type = "DenseLayer",
         .info = "deterministic test layer",
         .useBias = true,
-        .initWeights = initWeights,
     };
 
+    if (!randomInitialize) {
+        config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+        config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    }
+
     auto layer = std::make_shared<DenseLayer>(config);
-    layer->initWeights();
     return layer;
 }
 

@@ -2,6 +2,7 @@
 
 #include "Tensor.h"
 #include "base/ActivationFunction.h"
+#include "base/Initializer.h"
 #include "base/LearningRule.h"
 #include "base/Types.h"
 
@@ -20,9 +21,10 @@ struct LayerConfig
     std::string info;
 
     bool useBias = true;
-    bool initWeights = true;
-    Scalar weightInitScale = Scalar{1.0};
-    Scalar biasInit = Scalar{0.0};
+    std::shared_ptr<Initializer<Scalar>> weightInitializer =
+        std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
+    std::shared_ptr<Initializer<Scalar>> biasInitializer =
+        std::make_shared<ConstantInitializer<Scalar>>(Scalar{0.0});
 
     bool isValid() const;
 };
@@ -36,6 +38,7 @@ protected:
 
     virtual Shape expectedWeightShape() const;
     virtual Shape expectedBiasShape() const;
+    void initWeights(Scalar value = Scalar{});
 
 public:
 
@@ -44,8 +47,6 @@ public:
     virtual ~Layer();
 
     virtual std::shared_ptr<Layer> clone() const = 0;
-    virtual void initWeights(Scalar value = Scalar{});
-
     size_t getInputSize() const;
     size_t getOutputSize() const;
     const Pattern &getWeights() const;
