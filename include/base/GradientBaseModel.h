@@ -5,8 +5,8 @@
 class GradientBaseModel : public LayeredModel
 {
 protected:
-    Patterns activate;
-    Patterns preActivations;
+    Batch activate;
+    Batch preActivations;
 
 public:
     GradientBaseModel();

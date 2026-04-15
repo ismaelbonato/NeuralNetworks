@@ -14,10 +14,10 @@ class Layer; // Forward declaration
 
 using Scalar = float;
 using Pattern = Tensor<Scalar>;
-using Patterns = Tensor<Pattern>;
+using Batch = Tensor<Pattern>;
 
 //using Pattern = std::vector<Scalar>;
-//using Patterns = std::vector<Pattern>;
+//using Batch = std::vector<Pattern>;
 //using Matrix = std::vector<std::vector<Scalar>>;
 //using MatrixPattern = std::vector<Pattern>;
 

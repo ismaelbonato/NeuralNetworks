@@ -226,12 +226,12 @@ TEST_CASE("tensor maps values with a unary operation", "[tensor]")
             Pattern{1.0F, 4.0F, 9.0F});
 }
 
-TEST_CASE("tensor recursively maps nested values with a unary operation", "[tensor]")
+TEST_CASE("tensor recursively maps batch values with a unary operation", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    const Batch batch = {{1.0F, 2.0F}, {3.0F, 4.0F}};
 
-    REQUIRE(matrix.mapValues([](Scalar value) { return value * 2.0F; }) ==
-            Patterns{{2.0F, 4.0F}, {6.0F, 8.0F}});
+    REQUIRE(batch.mapValues([](Scalar value) { return value * 2.0F; }) ==
+            Batch{{2.0F, 4.0F}, {6.0F, 8.0F}});
 }
 
 TEST_CASE("tensor zips values with a binary operation", "[tensor]")
@@ -247,20 +247,20 @@ TEST_CASE("tensor zips values with a binary operation", "[tensor]")
                       std::runtime_error);
 }
 
-TEST_CASE("tensor recursively zips nested values with a binary operation", "[tensor]")
+TEST_CASE("tensor recursively zips batch values with a binary operation", "[tensor]")
 {
-    const Patterns a = {{1.0F, 2.0F}, {3.0F, 4.0F}};
-    const Patterns b = {{5.0F, 6.0F}, {7.0F, 8.0F}};
+    const Batch a = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    const Batch b = {{5.0F, 6.0F}, {7.0F, 8.0F}};
 
     REQUIRE(a.zipValues(b, [](Scalar lhs, Scalar rhs) { return lhs + rhs; }) ==
-            Patterns{{6.0F, 8.0F}, {10.0F, 12.0F}});
-    REQUIRE_THROWS_AS(a.zipValues(Patterns{{1.0F, 2.0F}}, [](Scalar lhs, Scalar rhs) {
+            Batch{{6.0F, 8.0F}, {10.0F, 12.0F}});
+    REQUIRE_THROWS_AS(a.zipValues(Batch{{1.0F, 2.0F}}, [](Scalar lhs, Scalar rhs) {
                           return lhs + rhs;
                       }),
                       std::runtime_error);
 }
 
-TEST_CASE("tensor generates values in vectors and nested matrices", "[tensor]")
+TEST_CASE("tensor generates values in vectors and batches", "[tensor]")
 {
     Pattern values(3);
     Scalar next = 1.0F;
@@ -269,12 +269,12 @@ TEST_CASE("tensor generates values in vectors and nested matrices", "[tensor]")
 
     REQUIRE(values == Pattern{1.0F, 2.0F, 3.0F});
 
-    Patterns matrix(2, Pattern(2));
+    Batch batch(2, Pattern(2));
     next = 1.0F;
 
-    matrix.generate([&next]() { return next++; });
+    batch.generate([&next]() { return next++; });
 
-    REQUIRE(matrix == Patterns{{1.0F, 2.0F}, {3.0F, 4.0F}});
+    REQUIRE(batch == Batch{{1.0F, 2.0F}, {3.0F, 4.0F}});
 }
 
 TEST_CASE("tensor reports explicit flat shape", "[tensor]")

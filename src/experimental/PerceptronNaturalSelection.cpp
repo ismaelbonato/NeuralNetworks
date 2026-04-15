@@ -14,8 +14,8 @@ PerceptronNaturalSelection::PerceptronNaturalSelection(const std::shared_ptr<Lay
 
 PerceptronNaturalSelection::~PerceptronNaturalSelection() = default;
 
-void PerceptronNaturalSelection::learn(const Patterns &inputs,
-                                       const Patterns &labels,
+void PerceptronNaturalSelection::learn(const Batch &inputs,
+                                       const Batch &labels,
                                        Scalar learningRate,
                                        size_t epochs)
 {
@@ -33,7 +33,7 @@ void PerceptronNaturalSelection::learn(const Patterns &inputs,
 
     size_t bestIdx = 0;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
-        Patterns ret(4);
+        Batch ret(4);
 
         for (size_t i = 0; i < inputs.size(); ++i) {
             ret[0].push_back(ls[0]->infer(inputs[i]).front());
@@ -53,8 +53,8 @@ void PerceptronNaturalSelection::learn(const Patterns &inputs,
     layers.front()->naturalUpdateWeights(*ls[bestIdx]);
 }
 
-size_t PerceptronNaturalSelection::findClosestPerceptron(const Patterns &ret,
-                                                         const Patterns &labels) const
+size_t PerceptronNaturalSelection::findClosestPerceptron(const Batch &ret,
+                                                         const Batch &labels) const
 {
     size_t bestIdx = 0;
     Scalar bestError = std::numeric_limits<Scalar>::max();

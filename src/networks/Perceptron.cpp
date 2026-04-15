@@ -10,8 +10,8 @@ Perceptron::Perceptron(const std::shared_ptr<Layer> &newLayer)
 
 Perceptron::~Perceptron() = default;
 
-void Perceptron::learn(const Patterns &inputs,
-                       const Patterns &labels,
+void Perceptron::learn(const Batch &inputs,
+                       const Batch &labels,
                        Scalar learningRate,
                        size_t epochs)
 {

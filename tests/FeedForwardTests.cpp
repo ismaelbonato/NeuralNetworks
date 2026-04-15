@@ -182,11 +182,11 @@ TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
 
     Feedforward network({layer});
 
-    const Patterns inputs = {{0.0F, 0.0F},
+    const Batch inputs = {{0.0F, 0.0F},
                              {0.0F, 1.0F},
                              {1.0F, 0.0F},
                              {1.0F, 1.0F}};
-    const Patterns labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
+    const Batch labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
 
     network.learn(inputs, labels, 0.5F, 5000);
 
@@ -204,11 +204,11 @@ TEST_CASE("feedforward learns AND gate", "[feedforward][learning]")
 
     Feedforward network({layer});
 
-    const Patterns inputs = {{0.0F, 0.0F},
+    const Batch inputs = {{0.0F, 0.0F},
                              {0.0F, 1.0F},
                              {1.0F, 0.0F},
                              {1.0F, 1.0F}};
-    const Patterns labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
+    const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
     network.learn(inputs, labels, 0.5F, 5000);
 

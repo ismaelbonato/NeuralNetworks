@@ -37,7 +37,7 @@ void GradientBaseModel::backpropagation(const Pattern &outputError, Scalar rate)
         throw std::runtime_error("Cannot backpropagate without layers.");
     }
 
-    Patterns layerDeltas(numLayers());
+    Batch layerDeltas(numLayers());
 
     layerDeltas.back() =
         outputError * layers.back()->activationDerivatives(preActivations.back());

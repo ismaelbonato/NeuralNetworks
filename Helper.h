@@ -39,9 +39,9 @@ inline Pattern png_to_bits(const std::string &filename)
 
 inline void perceptronNetwork()
 {
-    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    Batch inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
-    Patterns labels = {
+    Batch labels = {
         {0.0}, // 0 AND 0
         {0.0}, // 0 AND 1
         {0.0}, // 1 AND 0
@@ -78,9 +78,9 @@ inline void perceptronNetwork()
 
 inline void perceptronNaturalSelection()
 {
-    Patterns inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    Batch inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
 
-    Patterns labels = {
+    Batch labels = {
         {0.0}, // 0 AND 0
         {1.0}, // 0 AND 1
         {1.0}, // 1 AND 0
@@ -136,7 +136,7 @@ int hamming_distance(const Pattern& a, const Pattern& b) {
 
 inline void feedforwardExperiment()
 {
-    Patterns inputs;
+    Batch inputs;
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
     inputs.emplace_back(png_to_bits("../Misc/homer.png"));
@@ -147,7 +147,7 @@ inline void feedforwardExperiment()
 
     Pattern p(png_to_bits("../Misc/meg.png"));
 
-    Patterns labels = {{1.0, 0.0, 0.0, 0.0, 0.0, 0.0},  //bart
+    Batch labels = {{1.0, 0.0, 0.0, 0.0, 0.0, 0.0},  //bart
                        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0},  //homer
                        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0},  //marge
                        {0.0, 0.0, 0.0, 1.0, 0.0, 0.0},  //meg
