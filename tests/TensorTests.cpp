@@ -3,6 +3,123 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <stdexcept>
+#include <vector>
+
+TEST_CASE("tensor keeps value initializer lists as one-dimensional data", "[tensor]")
+{
+    const Pattern values = {1.0F, 2.0F, 3.0F};
+
+    REQUIRE(values.shape() == std::vector<size_t>{3});
+    REQUIRE(values.rank() == 1);
+    REQUIRE(values.elementCount() == 3);
+    REQUIRE(values == Pattern{1.0F, 2.0F, 3.0F});
+}
+
+TEST_CASE("tensor can be allocated from explicit shape", "[tensor]")
+{
+    const auto image = Tensor<Scalar>::withShape({28, 28, 3}, 1.0F);
+
+    REQUIRE(image.shape() == std::vector<size_t>{28, 28, 3});
+    REQUIRE(image.rank() == 3);
+    REQUIRE(image.strides() == std::vector<size_t>{84, 3, 1});
+    REQUIRE(image.elementCount() == 2352);
+    REQUIRE(image.size() == 2352);
+    REQUIRE(image.front() == 1.0F);
+    REQUIRE(image.back() == 1.0F);
+}
+
+TEST_CASE("tensor can be allocated as a vector", "[tensor]")
+{
+    const auto vector = Tensor<Scalar>::vector(3, 2.0F);
+
+    REQUIRE(vector.shape() == std::vector<size_t>{3});
+    REQUIRE(vector.rank() == 1);
+    REQUIRE(vector.strides() == std::vector<size_t>{1});
+    REQUIRE(vector.elementCount() == 3);
+    REQUIRE(vector == Pattern{2.0F, 2.0F, 2.0F});
+}
+
+TEST_CASE("tensor can be allocated as a matrix", "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::matrix(2, 3, 4.0F);
+
+    REQUIRE(matrix.shape() == std::vector<size_t>{2, 3});
+    REQUIRE(matrix.rank() == 2);
+    REQUIRE(matrix.strides() == std::vector<size_t>{3, 1});
+    REQUIRE(matrix.elementCount() == 6);
+    REQUIRE(matrix.at({0, 0}) == 4.0F);
+    REQUIRE(matrix.at({1, 2}) == 4.0F);
+}
+
+TEST_CASE("tensor can be allocated as a matrix from rows", "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::matrix({{1.0F, 2.0F, 3.0F},
+                                                {4.0F, 5.0F, 6.0F}});
+
+    REQUIRE(matrix.shape() == std::vector<size_t>{2, 3});
+    REQUIRE(matrix.at({0, 0}) == 1.0F);
+    REQUIRE(matrix.at({0, 2}) == 3.0F);
+    REQUIRE(matrix.at({1, 0}) == 4.0F);
+    REQUIRE(matrix.at({1, 2}) == 6.0F);
+}
+
+TEST_CASE("tensor matrix row factory rejects invalid rows", "[tensor]")
+{
+    REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({}), std::runtime_error);
+    REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({{}}), std::runtime_error);
+    REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({{1.0F, 2.0F}, {3.0F}}),
+                      std::runtime_error);
+}
+
+TEST_CASE("tensor vector and matrix factories reject empty dimensions", "[tensor]")
+{
+    REQUIRE_THROWS_AS(Tensor<Scalar>::vector(0), std::runtime_error);
+    REQUIRE_THROWS_AS(Tensor<Scalar>::matrix(0, 3), std::runtime_error);
+    REQUIRE_THROWS_AS(Tensor<Scalar>::matrix(2, 0), std::runtime_error);
+}
+
+TEST_CASE("tensor indexes shaped storage in row-major order", "[tensor]")
+{
+    auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
+
+    tensor.at({1, 2, 3}) = 42.0F;
+
+    REQUIRE(tensor.offsetOf({0, 0, 0}) == 0);
+    REQUIRE(tensor.offsetOf({0, 1, 0}) == 4);
+    REQUIRE(tensor.offsetOf({1, 0, 0}) == 12);
+    REQUIRE(tensor.offsetOf({1, 2, 3}) == 23);
+    REQUIRE(tensor.at({1, 2, 3}) == 42.0F);
+    REQUIRE(tensor[23] == 42.0F);
+}
+
+TEST_CASE("tensor rejects shaped indexes with wrong rank or bounds", "[tensor]")
+{
+    auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
+
+    REQUIRE_THROWS_AS(tensor.offsetOf({1, 2}), std::runtime_error);
+    REQUIRE_THROWS_AS(tensor.offsetOf({2, 0, 0}), std::runtime_error);
+    REQUIRE_THROWS_AS(tensor.at({0, 3, 0}), std::runtime_error);
+}
+
+TEST_CASE("tensor can reshape when element count matches", "[tensor]")
+{
+    Pattern values = {1.0F, 2.0F, 3.0F, 4.0F};
+
+    values.reshape({2, 2});
+
+    REQUIRE(values.shape() == std::vector<size_t>{2, 2});
+    REQUIRE(values.rank() == 2);
+    REQUIRE(values.elementCount() == 4);
+}
+
+TEST_CASE("tensor rejects invalid explicit shapes", "[tensor]")
+{
+    REQUIRE_THROWS_AS(Tensor<Scalar>::withShape({}), std::runtime_error);
+    REQUIRE_THROWS_AS(Tensor<Scalar>::withShape({28, 0, 3}), std::runtime_error);
+
+    Pattern values = {1.0F, 2.0F, 3.0F, 4.0F};
+    REQUIRE_THROWS_AS(values.reshape({3, 3}), std::runtime_error);
+}
 
 TEST_CASE("tensor elementwise operations reject mismatched sizes", "[tensor]")
 {
@@ -14,32 +131,91 @@ TEST_CASE("tensor elementwise operations reject mismatched sizes", "[tensor]")
     REQUIRE_THROWS_AS(a * b, std::runtime_error);
 }
 
-TEST_CASE("tensor matrix vector multiplication rejects mismatched shapes", "[tensor]")
+TEST_CASE("tensor matrix vector multiplication uses explicit shape", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    auto matrix = Tensor<Scalar>::withShape({2, 3});
+    matrix.at({0, 0}) = 1.0F;
+    matrix.at({0, 1}) = 2.0F;
+    matrix.at({0, 2}) = 3.0F;
+    matrix.at({1, 0}) = 4.0F;
+    matrix.at({1, 1}) = 5.0F;
+    matrix.at({1, 2}) = 6.0F;
 
-    REQUIRE_THROWS_AS(matrix.matVecMul({1.0F}), std::runtime_error);
+    const Pattern vector = {7.0F, 8.0F, 9.0F};
+
+    const Pattern result = matrix.matVec(vector);
+
+    REQUIRE(result == Pattern{50.0F, 122.0F});
+    REQUIRE(result.shape() == std::vector<size_t>{2});
 }
 
-TEST_CASE("tensor transposed matrix vector multiplication rejects mismatched shapes", "[tensor]")
+TEST_CASE("tensor matrix vector multiplication rejects invalid shapes", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    const auto notMatrix = Tensor<Scalar>::withShape({2, 3, 4});
+    const auto matrix = Tensor<Scalar>::withShape({2, 3});
+    const auto notVector = Tensor<Scalar>::withShape({3, 1});
+    const Pattern shortVector = {1.0F, 2.0F};
 
-    REQUIRE_THROWS_AS(matrix.matVecTransMul({1.0F}), std::runtime_error);
+    REQUIRE_THROWS_AS(notMatrix.matVec(Pattern{1.0F, 2.0F, 3.0F}),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(matrix.matVec(notVector), std::runtime_error);
+    REQUIRE_THROWS_AS(matrix.matVec(shortVector), std::runtime_error);
 }
 
-TEST_CASE("tensor matrix vector multiplication rejects ragged matrices", "[tensor]")
+TEST_CASE("tensor transposed matrix vector multiplication uses explicit shape", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F}};
+    auto matrix = Tensor<Scalar>::withShape({2, 3});
+    matrix.at({0, 0}) = 1.0F;
+    matrix.at({0, 1}) = 2.0F;
+    matrix.at({0, 2}) = 3.0F;
+    matrix.at({1, 0}) = 4.0F;
+    matrix.at({1, 1}) = 5.0F;
+    matrix.at({1, 2}) = 6.0F;
 
-    REQUIRE_THROWS_AS(matrix.matVecMul({1.0F, 2.0F}), std::runtime_error);
+    const Pattern vector = {7.0F, 8.0F};
+
+    const Pattern result = matrix.transposedMatVec(vector);
+
+    REQUIRE(result == Pattern{39.0F, 54.0F, 69.0F});
+    REQUIRE(result.shape() == std::vector<size_t>{3});
 }
 
-TEST_CASE("tensor transposed matrix vector multiplication rejects ragged matrices", "[tensor]")
+TEST_CASE("tensor transposed matrix vector multiplication rejects invalid shapes", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F}};
+    const auto notMatrix = Tensor<Scalar>::withShape({2, 3, 4});
+    const auto matrix = Tensor<Scalar>::withShape({2, 3});
+    const auto notVector = Tensor<Scalar>::withShape({2, 1});
+    const Pattern shortVector = {1.0F};
 
-    REQUIRE_THROWS_AS(matrix.matVecTransMul({1.0F, 2.0F}), std::runtime_error);
+    REQUIRE_THROWS_AS(notMatrix.transposedMatVec(Pattern{1.0F, 2.0F}),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(matrix.transposedMatVec(notVector), std::runtime_error);
+    REQUIRE_THROWS_AS(matrix.transposedMatVec(shortVector), std::runtime_error);
+}
+
+TEST_CASE("tensor outer product uses explicit shape", "[tensor]")
+{
+    const Pattern a = {1.0F, 2.0F};
+    const Pattern b = {3.0F, 4.0F, 5.0F};
+
+    const auto result = a.outer(b);
+
+    REQUIRE(result.shape() == std::vector<size_t>{2, 3});
+    REQUIRE(result.at({0, 0}) == 3.0F);
+    REQUIRE(result.at({0, 1}) == 4.0F);
+    REQUIRE(result.at({0, 2}) == 5.0F);
+    REQUIRE(result.at({1, 0}) == 6.0F);
+    REQUIRE(result.at({1, 1}) == 8.0F);
+    REQUIRE(result.at({1, 2}) == 10.0F);
+}
+
+TEST_CASE("tensor outer product rejects non-vector shapes", "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::withShape({2, 3});
+    const Pattern vector = {1.0F, 2.0F};
+
+    REQUIRE_THROWS_AS(matrix.outer(vector), std::runtime_error);
+    REQUIRE_THROWS_AS(vector.outer(matrix), std::runtime_error);
 }
 
 TEST_CASE("tensor maps values with a unary operation", "[tensor]")
@@ -101,41 +277,31 @@ TEST_CASE("tensor generates values in vectors and nested matrices", "[tensor]")
     REQUIRE(matrix == Patterns{{1.0F, 2.0F}, {3.0F, 4.0F}});
 }
 
-TEST_CASE("tensor reports nested matrix shape", "[tensor]")
+TEST_CASE("tensor reports explicit flat shape", "[tensor]")
 {
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
-    const Patterns ragged = {{1.0F, 2.0F}, {3.0F}};
+    const auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
 
-    REQUIRE(matrix.hasShape(2, 2));
-    REQUIRE_FALSE(matrix.hasShape(1, 2));
-    REQUIRE_FALSE(matrix.hasShape(2, 1));
-    REQUIRE_FALSE(ragged.hasShape(2, 2));
+    REQUIRE(tensor.hasShape({2, 3, 4}));
+    REQUIRE_FALSE(tensor.hasShape({2, 12}));
+    REQUIRE_FALSE(tensor.hasShape({24}));
 }
 
-TEST_CASE("tensor sets nested matrix diagonal", "[tensor]")
+TEST_CASE("tensor sets flat matrix diagonal", "[tensor]")
 {
-    Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
+    auto matrix = Tensor<Scalar>::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}});
 
     matrix.setDiagonal(0.0F);
 
-    REQUIRE(matrix == Patterns{{0.0F, 2.0F}, {3.0F, 0.0F}});
+    REQUIRE(matrix.at({0, 0}) == 0.0F);
+    REQUIRE(matrix.at({0, 1}) == 2.0F);
+    REQUIRE(matrix.at({1, 0}) == 3.0F);
+    REQUIRE(matrix.at({1, 1}) == 0.0F);
 }
 
-TEST_CASE("tensor computes dot product and matrix vector products", "[tensor]")
+TEST_CASE("tensor computes dot product", "[tensor]")
 {
     const Pattern a = {1.0F, 2.0F, 3.0F};
     const Pattern b = {4.0F, 5.0F, 6.0F};
-    const Patterns matrix = {{1.0F, 2.0F}, {3.0F, 4.0F}};
 
     REQUIRE(a.dot(b) == 32.0F);
-    REQUIRE(matrix.matVecMul({5.0F, 6.0F}) == Pattern{17.0F, 39.0F});
-    REQUIRE(matrix.matVecTransMul({5.0F, 6.0F}) == Pattern{23.0F, 34.0F});
-}
-
-TEST_CASE("tensor computes outer product", "[tensor]")
-{
-    const Pattern a = {1.0F, 2.0F};
-    const Pattern b = {3.0F, 4.0F, 5.0F};
-
-    REQUIRE(a.outer(b) == Patterns{{3.0F, 4.0F, 5.0F}, {6.0F, 8.0F, 10.0F}});
 }

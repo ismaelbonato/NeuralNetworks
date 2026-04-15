@@ -37,11 +37,11 @@ void Feedforward::learn(const Patterns &inputs,
 
     activate = Patterns(numLayers() + 1);
     preActivations = Patterns(numLayers());
-    activate[0] = Pattern(layers.front()->getInputSize(), 0.0f);
+    activate[0] = Pattern::vector(layers.front()->getInputSize(), 0.0f);
 
     for (size_t l = 0; l < numLayers(); ++l) {
-        activate[l + 1] = Pattern(layers[l]->getOutputSize(), 0.0f);
-        preActivations[l] = Pattern(layers[l]->getOutputSize(), 0.0f);
+        activate[l + 1] = Pattern::vector(layers[l]->getOutputSize(), 0.0f);
+        preActivations[l] = Pattern::vector(layers[l]->getOutputSize(), 0.0f);
     }
 
     std::cout << "Training feedforward Network..." << std::endl;

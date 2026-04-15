@@ -24,7 +24,7 @@ void DenseLayer::initWeights(Scalar value)
     std::uniform_real_distribution<Scalar> dis(-1.0, 1.0);
 
     if (weights.empty()) {
-        weights.resize(config.outputSize, Pattern(config.inputSize, value));
+        weights = Pattern::matrix(config.outputSize, config.inputSize, value);
 
         if (config.initWeights) {
             weights.generate([&dis, &gen]() { return dis(gen); });
@@ -32,7 +32,7 @@ void DenseLayer::initWeights(Scalar value)
     }
 
     if (config.useBias && biases.empty()) {
-        biases.resize(config.outputSize, config.biasInit);
+        biases = Pattern::vector(config.outputSize, config.biasInit);
 
         if (config.initWeights) {
             biases.generate([&dis, &gen]() { return dis(gen); });

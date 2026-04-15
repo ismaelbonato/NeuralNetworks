@@ -33,7 +33,7 @@ protected:
     LayerConfig config;
 
 public:
-    Patterns weights;
+    Pattern weights;
     Pattern biases;
 
     Layer() = delete;

@@ -33,7 +33,7 @@ std::shared_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
 TEST_CASE("perceptron learns AND gate", "[perceptron]")
 {
     auto layer = makePerceptronLayer();
-    layer->weights = {{0.0F, 0.0F}};
+    layer->weights = Pattern::matrix({{0.0F, 0.0F}});
     layer->biases = {0.0F};
 
     Perceptron network(layer);
