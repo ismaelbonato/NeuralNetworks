@@ -39,8 +39,8 @@ void requireClose(const Scalar actual, const Scalar expected)
 TEST_CASE("dense layer without bias computes weighted sum only", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1, false);
-    layer->weights = Pattern::matrix({{1.0F, 1.0F}});
-    layer->biases = {10.0F};
+    layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
+    layer->setBiases({10.0F});
 
     const Pattern output = layer->infer({1.0F, 1.0F});
 
@@ -50,13 +50,13 @@ TEST_CASE("dense layer without bias computes weighted sum only", "[layer][dense]
 TEST_CASE("dense layer clone preserves weights and biases", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->weights = Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}});
-    layer->biases = {0.5F, -0.5F};
+    layer->setWeights(Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}}));
+    layer->setBiases({0.5F, -0.5F});
 
     auto cloned = layer->clone();
 
-    REQUIRE(cloned->weights == layer->weights);
-    REQUIRE(cloned->biases == layer->biases);
+    REQUIRE(cloned->getWeights() == layer->getWeights());
+    REQUIRE(cloned->getBiases() == layer->getBiases());
 }
 
 TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
@@ -77,20 +77,34 @@ TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
     DenseLayer layer(config);
     layer.initWeights();
 
-    REQUIRE(layer.biases == Pattern{0.25F, 0.25F});
+    REQUIRE(layer.getBiases() == Pattern{0.25F, 0.25F});
 }
 
 TEST_CASE("layer update rejects mismatched activation and delta sizes", "[layer][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->weights = Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}});
-    layer->biases = {0.0F, 0.0F};
+    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}}));
+    layer->setBiases({0.0F, 0.0F});
 
     REQUIRE_THROWS_AS(layer->updateWeights({1.0F}, {1.0F, 1.0F}, 0.1F),
                       std::runtime_error);
     REQUIRE_THROWS_AS(layer->updateWeights({1.0F, 1.0F}, {1.0F}, 0.1F),
                       std::runtime_error);
 }
+TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors]")
+{
+    auto layer = makeDenseLayer(2, 2);
+
+    REQUIRE_THROWS_AS(layer->setWeights(Pattern::vector(4, 0.0F)),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(layer->setWeights(Pattern::matrix(1, 4, 0.0F)),
+                      std::runtime_error);
+    REQUIRE_THROWS_AS(layer->setBiases({0.0F}), std::runtime_error);
+
+    REQUIRE_NOTHROW(layer->setWeights(Pattern::matrix(2, 2, 0.0F)));
+    REQUIRE_NOTHROW(layer->setBiases({0.0F, 0.0F}));
+}
+
 TEST_CASE("layer reports and rejects missing initialization", "[layer][errors]")
 {
     auto layer = makeDenseLayer(2, 1);

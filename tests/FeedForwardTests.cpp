@@ -46,8 +46,8 @@ TEST_CASE("dense layer computes deterministic weighted sums and activations",
           "[feedforward][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->weights = Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}});
-    layer->biases = {0.0F, -0.5F};
+    layer->setWeights(Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}}));
+    layer->setBiases({0.0F, -0.5F});
 
     const Pattern output = layer->infer({2.0F, 1.0F});
 
@@ -58,12 +58,12 @@ TEST_CASE("dense layer computes deterministic weighted sums and activations",
 TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
 {
     auto hidden = makeDenseLayer(2, 1);
-    hidden->weights = Pattern::matrix({{1.0F, 1.0F}});
-    hidden->biases = {0.0F};
+    hidden->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
+    hidden->setBiases({0.0F});
 
     auto output = makeDenseLayer(1, 1);
-    output->weights = Pattern::matrix({{2.0F}});
-    output->biases = {-1.0F};
+    output->setWeights(Pattern::matrix({{2.0F}}));
+    output->setBiases({-1.0F});
 
     Feedforward network({hidden, output});
 
@@ -80,8 +80,8 @@ TEST_CASE("feedforward learning updates weights and biases through SGD",
 
     network.learn({{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    requireClose(layer->weights.at({0, 0}), 0.125F);
-    requireClose(layer->biases[0], 0.125F);
+    requireClose(layer->getWeights().at({0, 0}), 0.125F);
+    requireClose(layer->getBiases()[0], 0.125F);
 }
 
 TEST_CASE("feedforward inference rejects missing layers and invalid input sizes",
@@ -123,21 +123,21 @@ TEST_CASE("feedforward learning updates hidden and output layers",
           "[feedforward][learning]")
 {
     auto hidden = makeDenseLayer(2, 2);
-    hidden->weights = Pattern::matrix({{0.1F, -0.2F}, {0.3F, 0.4F}});
-    hidden->biases = {0.0F, 0.0F};
+    hidden->setWeights(Pattern::matrix({{0.1F, -0.2F}, {0.3F, 0.4F}}));
+    hidden->setBiases({0.0F, 0.0F});
 
     auto output = makeDenseLayer(2, 1);
-    output->weights = Pattern::matrix({{0.5F, -0.3F}});
-    output->biases = {0.0F};
+    output->setWeights(Pattern::matrix({{0.5F, -0.3F}}));
+    output->setBiases({0.0F});
 
-    const Scalar hiddenWeightBefore = hidden->weights.at({0, 0});
-    const Scalar outputWeightBefore = output->weights.at({0, 0});
+    const Scalar hiddenWeightBefore = hidden->getWeights().at({0, 0});
+    const Scalar outputWeightBefore = output->getWeights().at({0, 0});
 
     Feedforward network({hidden, output});
     network.learn({{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
-    REQUIRE(hidden->weights.at({0, 0}) != hiddenWeightBefore);
-    REQUIRE(output->weights.at({0, 0}) != outputWeightBefore);
+    REQUIRE(hidden->getWeights().at({0, 0}) != hiddenWeightBefore);
+    REQUIRE(output->getWeights().at({0, 0}) != outputWeightBefore);
 }
 
 TEST_CASE("feedforward learn rejects invalid training data", "[feedforward][errors]")
@@ -177,8 +177,8 @@ TEST_CASE("feedforward learn rejects wrong input and label shapes", "[feedforwar
 TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(2, 1);
-    layer->weights = Pattern::matrix({{0.0F, 0.0F}});
-    layer->biases = {0.0F};
+    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
+    layer->setBiases({0.0F});
 
     Feedforward network({layer});
 
@@ -199,8 +199,8 @@ TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
 TEST_CASE("feedforward learns AND gate", "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(2, 1);
-    layer->weights = Pattern::matrix({{0.0F, 0.0F}});
-    layer->biases = {0.0F};
+    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
+    layer->setBiases({0.0F});
 
     Feedforward network({layer});
 

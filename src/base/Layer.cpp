@@ -28,6 +28,34 @@ size_t Layer::getOutputSize() const
     return config.outputSize;
 }
 
+const Pattern &Layer::getWeights() const
+{
+    return weights;
+}
+
+const Pattern &Layer::getBiases() const
+{
+    return biases;
+}
+
+void Layer::setWeights(const Pattern &newWeights)
+{
+    if (!newWeights.hasShape({config.outputSize, config.inputSize})) {
+        throw std::runtime_error("Layer weights shape does not match layer configuration.");
+    }
+
+    weights = newWeights;
+}
+
+void Layer::setBiases(const Pattern &newBiases)
+{
+    if (newBiases.size() != config.outputSize) {
+        throw std::runtime_error("Layer bias size does not match layer output size.");
+    }
+
+    biases = newBiases;
+}
+
 bool Layer::isInitialized() const
 {
     return weights.hasShape({config.outputSize, config.inputSize})

@@ -31,9 +31,9 @@ std::shared_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
 TEST_CASE("hopfield recall updates from current state until convergence", "[hopfield]")
 {
     auto layer = makeHopfieldLayer(3);
-    layer->weights = Pattern::matrix({{-2.0F, -2.0F, -2.0F},
+    layer->setWeights(Pattern::matrix({{-2.0F, -2.0F, -2.0F},
                                       {-2.0F, -2.0F, 1.0F},
-                                      {-2.0F, -2.0F, 0.0F}});
+                                      {-2.0F, -2.0F, 0.0F}}));
 
     Hopfield network(layer);
 
@@ -58,10 +58,10 @@ TEST_CASE("hopfield learning keeps diagonal zero and weights symmetric", "[hopfi
 
     network.learn({{1.0F, -1.0F, 1.0F}});
 
-    for (size_t i = 0; i < layer->weights.shape()[0]; ++i) {
-        REQUIRE(layer->weights.at({i, i}) == 0.0F);
-        for (size_t j = 0; j < layer->weights.shape()[1]; ++j) {
-            REQUIRE(layer->weights.at({i, j}) == layer->weights.at({j, i}));
+    for (size_t i = 0; i < layer->getWeights().shape()[0]; ++i) {
+        REQUIRE(layer->getWeights().at({i, i}) == 0.0F);
+        for (size_t j = 0; j < layer->getWeights().shape()[1]; ++j) {
+            REQUIRE(layer->getWeights().at({i, j}) == layer->getWeights().at({j, i}));
         }
     }
 }
