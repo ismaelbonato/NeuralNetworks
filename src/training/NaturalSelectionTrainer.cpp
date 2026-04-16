@@ -40,6 +40,7 @@ void NaturalSelectionTrainer::learn(Model &network,
 
         const LayerParameters bestParameters = candidates[bestIdx];
         for (auto &candidate : candidates) {
+            // cppcheck-suppress useStlAlgorithm
             candidate = layer->naturalUpdatedParameters(bestParameters);
         }
     }
