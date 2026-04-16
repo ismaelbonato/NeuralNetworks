@@ -6,15 +6,13 @@
 #include "base/LearningRule.h"
 #include "layers/DenseLayer.h"
 #include "base/Types.h"
-#include "networks/FeedForward.h"
-#include "networks/Perceptron.h"
+#include "base/Model.h"
 #include <opencv2/opencv.hpp>
 
 #include "training/FeedforwardTrainer.h"
 #include "training/NaturalSelectionTrainer.h"
 #include "training/PerceptronRuleTrainer.h"
 
-#include "base/Types.h"
 
 inline Pattern png_to_bits(const std::string &filename)
 {
@@ -56,7 +54,7 @@ inline void perceptronNetwork()
         .activation = std::make_shared<SigmoidActivation<Scalar>>(),
         .inputSize =inputs.at(0).size(),
         .outputSize = labels.at(0).size(),
-        .name = "Perceptron",
+        .name = "Model",
         .type = "DenseLayer",
         .info = "info",
         .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0}),
@@ -65,12 +63,12 @@ inline void perceptronNetwork()
 
     auto l = makeLayer<DenseLayer>(config);
 
-    Perceptron net(l);
+    Model net(l);
     PerceptronRuleTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 1000);
 
-    std::cout << "Perceptron Network trained!" << std::endl;
+    std::cout << "Model Network trained!" << std::endl;
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
         std::cout << input << std::endl;
@@ -96,7 +94,7 @@ inline void perceptronNaturalSelection()
         .activation = std::make_shared<SigmoidActivation<Scalar>>(),
         .inputSize = 2,
         .outputSize = 1,
-        .name = "Perceptron",
+        .name = "Model",
         .type = "DenseLayer",
         .info = "info",
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
@@ -105,12 +103,12 @@ inline void perceptronNaturalSelection()
 
     auto l = makeLayer<DenseLayer>(config);
 
-    Perceptron net(l);
+    Model net(l);
     NaturalSelectionTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 10000);
 
-    std::cout << "Perceptron Network trained!" << std::endl;
+    std::cout << "Model Network trained!" << std::endl;
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
         std::cout << input << std::endl;
@@ -219,7 +217,7 @@ inline void feedforwardExperiment()
     auto l4 = makeLayer<DenseLayer>(config4);
     
 
-    Feedforward net({l1, l2, l3, l4});
+    Model net({l1, l2, l3, l4});
     FeedforwardTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 100000);

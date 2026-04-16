@@ -2,7 +2,7 @@
 #include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
-#include "networks/FeedForward.h"
+#include "base/Model.h"
 #include "training/FeedforwardTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -69,7 +69,7 @@ TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
     output->setWeights(Pattern::matrix({{2.0F}}));
     output->setBiases({-1.0F});
 
-    Feedforward network({hidden, output});
+    Model network({hidden, output});
 
     const Pattern prediction = network.infer({1.0F, 1.0F});
 
@@ -80,7 +80,7 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
           "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(1, 1);
-    Feedforward network({layer});
+    Model network({layer});
     FeedforwardTrainer trainer;
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
@@ -92,44 +92,34 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
 TEST_CASE("feedforward inference rejects missing layers and invalid input sizes",
           "[feedforward][errors]")
 {
-    Feedforward emptyNetwork;
+    Model emptyNetwork;
 
     REQUIRE_THROWS_AS(emptyNetwork.infer({1.0F}), std::runtime_error);
 
     auto layer = makeDenseLayer(2, 1);
-    Feedforward network({layer});
+    Model network({layer});
 
     REQUIRE_THROWS_AS(network.infer({1.0F}), std::runtime_error);
 }
 
-class InspectableFeedforward : public Feedforward
-{
-public:
-    using Feedforward::Feedforward;
-
-    size_t activationBufferSize() const { return activate.size(); }
-    size_t preActivationBufferSize() const { return preActivations.size(); }
-};
-
-TEST_CASE("feedforward trainer keeps training buffers outside the network",
+TEST_CASE("feedforward trainer can train the same model more than once",
           "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(1, 1);
-    InspectableFeedforward network({layer});
+    Model network({layer});
     FeedforwardTrainer trainer;
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    REQUIRE(network.activationBufferSize() == 0);
-    REQUIRE(network.preActivationBufferSize() == 0);
+    REQUIRE(layer->getWeights().at({0, 0}) != 0.0F);
 }
 
 TEST_CASE("feedforward trainer direct API updates weights and biases",
           "[feedforward][trainer]")
 {
     auto layer = makeDenseLayer(1, 1);
-    Feedforward network({layer});
+    Model network({layer});
     FeedforwardTrainer trainer;
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
@@ -152,7 +142,7 @@ TEST_CASE("feedforward trainer updates hidden and output layers",
     const Scalar hiddenWeightBefore = hidden->getWeights().at({0, 0});
     const Scalar outputWeightBefore = output->getWeights().at({0, 0});
 
-    Feedforward network({hidden, output});
+    Model network({hidden, output});
     FeedforwardTrainer trainer;
     trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
@@ -163,13 +153,13 @@ TEST_CASE("feedforward trainer updates hidden and output layers",
 TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][errors]")
 {
     auto layer = makeDenseLayer(1, 1);
-    Feedforward network({layer});
+    Model network({layer});
     FeedforwardTrainer trainer;
 
     REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
 
-    Feedforward emptyNetwork;
+    Model emptyNetwork;
     REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
@@ -177,7 +167,7 @@ TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][er
 TEST_CASE("feedforward trainer rejects wrong input and label shapes", "[feedforward][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
-    Feedforward network({layer});
+    Model network({layer});
     FeedforwardTrainer trainer;
 
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
@@ -202,7 +192,7 @@ TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
     layer->setBiases({0.0F});
 
-    Feedforward network({layer});
+    Model network({layer});
 
     const Batch inputs = {{0.0F, 0.0F},
                              {0.0F, 1.0F},
@@ -225,7 +215,7 @@ TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
     layer->setBiases({0.0F});
 
-    Feedforward network({layer});
+    Model network({layer});
 
     const Batch inputs = {{0.0F, 0.0F},
                              {0.0F, 1.0F},

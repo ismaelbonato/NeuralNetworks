@@ -1,14 +1,14 @@
 #include "training/FeedforwardTrainer.h"
 
 #include "base/Layer.h"
-#include "networks/FeedForward.h"
+#include "base/Model.h"
 
 #include <iostream>
 #include <stdexcept>
 
 namespace
 {
-void validateTrainingData(const Feedforward &network,
+void validateTrainingData(const Model &network,
                           const Batch &inputs,
                           const Batch &labels)
 {
@@ -30,7 +30,7 @@ void validateTrainingData(const Feedforward &network,
     }
 }
 
-void initializeTrainingBuffers(const Feedforward &network,
+void initializeTrainingBuffers(const Model &network,
                                Batch &activations,
                                Batch &preActivations)
 {
@@ -47,7 +47,7 @@ void initializeTrainingBuffers(const Feedforward &network,
     }
 }
 
-void forward(Feedforward &network,
+void forward(Model &network,
              const Pattern &input,
              Batch &activations,
              Batch &preActivations)
@@ -68,7 +68,7 @@ Pattern lossDerivative(const Pattern &output, const Pattern &target)
     return output - target;
 }
 
-void backpropagation(Feedforward &network,
+void backpropagation(Model &network,
                      const Batch &activations,
                      const Batch &preActivations,
                      const Pattern &outputError,
@@ -94,7 +94,7 @@ void backpropagation(Feedforward &network,
 }
 }
 
-void FeedforwardTrainer::learn(Feedforward &network,
+void FeedforwardTrainer::learn(Model &network,
                                const Batch &inputs,
                                const Batch &labels,
                                Scalar learningRate,

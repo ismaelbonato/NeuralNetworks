@@ -1,12 +1,12 @@
 #include "training/NaturalSelectionTrainer.h"
 
-#include "networks/Perceptron.h"
+#include "base/Model.h"
 
 #include <limits>
 #include <stdexcept>
 #include <vector>
 
-void NaturalSelectionTrainer::learn(Perceptron &network,
+void NaturalSelectionTrainer::learn(Model &network,
                                     const Batch &inputs,
                                     const Batch &labels,
                                     Scalar learningRate,

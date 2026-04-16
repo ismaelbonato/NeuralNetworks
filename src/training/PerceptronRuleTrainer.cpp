@@ -1,10 +1,18 @@
 #include "training/PerceptronRuleTrainer.h"
 
-#include "networks/Perceptron.h"
+#include "base/Model.h"
 
 #include <stdexcept>
 
-void PerceptronRuleTrainer::learn(Perceptron &network,
+namespace
+{
+Pattern computeError(const Pattern &target, const Pattern &activated)
+{
+    return Pattern{target.front() - activated.front()};
+}
+}
+
+void PerceptronRuleTrainer::learn(Model &network,
                                   const Batch &inputs,
                                   const Batch &labels,
                                   Scalar learningRate,
@@ -25,7 +33,7 @@ void PerceptronRuleTrainer::learn(Perceptron &network,
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         for (size_t i = 0; i < inputs.size(); ++i) {
             Pattern activated = network.infer(inputs[i]);
-            Pattern error = network.computeError(labels[i], activated);
+            Pattern error = computeError(labels[i], activated);
             layer->updateWeights(inputs[i], error, learningRate);
         }
     }

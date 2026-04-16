@@ -4,14 +4,14 @@
 
 #include <cstddef>
 
-class Perceptron;
+class Model;
 
-class PerceptronTrainingAlgorithm
+class SupervisedTrainer
 {
 public:
-    virtual ~PerceptronTrainingAlgorithm() = default;
+    virtual ~SupervisedTrainer() = default;
 
-    virtual void learn(Perceptron &network,
+    virtual void learn(Model &network,
                        const Batch &inputs,
                        const Batch &labels,
                        Scalar learningRate,

@@ -4,12 +4,12 @@
 
 #include <cstddef>
 
-class Feedforward;
+class Model;
 
 class FeedforwardTrainer
 {
 public:
-    void learn(Feedforward &network,
+    void learn(Model &network,
                const Batch &inputs,
                const Batch &labels,
                Scalar learningRate,
