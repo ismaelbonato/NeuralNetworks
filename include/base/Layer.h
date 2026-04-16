@@ -80,5 +80,6 @@ public:
     virtual Pattern activate(const Pattern &values) const;
 
     Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation);
-    LayerParameters naturalUpdatedParameters(const LayerParameters &parameters) const;
+    LayerParameters naturalUpdatedParameters(const LayerParameters &parameters,
+                                             Scalar mutationStrength) const;
 };

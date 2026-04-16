@@ -24,6 +24,7 @@ public:
     virtual void removeLayer(size_t index);
 
     Layers::value_type &getLayer(size_t index);
+    const Layers::value_type &getLayer(size_t index) const;
     Layers &getLayers();
     const Layers &getLayers() const;
     size_t numLayers() const;
