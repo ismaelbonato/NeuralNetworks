@@ -4,17 +4,17 @@
 
 DenseLayer::DenseLayer(const LayerConfig &newConfig)
     : Layer(newConfig)
-{
-    initWeights();
-}
+{}
 
 DenseLayer::~DenseLayer() = default;
 
-std::shared_ptr<Layer> DenseLayer::clone() const
+Shape DenseLayer::expectedWeightShape() const
 {
-    auto cloned = std::make_shared<DenseLayer>(config);
-    cloned->weights = weights;
-    cloned->biases = biases;
-    return cloned;
+    return {config.outputSize, config.inputSize};
+}
+
+Shape DenseLayer::expectedBiasShape() const
+{
+    return {config.outputSize};
 }
 

@@ -41,10 +41,6 @@ public:
         layers_.push_back(std::move(layer));
     }
 
-    void add_clone(const Layer& layer) {
-        layers_.push_back(layer.clone());
-    }
-
     std::unique_ptr<Layer>& operator[](size_t idx) { return layers_[idx]; }
     const std::unique_ptr<Layer>& operator[](size_t idx) const { return layers_[idx]; }
     size_t size() const { return layers_.size(); }

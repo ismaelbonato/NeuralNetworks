@@ -1,5 +1,6 @@
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
+#include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -12,8 +13,7 @@ namespace
 constexpr Scalar tolerance = 0.0001F;
 
 std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize,
-                                           const bool useBias = true)
+                                           const size_t outputSize)
 {
     LayerConfig config{
         .learningRule = std::make_shared<SGDRule<Scalar>>(),
@@ -23,12 +23,11 @@ std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
         .name = "test dense layer",
         .type = "DenseLayer",
         .info = "deterministic test layer",
-        .useBias = useBias,
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
-    return std::make_shared<DenseLayer>(config);
+    return makeLayer<DenseLayer>(config);
 }
 
 void requireClose(const Scalar actual, const Scalar expected)
@@ -43,34 +42,41 @@ public:
         : Layer(newConfig)
     {}
 
-    std::shared_ptr<Layer> clone() const override
+protected:
+    Shape expectedWeightShape() const override
     {
-        return std::make_shared<UninitializedLayer>(config);
+        return {config.outputSize, config.inputSize};
+    }
+
+    Shape expectedBiasShape() const override
+    {
+        return {config.outputSize};
     }
 };
 }
 
-TEST_CASE("dense layer without bias computes weighted sum only", "[layer][dense]")
+TEST_CASE("dense layer adds configured bias to weighted sum", "[layer][dense]")
 {
-    auto layer = makeDenseLayer(2, 1, false);
+    auto layer = makeDenseLayer(2, 1);
     layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
     layer->setBiases({10.0F});
 
     const Pattern output = layer->infer({1.0F, 1.0F});
 
-    requireClose(output[0], 0.880797F);
+    requireClose(output[0], 0.9999938F);
 }
 
-TEST_CASE("dense layer clone preserves weights and biases", "[layer][dense]")
+TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dense]")
 {
-    auto layer = makeDenseLayer(2, 2);
-    layer->setWeights(Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}}));
-    layer->setBiases({0.5F, -0.5F});
+    auto source = makeDenseLayer(2, 2);
+    source->setWeights(Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}}));
+    source->setBiases({0.5F, -0.5F});
 
-    auto cloned = layer->clone();
+    auto target = makeDenseLayer(2, 2);
+    target->setParameters(source->getParameters());
 
-    REQUIRE(cloned->getWeights() == layer->getWeights());
-    REQUIRE(cloned->getBiases() == layer->getBiases());
+    REQUIRE(target->getWeights() == source->getWeights());
+    REQUIRE(target->getBiases() == source->getBiases());
 }
 
 TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
@@ -83,14 +89,13 @@ TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
         .name = "bias init layer",
         .type = "DenseLayer",
         .info = "deterministic test layer",
-        .useBias = true,
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
         .biasInitializer = std::make_shared<ConstantInitializer<Scalar>>(0.25F),
     };
 
-    DenseLayer layer(config);
+    auto layer = makeLayer<DenseLayer>(config);
 
-    REQUIRE(layer.getBiases() == Pattern{0.25F, 0.25F});
+    REQUIRE(layer->getBiases() == Pattern{0.25F, 0.25F});
 }
 
 TEST_CASE("layer initializes weights through base implementation", "[layer][dense]")
@@ -112,13 +117,12 @@ TEST_CASE("layer initializes weights using configured scale", "[layer][dense]")
         .name = "scaled init layer",
         .type = "DenseLayer",
         .info = "deterministic test layer",
-        .useBias = true,
         .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F),
     };
 
-    DenseLayer layer(config);
+    auto layer = makeLayer<DenseLayer>(config);
 
-    for (const Scalar weight : layer.getWeights()) {
+    for (const Scalar weight : layer->getWeights()) {
         REQUIRE(weight >= -0.25F);
         REQUIRE(weight <= 0.25F);
     }
@@ -149,7 +153,7 @@ TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors
     REQUIRE_NOTHROW(layer->setBiases({0.0F, 0.0F}));
 }
 
-TEST_CASE("dense layer initializes during construction", "[layer][dense]")
+TEST_CASE("factory initializes dense layer", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
 
@@ -167,7 +171,6 @@ TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer
         .name = "uninitialized test layer",
         .type = "TestLayer",
         .info = "intentionally skips construction initialization",
-        .useBias = true,
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };

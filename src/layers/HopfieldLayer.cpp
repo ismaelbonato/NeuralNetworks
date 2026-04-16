@@ -5,15 +5,18 @@
 
 HopfieldLayer::HopfieldLayer(const LayerConfig &newConfig)
     : Layer(newConfig)
-{
-    initWeights();
-}
+{}
 
 HopfieldLayer::~HopfieldLayer() = default;
 
-std::shared_ptr<Layer> HopfieldLayer::clone() const
+Shape HopfieldLayer::expectedWeightShape() const
 {
-    return std::make_shared<HopfieldLayer>(config);
+    return {config.outputSize, config.inputSize};
+}
+
+Shape HopfieldLayer::expectedBiasShape() const
+{
+    return {};
 }
 
 Pattern HopfieldLayer::infer(const Pattern &input) const
