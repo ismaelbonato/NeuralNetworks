@@ -2,7 +2,7 @@
 #include "base/LayerFactory.h"
 #include "base/LearningRule.h"
 #include "layers/DenseLayer.h"
-#include "networks/Perceptron.h"
+#include "base/Model.h"
 #include "training/NaturalSelectionTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -47,13 +47,13 @@ TEST_CASE("natural selection trainer rejects invalid training data",
           "[perceptron][trainer][natural-selection][errors]")
 {
     NaturalSelectionTrainer trainer;
-    Perceptron emptyNetwork;
+    Model emptyNetwork;
 
     REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 
     auto layer = makePerceptronLayer();
-    Perceptron network(layer);
+    Model network(layer);
 
     REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {}, 0.1F, 1),

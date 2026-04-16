@@ -1,11 +1,11 @@
 #pragma once
 
-#include "training/PerceptronTrainingAlgorithm.h"
+#include "training/SupervisedTrainer.h"
 
-class PerceptronRuleTrainer : public PerceptronTrainingAlgorithm
+class PerceptronRuleTrainer : public SupervisedTrainer
 {
 public:
-    void learn(Perceptron &network,
+    void learn(Model &network,
                const Batch &inputs,
                const Batch &labels,
                Scalar learningRate,

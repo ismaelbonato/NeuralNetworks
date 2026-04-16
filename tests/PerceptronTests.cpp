@@ -2,7 +2,7 @@
 #include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
-#include "networks/Perceptron.h"
+#include "base/Model.h"
 #include "training/PerceptronRuleTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -37,7 +37,7 @@ TEST_CASE("perceptron inference uses trainer-learned AND weights", "[perceptron]
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
     layer->setBiases({0.0F});
 
-    Perceptron network(layer);
+    Model network(layer);
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
@@ -56,7 +56,7 @@ TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
     layer->setBiases({0.0F});
 
-    Perceptron network(layer);
+    Model network(layer);
     PerceptronRuleTrainer trainer;
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
@@ -72,7 +72,7 @@ TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
 TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
 {
     auto layer = makePerceptronLayer(2);
-    Perceptron network(layer);
+    Model network(layer);
 
     PerceptronRuleTrainer trainer;
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
@@ -82,14 +82,14 @@ TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
 TEST_CASE("perceptron trainer rejects invalid training data", "[perceptron][errors]")
 {
     auto layer = makePerceptronLayer();
-    Perceptron network(layer);
+    Model network(layer);
 
     PerceptronRuleTrainer trainer;
     REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
                       std::runtime_error);
 
-    Perceptron emptyNetwork;
+    Model emptyNetwork;
     REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }

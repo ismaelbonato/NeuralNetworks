@@ -3,6 +3,7 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
+#include <cstddef>
 #include <initializer_list>
 #include <memory>
 
@@ -13,11 +14,19 @@ protected:
 
 public:
     Model();
-    Model(Layers &newLayers);
-    Model(std::initializer_list<std::shared_ptr<Layer>> newLayers);
+    explicit Model(Layers &newLayers);
+    explicit Model(const std::shared_ptr<Layer> &newLayer);
+    Model(const std::initializer_list<std::shared_ptr<Layer>> &newLayers);
     virtual ~Model();
 
     virtual void addLayer(const std::shared_ptr<Layer> &layer);
+    virtual void addLayers(const std::initializer_list<std::shared_ptr<Layer>> &newLayers);
+    virtual void removeLayer(size_t index);
 
-    virtual Pattern infer(const Pattern &input) = 0;
+    Layers::value_type &getLayer(size_t index);
+    Layers &getLayers();
+    const Layers &getLayers() const;
+    size_t numLayers() const;
+
+    virtual Pattern infer(const Pattern &input);
 };

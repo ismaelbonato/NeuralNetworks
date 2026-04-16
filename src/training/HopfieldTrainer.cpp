@@ -1,10 +1,10 @@
 #include "training/HopfieldTrainer.h"
 
-#include "networks/Hopfield.h"
+#include "base/Model.h"
 
 #include <stdexcept>
 
-void HopfieldTrainer::learn(Hopfield &network,
+void HopfieldTrainer::learn(Model &network,
                             const Batch &inputs,
                             Scalar learningRate,
                             size_t epochs)
