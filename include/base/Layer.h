@@ -20,7 +20,6 @@ struct LayerConfig
     std::string type;
     std::string info;
 
-    bool useBias = true;
     std::shared_ptr<Initializer<Scalar>> weightInitializer =
         std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
     std::shared_ptr<Initializer<Scalar>> biasInitializer =
@@ -29,6 +28,15 @@ struct LayerConfig
     bool isValid() const;
 };
 
+struct LayerParameters
+{
+    Pattern weights;
+    Pattern biases;
+};
+
+template<typename LayerType>
+std::shared_ptr<LayerType> makeLayer(const LayerConfig &config);
+
 class Layer
 {
 protected:
@@ -36,9 +44,13 @@ protected:
     Pattern weights;
     Pattern biases;
 
-    virtual Shape expectedWeightShape() const;
-    virtual Shape expectedBiasShape() const;
-    void initWeights(Scalar value = Scalar{});
+    virtual Shape expectedWeightShape() const = 0;
+    virtual Shape expectedBiasShape() const = 0;
+    bool hasBias() const;
+    Pattern initializeParameter(const Shape &shape,
+                                const std::shared_ptr<Initializer<Scalar>> &initializer,
+                                Scalar fallbackValue = Scalar{});
+
 
 public:
 
@@ -46,11 +58,13 @@ public:
     Layer(const LayerConfig &newConfig);
     virtual ~Layer();
 
-    virtual std::shared_ptr<Layer> clone() const = 0;
+    void initializeParameters(Scalar value = Scalar{});
     size_t getInputSize() const;
     size_t getOutputSize() const;
     const Pattern &getWeights() const;
     const Pattern &getBiases() const;
+    LayerParameters getParameters() const;
+    void setParameters(const LayerParameters &parameters);
     void setWeights(const Pattern &newWeights);
     void setBiases(const Pattern &newBiases);
     bool isInitialized() const;
@@ -66,5 +80,5 @@ public:
     virtual Pattern activate(const Pattern &values) const;
 
     Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation);
-    void naturalUpdateWeights(const Layer &l);
+    LayerParameters naturalUpdatedParameters(const LayerParameters &parameters) const;
 };

@@ -2,6 +2,7 @@
 
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 namespace experimental
 {
@@ -25,32 +26,29 @@ void PerceptronNaturalSelection::learn(const Batch &inputs,
         throw std::runtime_error("Cannot train natural-selection perceptron without a layer.");
     }
 
-    Layers ls;
-    ls.push_back(layers.front()->clone());
-    ls.push_back(layers.front()->clone());
-    ls.push_back(layers.front()->clone());
-    ls.push_back(layers.front()->clone());
+    auto layer = layers.front();
+    std::vector<LayerParameters> candidates(4, layer->getParameters());
 
     size_t bestIdx = 0;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         Batch ret(4);
 
         for (size_t i = 0; i < inputs.size(); ++i) {
-            ret[0].push_back(ls[0]->infer(inputs[i]).front());
-            ret[1].push_back(ls[1]->infer(inputs[i]).front());
-            ret[2].push_back(ls[2]->infer(inputs[i]).front());
-            ret[3].push_back(ls[3]->infer(inputs[i]).front());
+            for (size_t candidateIdx = 0; candidateIdx < candidates.size(); ++candidateIdx) {
+                layer->setParameters(candidates[candidateIdx]);
+                ret[candidateIdx].push_back(layer->infer(inputs[i]).front());
+            }
         }
 
         bestIdx = findClosestPerceptron(ret, labels);
 
-        ls[0]->naturalUpdateWeights(*ls[bestIdx]);
-        ls[1]->naturalUpdateWeights(*ls[bestIdx]);
-        ls[2]->naturalUpdateWeights(*ls[bestIdx]);
-        ls[3]->naturalUpdateWeights(*ls[bestIdx]);
+        const LayerParameters bestParameters = candidates[bestIdx];
+        for (auto &candidate : candidates) {
+            candidate = layer->naturalUpdatedParameters(bestParameters);
+        }
     }
 
-    layers.front()->naturalUpdateWeights(*ls[bestIdx]);
+    layer->setParameters(layer->naturalUpdatedParameters(candidates[bestIdx]));
 }
 
 size_t PerceptronNaturalSelection::findClosestPerceptron(const Batch &ret,

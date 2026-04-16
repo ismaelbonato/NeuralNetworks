@@ -1,5 +1,6 @@
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
+#include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "networks/Hopfield.h"
 
@@ -20,18 +21,20 @@ std::shared_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
         .name = "test hopfield",
         .type = "HopfieldLayer",
         .info = "deterministic test layer",
-        .useBias = false,
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
-    return std::make_shared<HopfieldLayer>(config);
+    return makeLayer<HopfieldLayer>(config);
 }
 }
 
 TEST_CASE("hopfield recall updates from current state until convergence", "[hopfield]")
 {
     auto layer = makeHopfieldLayer(3);
+
+    REQUIRE(layer->getBiases().empty());
+    REQUIRE_THROWS_AS(layer->setBiases({0.0F, 0.0F, 0.0F}), std::runtime_error);
     layer->setWeights(Pattern::matrix({{-2.0F, -2.0F, -2.0F},
                                       {-2.0F, -2.0F, 1.0F},
                                       {-2.0F, -2.0F, 0.0F}}));

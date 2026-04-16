@@ -1,5 +1,6 @@
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
+#include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "networks/Perceptron.h"
 
@@ -20,12 +21,11 @@ std::shared_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
         .name = "test perceptron",
         .type = "DenseLayer",
         .info = "deterministic test layer",
-        .useBias = true,
         .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
     };
 
-    auto layer = std::make_shared<DenseLayer>(config);
+    auto layer = makeLayer<DenseLayer>(config);
     return layer;
 }
 }

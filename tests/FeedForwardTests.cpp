@@ -1,5 +1,6 @@
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
+#include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "networks/FeedForward.h"
 
@@ -27,7 +28,6 @@ std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
         .name = "test dense layer",
         .type = "DenseLayer",
         .info = "deterministic test layer",
-        .useBias = true,
     };
 
     if (!randomInitialize) {
@@ -35,7 +35,7 @@ std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
         config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     }
 
-    auto layer = std::make_shared<DenseLayer>(config);
+    auto layer = makeLayer<DenseLayer>(config);
     return layer;
 }
 

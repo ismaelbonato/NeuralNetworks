@@ -17,36 +17,36 @@ Layer::Layer(const LayerConfig &newConfig)
 
 Layer::~Layer() = default;
 
-Shape Layer::expectedWeightShape() const
+bool Layer::hasBias() const
 {
-    return {config.outputSize, config.inputSize};
+    return !expectedBiasShape().dimensions.empty();
 }
 
-Shape Layer::expectedBiasShape() const
+Pattern Layer::initializeParameter(const Shape &shape,
+                                   const std::shared_ptr<Initializer<Scalar>> &initializer,
+                                   Scalar fallbackValue)
 {
-    return {config.outputSize};
-}
+    Pattern parameter = Pattern::withShape(shape, fallbackValue);
 
-void Layer::initWeights(Scalar value)
-{
-    if (weights.empty()) {
-        Pattern newWeights = Pattern::withShape(expectedWeightShape(), value);
-
-        if (config.weightInitializer) {
-            config.weightInitializer->fill(newWeights);
-        }
-
-        setWeights(newWeights);
+    if (initializer) {
+        initializer->fill(parameter);
     }
 
-    if (config.useBias && biases.empty()) {
-        Pattern newBiases = Pattern::withShape(expectedBiasShape(), Scalar{});
+    return parameter;
+}
 
-        if (config.biasInitializer) {
-            config.biasInitializer->fill(newBiases);
-        }
+void Layer::initializeParameters(Scalar value)
+{
+    if (weights.empty()) {
+        setWeights(initializeParameter(expectedWeightShape(),
+                                       config.weightInitializer,
+                                       value));
+    }
 
-        setBiases(newBiases);
+    if (hasBias() && biases.empty()) {
+        setBiases(initializeParameter(expectedBiasShape(),
+                                      config.biasInitializer,
+                                      Scalar{}));
     }
 }
 
@@ -70,6 +70,20 @@ const Pattern &Layer::getBiases() const
     return biases;
 }
 
+LayerParameters Layer::getParameters() const
+{
+    return {
+        .weights = weights,
+        .biases = biases,
+    };
+}
+
+void Layer::setParameters(const LayerParameters &parameters)
+{
+    setWeights(parameters.weights);
+    setBiases(parameters.biases);
+}
+
 void Layer::setWeights(const Pattern &newWeights)
 {
     if (!newWeights.hasShape(expectedWeightShape())) {
@@ -81,6 +95,15 @@ void Layer::setWeights(const Pattern &newWeights)
 
 void Layer::setBiases(const Pattern &newBiases)
 {
+    if (!hasBias()) {
+        if (!newBiases.empty()) {
+            throw std::runtime_error("Layer does not use bias.");
+        }
+
+        biases = newBiases;
+        return;
+    }
+
     if (!newBiases.hasShape(expectedBiasShape())) {
         throw std::runtime_error("Layer bias size does not match layer output size.");
     }
@@ -91,7 +114,7 @@ void Layer::setBiases(const Pattern &newBiases)
 bool Layer::isInitialized() const
 {
     return weights.hasShape(expectedWeightShape())
-           && (!config.useBias || biases.hasShape(expectedBiasShape()));
+           && (!hasBias() || biases.hasShape(expectedBiasShape()));
 }
 
 void Layer::requireInitialized() const
@@ -123,7 +146,7 @@ void Layer::updateWeights(const Pattern &prev_activations,
 
     weights = weights.zip(weightGradients, updateValue);
 
-    if (config.useBias) {
+    if (hasBias()) {
         biases = biases.zipValues(layerDelta, updateValue);
     }
 }
@@ -146,7 +169,7 @@ Pattern Layer::weightedSum(const Pattern &input) const
     }
 
     Pattern sums = weights.matVec(input);
-    return config.useBias ? sums + biases : sums;
+    return hasBias() ? sums + biases : sums;
 }
 
 Pattern Layer::activationDerivatives(const Pattern &values) const
@@ -178,22 +201,24 @@ Pattern Layer::backwardPass(const Pattern &layerDelta,
            * activationDerivatives(preActivation);
 }
 
-void Layer::naturalUpdateWeights(const Layer &l)
+LayerParameters Layer::naturalUpdatedParameters(const LayerParameters &parameters) const
 {
-    requireInitialized();
-    l.requireInitialized();
-
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
 
-    weights = l.weights.map([&dis, &gen](Scalar value) {
-        return value + dis(gen);
-    });
+    LayerParameters updated{
+        .weights = parameters.weights.map([&dis, &gen](Scalar value) {
+            return value + dis(gen);
+        }),
+        .biases = parameters.biases,
+    };
 
-    if (config.useBias) {
-        biases = l.biases.mapValues([&dis, &gen](Scalar value) {
+    if (hasBias()) {
+        updated.biases = parameters.biases.mapValues([&dis, &gen](Scalar value) {
             return value + dis(gen);
         });
     }
+
+    return updated;
 }
