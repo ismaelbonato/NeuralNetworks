@@ -14,9 +14,4 @@ public:
     Feedforward(Layers &newlayers);
     Feedforward(const std::initializer_list<std::shared_ptr<Layer>> &newlayers);
     ~Feedforward() override;
-
-    void learn(const Batch &inputs,
-               const Batch &labels,
-               Scalar learningRate = 0.1f,
-               size_t epochs = 100000) override;
 };

@@ -3,7 +3,6 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
-#include <cstddef>
 #include <initializer_list>
 #include <memory>
 
@@ -19,12 +18,6 @@ public:
     virtual ~Model();
 
     virtual void addLayer(const std::shared_ptr<Layer> &layer);
-
-    virtual void learn(const Batch &inputs,
-                       const Batch &labels,
-                       Scalar learningRate = 0.1f,
-                       size_t epochs = 100000)
-        = 0;
 
     virtual Pattern infer(const Pattern &input) = 0;
 };

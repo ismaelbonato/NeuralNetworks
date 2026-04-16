@@ -3,6 +3,7 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "networks/FeedForward.h"
+#include "training/FeedforwardTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -75,13 +76,14 @@ TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
     requireClose(prediction[0], 0.6816998F);
 }
 
-TEST_CASE("feedforward learning updates weights and biases through SGD",
+TEST_CASE("feedforward trainer updates single layer through SGD",
           "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(1, 1);
     Feedforward network({layer});
+    FeedforwardTrainer trainer;
 
-    network.learn({{1.0F}}, {{1.0F}}, 1.0F, 1);
+    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     requireClose(layer->getWeights().at({0, 0}), 0.125F);
     requireClose(layer->getBiases()[0], 0.125F);
@@ -109,20 +111,34 @@ public:
     size_t preActivationBufferSize() const { return preActivations.size(); }
 };
 
-TEST_CASE("feedforward can learn more than once without growing training buffers",
+TEST_CASE("feedforward trainer keeps training buffers outside the network",
           "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(1, 1);
     InspectableFeedforward network({layer});
+    FeedforwardTrainer trainer;
 
-    network.learn({{1.0F}}, {{1.0F}}, 1.0F, 1);
-    network.learn({{1.0F}}, {{1.0F}}, 1.0F, 1);
+    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    REQUIRE(network.activationBufferSize() == 2);
-    REQUIRE(network.preActivationBufferSize() == 1);
+    REQUIRE(network.activationBufferSize() == 0);
+    REQUIRE(network.preActivationBufferSize() == 0);
 }
 
-TEST_CASE("feedforward learning updates hidden and output layers",
+TEST_CASE("feedforward trainer direct API updates weights and biases",
+          "[feedforward][trainer]")
+{
+    auto layer = makeDenseLayer(1, 1);
+    Feedforward network({layer});
+    FeedforwardTrainer trainer;
+
+    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+
+    requireClose(layer->getWeights().at({0, 0}), 0.125F);
+    requireClose(layer->getBiases()[0], 0.125F);
+}
+
+TEST_CASE("feedforward trainer updates hidden and output layers",
           "[feedforward][learning]")
 {
     auto hidden = makeDenseLayer(2, 2);
@@ -137,47 +153,50 @@ TEST_CASE("feedforward learning updates hidden and output layers",
     const Scalar outputWeightBefore = output->getWeights().at({0, 0});
 
     Feedforward network({hidden, output});
-    network.learn({{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
+    FeedforwardTrainer trainer;
+    trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
     REQUIRE(hidden->getWeights().at({0, 0}) != hiddenWeightBefore);
     REQUIRE(output->getWeights().at({0, 0}) != outputWeightBefore);
 }
 
-TEST_CASE("feedforward learn rejects invalid training data", "[feedforward][errors]")
+TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][errors]")
 {
     auto layer = makeDenseLayer(1, 1);
     Feedforward network({layer});
+    FeedforwardTrainer trainer;
 
-    REQUIRE_THROWS_AS(network.learn({}, {}, 0.1F, 1), std::runtime_error);
-    REQUIRE_THROWS_AS(network.learn({{1.0F}}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
 
     Feedforward emptyNetwork;
-    REQUIRE_THROWS_AS(emptyNetwork.learn({{1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
-TEST_CASE("feedforward learn rejects wrong input and label shapes", "[feedforward][errors]")
+TEST_CASE("feedforward trainer rejects wrong input and label shapes", "[feedforward][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
     Feedforward network({layer});
+    FeedforwardTrainer trainer;
 
-    REQUIRE_THROWS_AS(network.learn({{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}, {1.0F}},
+    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}, {1.0F}},
                                     {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     0.1F,
                                     1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(network.learn({{1.0F, 0.0F}, {0.0F, 1.0F}},
+    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     {{1.0F, 0.0F}, {1.0F}},
                                     0.1F,
                                     1),
                       std::runtime_error);
 }
 
-TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
+TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(2, 1);
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
@@ -191,7 +210,8 @@ TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
 
-    network.learn(inputs, labels, 0.5F, 5000);
+    FeedforwardTrainer trainer;
+    trainer.learn(network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F})[0] > 0.5F);
@@ -199,7 +219,7 @@ TEST_CASE("feedforward learns OR gate", "[feedforward][learning]")
     REQUIRE(network.infer({1.0F, 1.0F})[0] > 0.5F);
 }
 
-TEST_CASE("feedforward learns AND gate", "[feedforward][learning]")
+TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
 {
     auto layer = makeDenseLayer(2, 1);
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
@@ -213,7 +233,8 @@ TEST_CASE("feedforward learns AND gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    network.learn(inputs, labels, 0.5F, 5000);
+    FeedforwardTrainer trainer;
+    trainer.learn(network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F})[0] < 0.5F);

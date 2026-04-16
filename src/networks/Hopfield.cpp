@@ -10,28 +10,14 @@ Hopfield::Hopfield(const std::shared_ptr<Layer> &newLayer)
 
 Hopfield::~Hopfield() = default;
 
-void Hopfield::learn(const Batch &inputs)
+Layers &Hopfield::getLayers()
 {
-    learn(inputs, {}, 1.0f, 10000);
+    return layers;
 }
 
-void Hopfield::learn(const Batch &inputs,
-                     const Batch &labels,
-                     Scalar learningRate,
-                     size_t epochs)
+const Layers &Hopfield::getLayers() const
 {
-    (void) epochs;
-    (void) labels;
-
-    if (inputs.empty()) {
-        throw std::runtime_error("Batch is empty.");
-    }
-
-    for (auto &pattern : inputs) {
-        for (auto &layer : layers) {
-            layer->updateWeights(pattern, {}, learningRate);
-        }
-    }
+    return layers;
 }
 
 Pattern Hopfield::infer(const Pattern &input)

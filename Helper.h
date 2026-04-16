@@ -10,7 +10,9 @@
 #include "networks/Perceptron.h"
 #include <opencv2/opencv.hpp>
 
-#include "experimental/PerceptronNaturalSelection.h"
+#include "training/FeedforwardTrainer.h"
+#include "training/NaturalSelectionTrainer.h"
+#include "training/PerceptronRuleTrainer.h"
 
 #include "base/Types.h"
 
@@ -64,8 +66,9 @@ inline void perceptronNetwork()
     auto l = makeLayer<DenseLayer>(config);
 
     Perceptron net(l);
+    PerceptronRuleTrainer trainer;
 
-    net.learn(inputs, labels, Scalar{0.1f}, 1000);
+    trainer.learn(net, inputs, labels, Scalar{0.1f}, 1000);
 
     std::cout << "Perceptron Network trained!" << std::endl;
     for (const auto &input : inputs) {
@@ -102,9 +105,10 @@ inline void perceptronNaturalSelection()
 
     auto l = makeLayer<DenseLayer>(config);
 
-    experimental::PerceptronNaturalSelection net(l);
+    Perceptron net(l);
+    NaturalSelectionTrainer trainer;
 
-    net.learn(inputs, labels, Scalar{0.1f}, 10000);
+    trainer.learn(net, inputs, labels, Scalar{0.1f}, 10000);
 
     std::cout << "Perceptron Network trained!" << std::endl;
     for (const auto &input : inputs) {
@@ -216,8 +220,9 @@ inline void feedforwardExperiment()
     
 
     Feedforward net({l1, l2, l3, l4});
+    FeedforwardTrainer trainer;
 
-    net.learn(inputs, labels);
+    trainer.learn(net, inputs, labels, Scalar{0.1f}, 100000);
 
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);
