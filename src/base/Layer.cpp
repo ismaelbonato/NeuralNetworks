@@ -1,5 +1,6 @@
 #include "base/Layer.h"
 
+#include <random>
 #include <stdexcept>
 
 bool LayerConfig::isValid() const
@@ -201,11 +202,12 @@ Pattern Layer::backwardPass(const Pattern &layerDelta,
            * activationDerivatives(preActivation);
 }
 
-LayerParameters Layer::naturalUpdatedParameters(const LayerParameters &parameters) const
+LayerParameters Layer::naturalUpdatedParameters(const LayerParameters &parameters,
+                                               Scalar mutationStrength) const
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<Scalar> dis(-0.01f, 0.01f);
+    std::uniform_real_distribution<Scalar> dis(-mutationStrength, mutationStrength);
 
     LayerParameters updated{
         .weights = parameters.weights.map([&dis, &gen](Scalar value) {

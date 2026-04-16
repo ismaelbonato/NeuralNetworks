@@ -45,6 +45,14 @@ Layers::value_type &Model::getLayer(size_t index)
     return layers[index];
 }
 
+const Layers::value_type &Model::getLayer(size_t index) const
+{
+    if (index >= layers.size()) {
+        throw std::out_of_range("Layer index out of range.");
+    }
+    return layers[index];
+}
+
 Layers &Model::getLayers()
 {
     return layers;

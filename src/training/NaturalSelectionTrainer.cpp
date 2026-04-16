@@ -6,64 +6,168 @@
 #include <stdexcept>
 #include <vector>
 
+namespace
+{
+using ModelParameters = std::vector<LayerParameters>;
+
+void validateTrainingData(const Model &network,
+                          const Batch &inputs,
+                          const Batch &labels)
+{
+    if (network.numLayers() == 0) {
+        throw std::runtime_error("Cannot train natural-selection model without layers.");
+    }
+    if (inputs.empty() || inputs.size() != labels.size()) {
+        throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
+    }
+
+    const size_t expectedInputSize = network.getLayers().front()->getInputSize();
+    const size_t expectedOutputSize = network.getLayers().back()->getOutputSize();
+    for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
+        if (inputs[sampleIndex].size() != expectedInputSize) {
+            throw std::runtime_error("Training input size does not match model input size.");
+        }
+        if (labels[sampleIndex].size() != expectedOutputSize) {
+            throw std::runtime_error("Training label size does not match model output size.");
+        }
+    }
+}
+
+ModelParameters snapshotParameters(const Model &network)
+{
+    ModelParameters parameters;
+    parameters.reserve(network.numLayers());
+
+    for (const auto &layer : network.getLayers()) {
+        // cppcheck-suppress useStlAlgorithm
+        parameters.push_back(layer->getParameters());
+    }
+
+    return parameters;
+}
+
+void applyParameters(Model &network, const ModelParameters &parameters)
+{
+    if (parameters.size() != network.numLayers()) {
+        throw std::runtime_error("Candidate parameter count does not match model layers.");
+    }
+
+    for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
+        network.getLayer(layerIndex)->setParameters(parameters[layerIndex]);
+    }
+}
+
+ModelParameters mutateParameters(const Model &network,
+                                 const ModelParameters &parameters,
+                                 Scalar mutationStrength)
+{
+    if (parameters.size() != network.numLayers()) {
+        throw std::runtime_error("Candidate parameter count does not match model layers.");
+    }
+
+    ModelParameters mutatedParameters;
+    mutatedParameters.reserve(parameters.size());
+
+    for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
+        mutatedParameters.push_back(
+            network.getLayer(layerIndex)->naturalUpdatedParameters(parameters[layerIndex],
+                                                                  mutationStrength));
+    }
+
+    return mutatedParameters;
+}
+}
+
+NaturalSelectionTrainer::NaturalSelectionTrainer() = default;
+
+NaturalSelectionTrainer::NaturalSelectionTrainer(NaturalSelectionConfig newConfig)
+    : config(newConfig)
+{}
+
 void NaturalSelectionTrainer::learn(Model &network,
                                     const Batch &inputs,
                                     const Batch &labels,
                                     Scalar learningRate,
                                     size_t epochs)
 {
-    (void) learningRate;
-
-    if (network.numLayers() == 0) {
-        throw std::runtime_error("Cannot train natural-selection perceptron without a layer.");
+    validateTrainingData(network, inputs, labels);
+    if (config.populationSize == 0) {
+        throw std::runtime_error("Natural-selection population size must be greater than zero.");
     }
-    if (inputs.empty() || inputs.size() != labels.size()) {
-        throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
+    if (learningRate < Scalar{}) {
+        throw std::runtime_error("Natural-selection mutation strength cannot be negative.");
     }
 
-    auto layer = network.getLayer(0);
-    std::vector<LayerParameters> candidates(4, layer->getParameters());
+    const ModelParameters initialParameters = snapshotParameters(network);
+    std::vector<ModelParameters> candidateParameters(config.populationSize, initialParameters);
+    ModelParameters bestParameters = initialParameters;
 
-    size_t bestIdx = 0;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
-        Batch ret(candidates.size());
+        std::vector<Batch> candidatePredictions(candidateParameters.size());
 
-        for (size_t candidateIdx = 0; candidateIdx < candidates.size(); ++candidateIdx) {
-            layer->setParameters(candidates[candidateIdx]);
+        for (size_t candidateIndex = 0; candidateIndex < candidateParameters.size();
+             ++candidateIndex) {
+            applyParameters(network, candidateParameters[candidateIndex]);
 
-            for (size_t sampleIdx = 0; sampleIdx < inputs.size(); ++sampleIdx) {
-                ret[candidateIdx].push_back(network.infer(inputs[sampleIdx]).front());
+            for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
+                candidatePredictions[candidateIndex].push_back(
+                    network.infer(inputs[sampleIndex]));
             }
         }
 
-        bestIdx = findClosestPerceptron(ret, labels);
+        const size_t bestCandidateIndex = findBestCandidate(candidatePredictions, labels);
+        bestParameters = candidateParameters[bestCandidateIndex];
 
-        const LayerParameters bestParameters = candidates[bestIdx];
-        for (auto &candidate : candidates) {
-            // cppcheck-suppress useStlAlgorithm
-            candidate = layer->naturalUpdatedParameters(bestParameters);
+        std::vector<ModelParameters> nextGeneration(candidateParameters.size(), bestParameters);
+        for (size_t candidateIndex = 1; candidateIndex < nextGeneration.size();
+             ++candidateIndex) {
+            nextGeneration[candidateIndex] = mutateParameters(network,
+                                                              bestParameters,
+                                                              learningRate);
         }
+
+        candidateParameters = nextGeneration;
     }
 
-    layer->setParameters(layer->naturalUpdatedParameters(candidates[bestIdx]));
+    applyParameters(network, bestParameters);
 }
 
-size_t NaturalSelectionTrainer::findClosestPerceptron(const Batch &ret,
-                                                      const Batch &labels) const
+size_t NaturalSelectionTrainer::findBestCandidate(
+    const std::vector<Batch> &candidatePredictions,
+    const Batch &labels) const
 {
-    size_t bestIdx = 0;
-    Scalar bestError = std::numeric_limits<Scalar>::max();
+    if (candidatePredictions.empty()) {
+        throw std::runtime_error("Candidate predictions cannot be empty.");
+    }
 
-    for (size_t perceptronIdx = 0; perceptronIdx < ret.size(); ++perceptronIdx) {
-        Scalar totalError = 0.0f;
-        for (size_t sampleIdx = 0; sampleIdx < ret[perceptronIdx].size(); ++sampleIdx) {
-            Scalar diff = ret[perceptronIdx][sampleIdx] - labels[sampleIdx].front();
-            totalError += diff * diff;
+    size_t bestCandidateIndex = 0;
+    Scalar lowestSquaredError = std::numeric_limits<Scalar>::max();
+
+    for (size_t candidateIndex = 0; candidateIndex < candidatePredictions.size();
+         ++candidateIndex) {
+        if (candidatePredictions[candidateIndex].size() != labels.size()) {
+            throw std::runtime_error("Candidate prediction count does not match labels.");
         }
-        if (totalError < bestError) {
-            bestError = totalError;
-            bestIdx = perceptronIdx;
+
+        Scalar totalSquaredError = 0.0f;
+        for (size_t sampleIndex = 0; sampleIndex < candidatePredictions[candidateIndex].size();
+             ++sampleIndex) {
+            if (candidatePredictions[candidateIndex][sampleIndex].size()
+                != labels[sampleIndex].size()) {
+                throw std::runtime_error("Candidate prediction size does not match label size.");
+            }
+
+            const Pattern predictionError =
+                candidatePredictions[candidateIndex][sampleIndex] - labels[sampleIndex];
+            for (const Scalar value : predictionError) {
+                // cppcheck-suppress useStlAlgorithm
+                totalSquaredError += value * value;
+            }
+        }
+        if (totalSquaredError < lowestSquaredError) {
+            lowestSquaredError = totalSquaredError;
+            bestCandidateIndex = candidateIndex;
         }
     }
-    return bestIdx;
+    return bestCandidateIndex;
 }
