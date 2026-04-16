@@ -68,6 +68,7 @@ Pattern Model::infer(const Pattern &input)
 
     Pattern output = input;
     for (const auto &layer : layers) {
+        // cppcheck-suppress useStlAlgorithm
         output = layer->infer(output);
     }
     return output;
