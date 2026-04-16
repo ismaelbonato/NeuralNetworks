@@ -65,7 +65,7 @@ inline void perceptronNetwork()
 
     Perceptron net(l);
 
-    net.learn(inputs, labels);
+    net.learn(inputs, labels, Scalar{0.1f}, 1000);
 
     std::cout << "Perceptron Network trained!" << std::endl;
     for (const auto &input : inputs) {
@@ -83,8 +83,8 @@ inline void perceptronNaturalSelection()
 
     Batch labels = {
         {0.0}, // 0 AND 0
-        {1.0}, // 0 AND 1
-        {1.0}, // 1 AND 0
+        {0.0}, // 0 AND 1
+        {0.0}, // 1 AND 0
         {1.0}  // 1 AND 1
     };
 
@@ -104,7 +104,7 @@ inline void perceptronNaturalSelection()
 
     experimental::PerceptronNaturalSelection net(l);
 
-    net.learn(inputs, labels);
+    net.learn(inputs, labels, Scalar{0.1f}, 10000);
 
     std::cout << "Perceptron Network trained!" << std::endl;
     for (const auto &input : inputs) {

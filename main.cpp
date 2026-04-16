@@ -19,7 +19,7 @@ int main()
 
     //feedforwardExperiment();
 
-    //perceptronNaturalSelection();
+    perceptronNaturalSelection();
     
     return 0;
 }
