@@ -1,42 +1,38 @@
-#include "experimental/PerceptronNaturalSelection.h"
+#include "training/NaturalSelectionTrainer.h"
+
+#include "networks/Perceptron.h"
 
 #include <limits>
 #include <stdexcept>
 #include <vector>
 
-namespace experimental
-{
-
-PerceptronNaturalSelection::PerceptronNaturalSelection() = default;
-
-PerceptronNaturalSelection::PerceptronNaturalSelection(const std::shared_ptr<Layer> &newLayer)
-    : Perceptron(newLayer)
-{}
-
-PerceptronNaturalSelection::~PerceptronNaturalSelection() = default;
-
-void PerceptronNaturalSelection::learn(const Batch &inputs,
-                                       const Batch &labels,
-                                       Scalar learningRate,
-                                       size_t epochs)
+void NaturalSelectionTrainer::learn(Perceptron &network,
+                                    const Batch &inputs,
+                                    const Batch &labels,
+                                    Scalar learningRate,
+                                    size_t epochs)
 {
     (void) learningRate;
 
-    if (layers.empty()) {
+    if (network.numLayers() == 0) {
         throw std::runtime_error("Cannot train natural-selection perceptron without a layer.");
     }
+    if (inputs.empty() || inputs.size() != labels.size()) {
+        throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
+    }
 
-    auto layer = layers.front();
+    auto layer = network.getLayer(0);
     std::vector<LayerParameters> candidates(4, layer->getParameters());
 
     size_t bestIdx = 0;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
-        Batch ret(4);
+        Batch ret(candidates.size());
 
-        for (size_t i = 0; i < inputs.size(); ++i) {
-            for (size_t candidateIdx = 0; candidateIdx < candidates.size(); ++candidateIdx) {
-                layer->setParameters(candidates[candidateIdx]);
-                ret[candidateIdx].push_back(layer->infer(inputs[i]).front());
+        for (size_t candidateIdx = 0; candidateIdx < candidates.size(); ++candidateIdx) {
+            layer->setParameters(candidates[candidateIdx]);
+
+            for (size_t sampleIdx = 0; sampleIdx < inputs.size(); ++sampleIdx) {
+                ret[candidateIdx].push_back(network.infer(inputs[sampleIdx]).front());
             }
         }
 
@@ -51,8 +47,8 @@ void PerceptronNaturalSelection::learn(const Batch &inputs,
     layer->setParameters(layer->naturalUpdatedParameters(candidates[bestIdx]));
 }
 
-size_t PerceptronNaturalSelection::findClosestPerceptron(const Batch &ret,
-                                                         const Batch &labels) const
+size_t NaturalSelectionTrainer::findClosestPerceptron(const Batch &ret,
+                                                      const Batch &labels) const
 {
     size_t bestIdx = 0;
     Scalar bestError = std::numeric_limits<Scalar>::max();
@@ -69,6 +65,4 @@ size_t PerceptronNaturalSelection::findClosestPerceptron(const Batch &ret,
         }
     }
     return bestIdx;
-}
-
 }
