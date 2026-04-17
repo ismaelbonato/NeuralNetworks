@@ -1,6 +1,4 @@
 #include "layers/HopfieldLayer.h"
-
-#include <memory>
 #include <stdexcept>
 
 HopfieldLayer::HopfieldLayer(const LayerConfig &newConfig)

@@ -1,61 +1,42 @@
 #include "base/Model.h"
 
 #include <stdexcept>
-#include <vector>
+#include <utility>
 
 Model::Model() = default;
 
-Model::Model(Layers &newLayers)
-    : layers(newLayers)
-{}
-
-Model::Model(const std::shared_ptr<Layer> &newLayer)
-    : layers({newLayer})
-{}
-
-Model::Model(const std::initializer_list<std::shared_ptr<Layer>> &newLayers)
-    : layers(newLayers)
-{}
-
 Model::~Model() = default;
 
-void Model::addLayer(const std::shared_ptr<Layer> &layer)
+Layer &Model::addLayer(std::unique_ptr<Layer> layer)
 {
-    layers.push_back(layer);
-}
-
-void Model::addLayers(const std::initializer_list<std::shared_ptr<Layer>> &newLayers)
-{
-    layers.insert(layers.end(), newLayers.begin(), newLayers.end());
+    if (!layer) {
+        throw std::invalid_argument("Cannot add null layer to model.");
+    }
+    layers.push_back(std::move(layer));
+    return *layers.back();
 }
 
 void Model::removeLayer(size_t index)
 {
     if (index < layers.size()) {
-        layers.erase(layers.begin()
-                     + static_cast<std::vector<std::shared_ptr<Layer>>::difference_type>(index));
+        layers.erase(layers.begin() + static_cast<Layers::difference_type>(index));
     }
 }
 
-Layers::value_type &Model::getLayer(size_t index)
+Layer &Model::getLayer(size_t index)
 {
     if (index >= layers.size()) {
         throw std::out_of_range("Layer index out of range.");
     }
-    return layers[index];
+    return *layers[index];
 }
 
-const Layers::value_type &Model::getLayer(size_t index) const
+const Layer &Model::getLayer(size_t index) const
 {
     if (index >= layers.size()) {
         throw std::out_of_range("Layer index out of range.");
     }
-    return layers[index];
-}
-
-Layers &Model::getLayers()
-{
-    return layers;
+    return *layers[index];
 }
 
 const Layers &Model::getLayers() const

@@ -56,9 +56,9 @@ void forward(Model &network,
     activations[0] = current;
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        auto &layer = network.getLayer(layerIndex);
-        preActivations[layerIndex] = layer->weightedSum(current);
-        current = layer->activate(preActivations[layerIndex]);
+        const auto &layer = network.getLayer(layerIndex);
+        preActivations[layerIndex] = layer.weightedSum(current);
+        current = layer.activate(preActivations[layerIndex]);
         activations[layerIndex + 1] = current;
     }
 }
@@ -77,17 +77,17 @@ void backpropagation(Model &network,
     Batch layerDeltas(network.numLayers());
 
     layerDeltas.back() =
-        outputError * network.getLayer(network.numLayers() - 1)->activationDerivatives(
+        outputError * network.getLayer(network.numLayers() - 1).activationDerivatives(
                           preActivations.back());
 
     for (size_t layerIndex = network.numLayers() - 1; layerIndex > 0; --layerIndex) {
         layerDeltas[layerIndex - 1] =
-            network.getLayer(layerIndex)->backwardPass(layerDeltas[layerIndex],
+            network.getLayer(layerIndex).backwardPass(layerDeltas[layerIndex],
                                                        preActivations[layerIndex - 1]);
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        network.getLayer(layerIndex)->updateWeights(activations[layerIndex],
+        network.getLayer(layerIndex).updateWeights(activations[layerIndex],
                                                     layerDeltas[layerIndex],
                                                     learningRate);
     }

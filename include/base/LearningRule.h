@@ -4,11 +4,8 @@
 
 
 #include <cmath>
-#include <cstddef> // for size_t
-#include <iostream>
-#include <memory>
+#include <cstddef>
 #include <stdexcept> // for std::runtime_error
-#include <utility>   // for std::pair
 
 template<typename T>
 class LearningRule
