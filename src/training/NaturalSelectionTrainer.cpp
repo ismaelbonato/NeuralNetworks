@@ -24,10 +24,10 @@ void validateTrainingData(const Model &network,
     const size_t expectedInputSize = network.getLayers().front()->getInputSize();
     const size_t expectedOutputSize = network.getLayers().back()->getOutputSize();
     for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
-        if (inputs[sampleIndex].size() != expectedInputSize) {
+        if (inputs.at(sampleIndex).size() != expectedInputSize) {
             throw std::runtime_error("Training input size does not match model input size.");
         }
-        if (labels[sampleIndex].size() != expectedOutputSize) {
+        if (labels.at(sampleIndex).size() != expectedOutputSize) {
             throw std::runtime_error("Training label size does not match model output size.");
         }
     }
@@ -53,7 +53,7 @@ void applyParameters(Model &network, const ModelParameters &parameters)
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        network.getLayer(layerIndex).setParameters(parameters[layerIndex]);
+        network.getLayer(layerIndex).setParameters(parameters.at(layerIndex));
     }
 }
 
@@ -70,7 +70,7 @@ ModelParameters mutateParameters(const Model &network,
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
         mutatedParameters.push_back(
-            network.getLayer(layerIndex).naturalUpdatedParameters(parameters[layerIndex],
+            network.getLayer(layerIndex).naturalUpdatedParameters(parameters.at(layerIndex),
                                                                   mutationStrength));
     }
 
@@ -107,21 +107,21 @@ void NaturalSelectionTrainer::learn(Model &network,
 
         for (size_t candidateIndex = 0; candidateIndex < candidateParameters.size();
              ++candidateIndex) {
-            applyParameters(network, candidateParameters[candidateIndex]);
+            applyParameters(network, candidateParameters.at(candidateIndex));
 
             for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
-                candidatePredictions[candidateIndex].push_back(
-                    network.infer(inputs[sampleIndex]));
+                candidatePredictions.at(candidateIndex).push_back(
+                    network.infer(inputs.at(sampleIndex)));
             }
         }
 
         const size_t bestCandidateIndex = findBestCandidate(candidatePredictions, labels);
-        bestParameters = candidateParameters[bestCandidateIndex];
+        bestParameters = candidateParameters.at(bestCandidateIndex);
 
         std::vector<ModelParameters> nextGeneration(candidateParameters.size(), bestParameters);
         for (size_t candidateIndex = 1; candidateIndex < nextGeneration.size();
              ++candidateIndex) {
-            nextGeneration[candidateIndex] = mutateParameters(network,
+            nextGeneration.at(candidateIndex) = mutateParameters(network,
                                                               bestParameters,
                                                               learningRate);
         }
@@ -145,20 +145,20 @@ size_t NaturalSelectionTrainer::findBestCandidate(
 
     for (size_t candidateIndex = 0; candidateIndex < candidatePredictions.size();
          ++candidateIndex) {
-        if (candidatePredictions[candidateIndex].size() != labels.size()) {
+        if (candidatePredictions.at(candidateIndex).size() != labels.size()) {
             throw std::runtime_error("Candidate prediction count does not match labels.");
         }
 
         Scalar totalSquaredError = 0.0f;
-        for (size_t sampleIndex = 0; sampleIndex < candidatePredictions[candidateIndex].size();
+        for (size_t sampleIndex = 0; sampleIndex < candidatePredictions.at(candidateIndex).size();
              ++sampleIndex) {
-            if (candidatePredictions[candidateIndex][sampleIndex].size()
-                != labels[sampleIndex].size()) {
+            if (candidatePredictions.at(candidateIndex).at(sampleIndex).size()
+                != labels.at(sampleIndex).size()) {
                 throw std::runtime_error("Candidate prediction size does not match label size.");
             }
 
             const Pattern predictionError =
-                candidatePredictions[candidateIndex][sampleIndex] - labels[sampleIndex];
+                candidatePredictions.at(candidateIndex).at(sampleIndex) - labels.at(sampleIndex);
             for (const Scalar value : predictionError) {
                 // cppcheck-suppress useStlAlgorithm
                 totalSquaredError += value * value;

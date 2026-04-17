@@ -68,9 +68,9 @@ TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfie
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    for (size_t i = 0; i < network.getLayer(0).getWeights().shape()[0]; ++i) {
+    for (size_t i = 0; i < network.getLayer(0).getWeights().shape().at(0); ++i) {
         REQUIRE(network.getLayer(0).getWeights().at({i, i}) == 0.0F);
-        for (size_t j = 0; j < network.getLayer(0).getWeights().shape()[1]; ++j) {
+        for (size_t j = 0; j < network.getLayer(0).getWeights().shape().at(1); ++j) {
             REQUIRE(network.getLayer(0).getWeights().at({i, j}) == network.getLayer(0).getWeights().at({j, i}));
         }
     }
@@ -85,9 +85,9 @@ TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    for (size_t i = 0; i < network.getLayer(0).getWeights().shape()[0]; ++i) {
+    for (size_t i = 0; i < network.getLayer(0).getWeights().shape().at(0); ++i) {
         REQUIRE(network.getLayer(0).getWeights().at({i, i}) == 0.0F);
-        for (size_t j = 0; j < network.getLayer(0).getWeights().shape()[1]; ++j) {
+        for (size_t j = 0; j < network.getLayer(0).getWeights().shape().at(1); ++j) {
             REQUIRE(network.getLayer(0).getWeights().at({i, j}) == network.getLayer(0).getWeights().at({j, i}));
         }
     }

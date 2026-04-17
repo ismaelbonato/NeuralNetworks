@@ -32,9 +32,9 @@ void PerceptronRuleTrainer::learn(Model &network,
 
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         for (size_t i = 0; i < inputs.size(); ++i) {
-            Pattern activated = network.infer(inputs[i]);
-            Pattern error = computeError(labels[i], activated);
-            layer.updateWeights(inputs[i], error, learningRate);
+            Pattern activated = network.infer(inputs.at(i));
+            Pattern error = computeError(labels.at(i), activated);
+            layer.updateWeights(inputs.at(i), error, learningRate);
         }
     }
 }

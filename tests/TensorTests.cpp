@@ -107,7 +107,7 @@ TEST_CASE("tensor indexes shaped storage in row-major order", "[tensor]")
     REQUIRE(tensor.offsetOf({1, 0, 0}) == 12);
     REQUIRE(tensor.offsetOf({1, 2, 3}) == 23);
     REQUIRE(tensor.at({1, 2, 3}) == 42.0F);
-    REQUIRE(tensor[23] == 42.0F);
+    REQUIRE(tensor.at(23) == 42.0F);
 }
 
 TEST_CASE("tensor rejects shaped indexes with wrong rank or bounds", "[tensor]")

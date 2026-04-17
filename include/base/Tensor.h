@@ -5,7 +5,6 @@
 #include <initializer_list>
 #include <iostream>
 #include <stdexcept>
-#include <type_traits>
 #include <vector>
 
 struct Shape
@@ -304,7 +303,7 @@ public:
             throw std::runtime_error("Tensor diagonal requires a rank-2 tensor.");
         }
 
-        const size_t diagonalSize = dimensions[0] < dimensions[1] ? dimensions[0] : dimensions[1];
+        const size_t diagonalSize = dimensions.at(0) < dimensions.at(1) ? dimensions.at(0) : dimensions.at(1);
         for (size_t i = 0; i < diagonalSize; ++i) {
             at({i, i}) = value;
         }
@@ -343,8 +342,8 @@ public:
             throw std::runtime_error("Matrix-vector multiplication requires a rank-1 vector.");
         }
 
-        const size_t rows = dimensions[0];
-        const size_t cols = dimensions[1];
+        const size_t rows = dimensions.at(0);
+        const size_t cols = dimensions.at(1);
         if (b.size() != cols) {
             throw std::runtime_error("Matrix columns must match vector size.");
         }
@@ -372,8 +371,8 @@ public:
                 "Transposed matrix-vector multiplication requires a rank-1 vector.");
         }
 
-        const size_t rows = dimensions[0];
-        const size_t cols = dimensions[1];
+        const size_t rows = dimensions.at(0);
+        const size_t cols = dimensions.at(1);
         if (b.size() != rows) {
             throw std::runtime_error("Matrix rows must match vector size.");
         }
@@ -462,11 +461,11 @@ public:
         size_t offset = 0;
         size_t axis = 0;
         for (const size_t index : indices) {
-            if (index >= dimensions[axis]) {
+            if (index >= dimensions.at(axis)) {
                 throw std::runtime_error("Tensor index is out of bounds.");
             }
 
-            offset += index * dimensionStrides[axis];
+            offset += index * dimensionStrides.at(axis);
             ++axis;
         }
 

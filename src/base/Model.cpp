@@ -28,7 +28,7 @@ Layer &Model::getLayer(size_t index)
     if (index >= layers.size()) {
         throw std::out_of_range("Layer index out of range.");
     }
-    return *layers[index];
+    return *layers.at(index);
 }
 
 const Layer &Model::getLayer(size_t index) const
@@ -36,7 +36,7 @@ const Layer &Model::getLayer(size_t index) const
     if (index >= layers.size()) {
         throw std::out_of_range("Layer index out of range.");
     }
-    return *layers[index];
+    return *layers.at(index);
 }
 
 const Layers &Model::getLayers() const
