@@ -53,7 +53,7 @@ void applyParameters(Model &network, const ModelParameters &parameters)
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        network.getLayer(layerIndex)->setParameters(parameters[layerIndex]);
+        network.getLayer(layerIndex).setParameters(parameters[layerIndex]);
     }
 }
 
@@ -70,7 +70,7 @@ ModelParameters mutateParameters(const Model &network,
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
         mutatedParameters.push_back(
-            network.getLayer(layerIndex)->naturalUpdatedParameters(parameters[layerIndex],
+            network.getLayer(layerIndex).naturalUpdatedParameters(parameters[layerIndex],
                                                                   mutationStrength));
     }
 

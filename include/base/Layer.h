@@ -35,7 +35,7 @@ struct LayerParameters
 };
 
 template<typename LayerType>
-std::shared_ptr<LayerType> makeLayer(const LayerConfig &config);
+std::unique_ptr<LayerType> makeLayer(const LayerConfig &config);
 
 class Layer
 {

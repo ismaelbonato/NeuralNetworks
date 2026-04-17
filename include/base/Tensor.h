@@ -22,21 +22,6 @@ struct Shape
 template<typename T>
 class Tensor;
 
-/*
-template<typename T>
-class TensorTransposed : public Tensor<T> 
-{
-public:
-    TensorTransposed(Tensor<T> &t) : Tensor<T>(t) {}
-};
-
-template<typename T>
-TensorTransposed<T> transpose(Tensor<T> &t)
-{
-    return TensorTransposed<T>(t);
-}
-*/
-
 template<typename T>
 bool operator==(const Tensor<T> &lhs, const Tensor<T> &rhs)
 {
@@ -129,11 +114,6 @@ class Tensor
     friend Tensor<T> operator* <T>(const Tensor<T> &a, const Tensor<T> &b);
     friend Tensor<T> operator+ <T>(const Tensor<T> &a, const Tensor<T> &b);
     friend Tensor<T> operator- <T>(const Tensor<T> &a, const Tensor<T> &b);
-
-    //  friend Tensor<T> operator* <T>(const TensorTransposed<T> &a,
-    //                                 const Tensor<T> &b);
-    //  friend Tensor<T> operator* <T>(const Tensor<Tensor<T>> &a,
-    //                                 const Tensor<T> &b);
 
 public:
     using value_type = T;

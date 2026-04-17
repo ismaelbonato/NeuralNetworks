@@ -16,8 +16,8 @@ void HopfieldTrainer::learn(Model &network,
     }
 
     for (const auto &pattern : inputs) {
-        for (auto &layer : network.getLayers()) {
-            layer->updateWeights(pattern, {}, learningRate);
+        for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
+            network.getLayer(layerIndex).updateWeights(pattern, {}, learningRate);
         }
     }
 }

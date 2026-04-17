@@ -23,7 +23,7 @@ void PerceptronRuleTrainer::learn(Model &network,
     }
 
     auto &layer = network.getLayer(0);
-    if (layer->getOutputSize() != 1) {
+    if (layer.getOutputSize() != 1) {
         throw std::runtime_error("Perceptron supports exactly one output.");
     }
     if (inputs.empty() || inputs.size() != labels.size()) {
@@ -34,7 +34,7 @@ void PerceptronRuleTrainer::learn(Model &network,
         for (size_t i = 0; i < inputs.size(); ++i) {
             Pattern activated = network.infer(inputs[i]);
             Pattern error = computeError(labels[i], activated);
-            layer->updateWeights(inputs[i], error, learningRate);
+            layer.updateWeights(inputs[i], error, learningRate);
         }
     }
 }

@@ -9,6 +9,8 @@
 #include "base/Model.h"
 #include <opencv2/opencv.hpp>
 
+#include <utility>
+
 #include "training/FeedforwardTrainer.h"
 #include "training/NaturalSelectionTrainer.h"
 #include "training/PerceptronRuleTrainer.h"
@@ -63,7 +65,8 @@ inline void perceptronNetwork()
 
     auto l = makeLayer<DenseLayer>(config);
 
-    Model net(l);
+    Model net;
+    net.addLayer(std::move(l));
     PerceptronRuleTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 1000);
@@ -103,7 +106,8 @@ inline void perceptronNaturalSelection()
 
     auto l = makeLayer<DenseLayer>(config);
 
-    Model net(l);
+    Model net;
+    net.addLayer(std::move(l));
     NaturalSelectionTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 10000);
@@ -116,25 +120,6 @@ inline void perceptronNaturalSelection()
     }
         
 }
-
-/*
-
-// Compute Hamming distance between two patterns
-int hamming_distance(const Pattern& a, const Pattern& b) {
-    int dist = 0;
-    for (size_t i = 0; i < a.size(); ++i) {
-        if (a[i] != b[i]) ++dist;
-    }
-    return dist;
-}
-
-    for (size_t i = 0; i < patterns.size(); ++i) {
-        for (size_t j = i + 1; j < patterns.size(); ++j) {
-            std::cout << "Hamming(" << i << "," << j << ") = "
-                      << hamming_distance(patterns[i], patterns[j]) << std::endl;
-        }
-    }
-*/
 
 inline void feedforwardExperiment()
 {
@@ -217,7 +202,11 @@ inline void feedforwardExperiment()
     auto l4 = makeLayer<DenseLayer>(config4);
     
 
-    Model net({l1, l2, l3, l4});
+    Model net;
+    net.addLayer(std::move(l1));
+    net.addLayer(std::move(l2));
+    net.addLayer(std::move(l3));
+    net.addLayer(std::move(l4));
     FeedforwardTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 100000);

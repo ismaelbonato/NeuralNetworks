@@ -12,7 +12,7 @@ namespace
 {
 constexpr Scalar tolerance = 0.0001F;
 
-std::shared_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
+std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
                                            const size_t outputSize)
 {
     LayerConfig config{

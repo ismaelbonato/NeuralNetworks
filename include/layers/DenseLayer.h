@@ -17,5 +17,5 @@ private:
     explicit DenseLayer(const LayerConfig &newConfig);
 
     template<typename LayerType>
-    friend std::shared_ptr<LayerType> makeLayer(const LayerConfig &config);
+    friend std::unique_ptr<LayerType> makeLayer(const LayerConfig &config);
 };
