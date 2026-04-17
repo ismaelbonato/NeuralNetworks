@@ -21,10 +21,10 @@ void validateTrainingData(const Model &network,
     }
 
     for (size_t i = 0; i < inputs.size(); ++i) {
-        if (inputs[i].size() != layers.front()->getInputSize()) {
+        if (inputs.at(i).size() != layers.front()->getInputSize()) {
             throw std::runtime_error("Training input size does not match network input size.");
         }
-        if (labels[i].size() != layers.back()->getOutputSize()) {
+        if (labels.at(i).size() != layers.back()->getOutputSize()) {
             throw std::runtime_error("Training label size does not match network output size.");
         }
     }
@@ -37,13 +37,13 @@ void initializeTrainingBuffers(const Model &network,
     const Layers &layers = network.getLayers();
     activations = Batch(network.numLayers() + 1);
     preActivations = Batch(network.numLayers());
-    activations[0] = Pattern::vector(layers.front()->getInputSize(), Scalar{0});
+    activations.at(0) = Pattern::vector(layers.front()->getInputSize(), Scalar{0});
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        activations[layerIndex + 1] =
-            Pattern::vector(layers[layerIndex]->getOutputSize(), Scalar{0});
-        preActivations[layerIndex] =
-            Pattern::vector(layers[layerIndex]->getOutputSize(), Scalar{0});
+        activations.at(layerIndex + 1) =
+            Pattern::vector(layers.at(layerIndex)->getOutputSize(), Scalar{0});
+        preActivations.at(layerIndex) =
+            Pattern::vector(layers.at(layerIndex)->getOutputSize(), Scalar{0});
     }
 }
 
@@ -53,13 +53,13 @@ void forward(Model &network,
              Batch &preActivations)
 {
     Pattern current = input;
-    activations[0] = current;
+    activations.at(0) = current;
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
         const auto &layer = network.getLayer(layerIndex);
-        preActivations[layerIndex] = layer.weightedSum(current);
-        current = layer.activate(preActivations[layerIndex]);
-        activations[layerIndex + 1] = current;
+        preActivations.at(layerIndex) = layer.weightedSum(current);
+        current = layer.activate(preActivations.at(layerIndex));
+        activations.at(layerIndex + 1) = current;
     }
 }
 
@@ -81,14 +81,14 @@ void backpropagation(Model &network,
                           preActivations.back());
 
     for (size_t layerIndex = network.numLayers() - 1; layerIndex > 0; --layerIndex) {
-        layerDeltas[layerIndex - 1] =
-            network.getLayer(layerIndex).backwardPass(layerDeltas[layerIndex],
-                                                       preActivations[layerIndex - 1]);
+        layerDeltas.at(layerIndex - 1) =
+            network.getLayer(layerIndex).backwardPass(layerDeltas.at(layerIndex),
+                                                       preActivations.at(layerIndex - 1));
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        network.getLayer(layerIndex).updateWeights(activations[layerIndex],
-                                                    layerDeltas[layerIndex],
+        network.getLayer(layerIndex).updateWeights(activations.at(layerIndex),
+                                                    layerDeltas.at(layerIndex),
                                                     learningRate);
     }
 }
@@ -109,9 +109,9 @@ void FeedforwardTrainer::learn(Model &network,
     std::cout << "Training feedforward Network..." << std::endl;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
-            forward(network, inputs[sampleIndex], activations, preActivations);
+            forward(network, inputs.at(sampleIndex), activations, preActivations);
             const Pattern outputError =
-                lossDerivative(activations.back(), labels[sampleIndex]);
+                lossDerivative(activations.back(), labels.at(sampleIndex));
             backpropagation(network, activations, preActivations, outputError, learningRate);
         }
     }

@@ -56,8 +56,8 @@ TEST_CASE("dense layer computes deterministic weighted sums and activations",
 
     const Pattern output = layer->infer({2.0F, 1.0F});
 
-    requireClose(output[0], 0.7310586F);
-    requireClose(output[1], 0.7310586F);
+    requireClose(output.at(0), 0.7310586F);
+    requireClose(output.at(1), 0.7310586F);
 }
 
 TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
@@ -76,7 +76,7 @@ TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
 
     const Pattern prediction = network.infer({1.0F, 1.0F});
 
-    requireClose(prediction[0], 0.6816998F);
+    requireClose(prediction.at(0), 0.6816998F);
 }
 
 TEST_CASE("feedforward trainer updates single layer through SGD",
@@ -90,7 +90,7 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     requireClose(network.getLayer(0).getWeights().at({0, 0}), 0.125F);
-    requireClose(network.getLayer(0).getBiases()[0], 0.125F);
+    requireClose(network.getLayer(0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward inference rejects missing layers and invalid input sizes",
@@ -132,7 +132,7 @@ TEST_CASE("feedforward trainer direct API updates weights and biases",
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     requireClose(network.getLayer(0).getWeights().at({0, 0}), 0.125F);
-    requireClose(network.getLayer(0).getBiases()[0], 0.125F);
+    requireClose(network.getLayer(0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward trainer updates hidden and output layers",
@@ -215,10 +215,10 @@ TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
     FeedforwardTrainer trainer;
     trainer.learn(network, inputs, labels, 0.5F, 5000);
 
-    REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
-    REQUIRE(network.infer({0.0F, 1.0F})[0] > 0.5F);
-    REQUIRE(network.infer({1.0F, 0.0F})[0] > 0.5F);
-    REQUIRE(network.infer({1.0F, 1.0F})[0] > 0.5F);
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) > 0.5F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) > 0.5F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.5F);
 }
 
 TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
@@ -239,8 +239,8 @@ TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
     FeedforwardTrainer trainer;
     trainer.learn(network, inputs, labels, 0.5F, 5000);
 
-    REQUIRE(network.infer({0.0F, 0.0F})[0] < 0.5F);
-    REQUIRE(network.infer({0.0F, 1.0F})[0] < 0.5F);
-    REQUIRE(network.infer({1.0F, 0.0F})[0] < 0.5F);
-    REQUIRE(network.infer({1.0F, 1.0F})[0] > 0.5F);
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) < 0.5F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) < 0.5F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.5F);
 }

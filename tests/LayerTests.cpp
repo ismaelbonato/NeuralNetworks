@@ -63,7 +63,7 @@ TEST_CASE("dense layer adds configured bias to weighted sum", "[layer][dense]")
 
     const Pattern output = layer->infer({1.0F, 1.0F});
 
-    requireClose(output[0], 0.9999938F);
+    requireClose(output.at(0), 0.9999938F);
 }
 
 TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dense]")

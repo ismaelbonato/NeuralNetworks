@@ -46,10 +46,10 @@ TEST_CASE("perceptron inference uses trainer-learned AND weights", "[perceptron]
     PerceptronRuleTrainer trainer;
     trainer.learn(network, inputs, labels, 0.1F, 20);
 
-    REQUIRE(network.infer({0.0F, 0.0F})[0] == 0.0F);
-    REQUIRE(network.infer({0.0F, 1.0F})[0] == 0.0F);
-    REQUIRE(network.infer({1.0F, 0.0F})[0] == 0.0F);
-    REQUIRE(network.infer({1.0F, 1.0F})[0] == 1.0F);
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) == 1.0F);
 }
 
 TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
@@ -66,10 +66,10 @@ TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
 
     trainer.learn(network, inputs, labels, 0.1F, 20);
 
-    REQUIRE(network.infer({0.0F, 0.0F})[0] == 0.0F);
-    REQUIRE(network.infer({0.0F, 1.0F})[0] == 0.0F);
-    REQUIRE(network.infer({1.0F, 0.0F})[0] == 0.0F);
-    REQUIRE(network.infer({1.0F, 1.0F})[0] == 1.0F);
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) == 1.0F);
 }
 
 TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
