@@ -15,17 +15,16 @@ namespace
 {
 std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
 {
-    LayerConfig config{
-        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
-        .activation = std::make_shared<StepActivation<Scalar>>(),
-        .inputSize = 2,
-        .outputSize = outputSize,
-        .name = "test perceptron",
-        .type = "DenseLayer",
-        .info = "deterministic test layer",
-        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    DenseLayerConfig config;
+    config.name = "test perceptron";
+    config.type = "DenseLayer";
+    config.info = "deterministic test layer";
+    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
+    config.activation = std::make_shared<StepActivation<Scalar>>();
+    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = outputSize;
 
     auto layer = makeLayer<DenseLayer>(config);
     return layer;

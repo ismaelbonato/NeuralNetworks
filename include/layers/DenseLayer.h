@@ -3,7 +3,7 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
-class DenseLayer : public Layer
+class DenseLayer : public TrainableLayer
 {
 public:
     DenseLayer() = delete;
@@ -14,8 +14,8 @@ protected:
     Shape expectedBiasShape() const override;
 
 private:
-    explicit DenseLayer(const LayerConfig &newConfig);
+    explicit DenseLayer(const DenseLayerConfig &newConfig);
 
-    template<typename LayerType>
-    friend std::unique_ptr<LayerType> makeLayer(const LayerConfig &config);
+    template<typename LayerType, typename ConfigType>
+    friend std::unique_ptr<LayerType> makeLayer(const ConfigType &config);
 };

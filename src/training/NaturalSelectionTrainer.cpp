@@ -21,14 +21,14 @@ void validateTrainingData(const Model &network,
         throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
     }
 
-    const size_t expectedInputSize = network.getLayers().front()->getInputSize();
-    const size_t expectedOutputSize = network.getLayers().back()->getOutputSize();
+    const Shape &expectedInputShape = network.getLayers().front()->getExpectedInputShape();
+    const Shape &expectedOutputShape = network.getLayers().back()->getExpectedOutputShape();
     for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
-        if (inputs.at(sampleIndex).size() != expectedInputSize) {
-            throw std::runtime_error("Training input size does not match model input size.");
+        if (!inputs.at(sampleIndex).hasShape(expectedInputShape)) {
+            throw std::runtime_error("Training input shape does not match model input shape.");
         }
-        if (labels.at(sampleIndex).size() != expectedOutputSize) {
-            throw std::runtime_error("Training label size does not match model output size.");
+        if (!labels.at(sampleIndex).hasShape(expectedOutputShape)) {
+            throw std::runtime_error("Training label shape does not match model output shape.");
         }
     }
 }
@@ -39,8 +39,12 @@ ModelParameters snapshotParameters(const Model &network)
     parameters.reserve(network.numLayers());
 
     for (const auto &layer : network.getLayers()) {
-        // cppcheck-suppress useStlAlgorithm
-        parameters.push_back(layer->getParameters());
+        const auto *trainable = dynamic_cast<const TrainableLayer *>(layer.get());
+        if (trainable != nullptr) {
+            parameters.push_back(trainable->getParameters());
+        } else {
+            parameters.push_back({});
+        }
     }
 
     return parameters;
@@ -53,7 +57,10 @@ void applyParameters(Model &network, const ModelParameters &parameters)
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        network.getLayer(layerIndex).setParameters(parameters.at(layerIndex));
+        auto *trainable = dynamic_cast<TrainableLayer *>(&network.getLayer(layerIndex));
+        if (trainable != nullptr) {
+            trainable->setParameters(parameters.at(layerIndex));
+        }
     }
 }
 
@@ -69,9 +76,13 @@ ModelParameters mutateParameters(const Model &network,
     mutatedParameters.reserve(parameters.size());
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        mutatedParameters.push_back(
-            network.getLayer(layerIndex).naturalUpdatedParameters(parameters.at(layerIndex),
-                                                                  mutationStrength));
+        const auto *trainable = dynamic_cast<const TrainableLayer *>(&network.getLayer(layerIndex));
+        if (trainable != nullptr) {
+            mutatedParameters.push_back(
+                trainable->naturalUpdatedParameters(parameters.at(layerIndex), mutationStrength));
+        } else {
+            mutatedParameters.push_back({});
+        }
     }
 
     return mutatedParameters;
@@ -152,9 +163,9 @@ size_t NaturalSelectionTrainer::findBestCandidate(
         Scalar totalSquaredError = 0.0f;
         for (size_t sampleIndex = 0; sampleIndex < candidatePredictions.at(candidateIndex).size();
              ++sampleIndex) {
-            if (candidatePredictions.at(candidateIndex).at(sampleIndex).size()
-                != labels.at(sampleIndex).size()) {
-                throw std::runtime_error("Candidate prediction size does not match label size.");
+            if (!candidatePredictions.at(candidateIndex).at(sampleIndex)
+                     .hasShape(Shape(labels.at(sampleIndex).shape()))) {
+                throw std::runtime_error("Candidate prediction shape does not match label shape.");
             }
 
             const Pattern predictionError =

@@ -3,7 +3,7 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
-class HopfieldLayer : public Layer
+class HopfieldLayer : public TrainableLayer
 {
 public:
     HopfieldLayer() = delete;
@@ -19,8 +19,8 @@ protected:
     Shape expectedBiasShape() const override;
 
 private:
-    explicit HopfieldLayer(const LayerConfig &newConfig);
+    explicit HopfieldLayer(const HopfieldLayerConfig &newConfig);
 
-    template<typename LayerType>
-    friend std::unique_ptr<LayerType> makeLayer(const LayerConfig &config);
+    template<typename LayerType, typename ConfigType>
+    friend std::unique_ptr<LayerType> makeLayer(const ConfigType &config);
 };

@@ -114,6 +114,7 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
 
         add_executable(NetworkTests
             tests/ActivationTests.cpp
+            tests/ConvolutionGeometryTests.cpp
             tests/FeedForwardTests.cpp
             tests/HopfieldTests.cpp
             tests/LayerTests.cpp

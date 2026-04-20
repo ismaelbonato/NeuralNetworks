@@ -16,34 +16,32 @@ namespace
 {
 std::unique_ptr<DenseLayer> makePerceptronLayer()
 {
-    LayerConfig config{
-        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
-        .activation = std::make_shared<StepActivation<Scalar>>(),
-        .inputSize = 2,
-        .outputSize = 1,
-        .name = "natural selection test perceptron",
-        .type = "DenseLayer",
-        .info = "deterministic test layer",
-        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    DenseLayerConfig config;
+    config.name = "natural selection test perceptron";
+    config.type = "DenseLayer";
+    config.info = "deterministic test layer";
+    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
+    config.activation = std::make_shared<StepActivation<Scalar>>();
+    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = 1;
 
     return makeLayer<DenseLayer>(config);
 }
 
 std::unique_ptr<DenseLayer> makeMultiOutputLayer()
 {
-    LayerConfig config{
-        .learningRule = std::make_shared<SGDRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 2,
-        .outputSize = 2,
-        .name = "natural selection multi-output layer",
-        .type = "DenseLayer",
-        .info = "deterministic test layer",
-        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    DenseLayerConfig config;
+    config.name = "natural selection multi-output layer";
+    config.type = "DenseLayer";
+    config.info = "deterministic test layer";
+    config.learningRule = std::make_shared<SGDRule<Scalar>>();
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = 2;
 
     return makeLayer<DenseLayer>(config);
 }

@@ -4,6 +4,19 @@
 
 #include <stdexcept>
 
+namespace
+{
+TrainableLayer &requireTrainable(Layer &layer)
+{
+    auto *trainable = dynamic_cast<TrainableLayer *>(&layer);
+    if (trainable == nullptr) {
+        throw std::runtime_error("Hopfield training requires trainable layers.");
+    }
+
+    return *trainable;
+}
+}
+
 void HopfieldTrainer::learn(Model &network,
                             const Batch &inputs,
                             Scalar learningRate,
@@ -17,7 +30,7 @@ void HopfieldTrainer::learn(Model &network,
 
     for (const auto &pattern : inputs) {
         for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-            network.getLayer(layerIndex).updateWeights(pattern, {}, learningRate);
+            requireTrainable(network.getLayer(layerIndex)).updateWeights(pattern, {}, learningRate);
         }
     }
 }

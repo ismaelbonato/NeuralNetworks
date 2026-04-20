@@ -1,15 +1,27 @@
 #include "layers/HopfieldLayer.h"
 #include <stdexcept>
 
-HopfieldLayer::HopfieldLayer(const LayerConfig &newConfig)
-    : Layer(newConfig)
-{}
+namespace
+{
+Shape hopfieldShape(const HopfieldLayerConfig &config)
+{
+    return config.expectedShape.isValid() ? config.expectedShape : Shape{config.size};
+}
+}
+
+HopfieldLayer::HopfieldLayer(const HopfieldLayerConfig &newConfig)
+    : TrainableLayer(newConfig, hopfieldShape(newConfig), hopfieldShape(newConfig))
+{
+    if (!newConfig.isValid()) {
+        throw std::invalid_argument("Invalid hopfield layer configuration");
+    }
+}
 
 HopfieldLayer::~HopfieldLayer() = default;
 
 Shape HopfieldLayer::expectedWeightShape() const
 {
-    return {config.outputSize, config.inputSize};
+    return {getOutputSize(), getInputSize()};
 }
 
 Shape HopfieldLayer::expectedBiasShape() const
@@ -26,9 +38,12 @@ void HopfieldLayer::updateWeights(const Pattern &pattern,
                                   const Pattern &,
                                   Scalar learningRate)
 {
-    size_t n = pattern.size();
-    if (n != config.inputSize || n != config.outputSize) {
+    const size_t n = pattern.size();
+    if (n != getInputSize() || n != getOutputSize()) {
         throw std::runtime_error("Pattern size does not match Hopfield layer size.");
+    }
+    if (!pattern.hasShape(getExpectedInputShape())) {
+        throw std::runtime_error("Pattern shape does not match Hopfield layer shape.");
     }
 
     Pattern weightGradients = pattern.outer(pattern);
@@ -36,7 +51,7 @@ void HopfieldLayer::updateWeights(const Pattern &pattern,
 
     weights = weights.zip(weightGradients, [this, learningRate](Scalar weight,
                                                                       Scalar gradient) {
-        return config.learningRule->updateWeight(weight, gradient, learningRate);
+        return trainableConfig.learningRule->updateWeight(weight, gradient, learningRate);
     });
     weights.setDiagonal(Scalar{});
 }
@@ -44,8 +59,8 @@ void HopfieldLayer::updateWeights(const Pattern &pattern,
 
 Pattern HopfieldLayer::recall(const Pattern &input) const
 {
-    if (input.size() != config.inputSize) {
-        throw std::runtime_error("Input size does not match Hopfield layer size.");
+    if (!input.hasShape(getExpectedInputShape())) {
+        throw std::runtime_error("Input shape does not match Hopfield layer shape.");
     }
 
     Pattern state = input;

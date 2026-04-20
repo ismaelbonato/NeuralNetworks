@@ -10,6 +10,16 @@ Pattern computeError(const Pattern &target, const Pattern &activated)
 {
     return Pattern{target.front() - activated.front()};
 }
+
+TrainableLayer &requireTrainable(Layer &layer)
+{
+    auto *trainable = dynamic_cast<TrainableLayer *>(&layer);
+    if (trainable == nullptr) {
+        throw std::runtime_error("Perceptron training requires a trainable layer.");
+    }
+
+    return *trainable;
+}
 }
 
 void PerceptronRuleTrainer::learn(Model &network,
@@ -22,7 +32,7 @@ void PerceptronRuleTrainer::learn(Model &network,
         throw std::runtime_error("Cannot train perceptron without a layer.");
     }
 
-    auto &layer = network.getLayer(0);
+    auto &layer = requireTrainable(network.getLayer(0));
     if (layer.getOutputSize() != 1) {
         throw std::runtime_error("Perceptron supports exactly one output.");
     }

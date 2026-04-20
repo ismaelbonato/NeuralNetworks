@@ -15,19 +15,24 @@ namespace
 {
 std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
 {
-    LayerConfig config{
-        .learningRule = std::make_shared<HebbianRule<Scalar>>(),
-        .activation = std::make_shared<StepPolarActivation<Scalar>>(),
-        .inputSize = size,
-        .outputSize = size,
-        .name = "test hopfield",
-        .type = "HopfieldLayer",
-        .info = "deterministic test layer",
-        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    HopfieldLayerConfig config;
+    config.name = "test hopfield";
+    config.type = "HopfieldLayer";
+    config.info = "deterministic test layer";
+    config.learningRule = std::make_shared<HebbianRule<Scalar>>();
+    config.activation = std::make_shared<StepPolarActivation<Scalar>>();
+    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.size = size;
 
     return makeLayer<HopfieldLayer>(config);
+}
+
+TrainableLayer &trainableLayer(Model &network)
+{
+    auto *layer = dynamic_cast<TrainableLayer *>(&network.getLayer(0));
+    REQUIRE(layer != nullptr);
+    return *layer;
 }
 }
 
@@ -68,10 +73,11 @@ TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfie
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    for (size_t i = 0; i < network.getLayer(0).getWeights().shape().at(0); ++i) {
-        REQUIRE(network.getLayer(0).getWeights().at({i, i}) == 0.0F);
-        for (size_t j = 0; j < network.getLayer(0).getWeights().shape().at(1); ++j) {
-            REQUIRE(network.getLayer(0).getWeights().at({i, j}) == network.getLayer(0).getWeights().at({j, i}));
+    const Pattern &weights = trainableLayer(network).getWeights();
+    for (size_t i = 0; i < weights.shape().at(0); ++i) {
+        REQUIRE(weights.at({i, i}) == 0.0F);
+        for (size_t j = 0; j < weights.shape().at(1); ++j) {
+            REQUIRE(weights.at({i, j}) == weights.at({j, i}));
         }
     }
 }
@@ -85,10 +91,11 @@ TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    for (size_t i = 0; i < network.getLayer(0).getWeights().shape().at(0); ++i) {
-        REQUIRE(network.getLayer(0).getWeights().at({i, i}) == 0.0F);
-        for (size_t j = 0; j < network.getLayer(0).getWeights().shape().at(1); ++j) {
-            REQUIRE(network.getLayer(0).getWeights().at({i, j}) == network.getLayer(0).getWeights().at({j, i}));
+    const Pattern &weights = trainableLayer(network).getWeights();
+    for (size_t i = 0; i < weights.shape().at(0); ++i) {
+        REQUIRE(weights.at({i, i}) == 0.0F);
+        for (size_t j = 0; j < weights.shape().at(1); ++j) {
+            REQUIRE(weights.at({i, j}) == weights.at({j, i}));
         }
     }
 }
