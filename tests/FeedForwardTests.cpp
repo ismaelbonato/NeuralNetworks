@@ -22,15 +22,14 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
 {
     auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-    LayerConfig config{
-        .learningRule = rule,
-        .activation = activation,
-        .inputSize = inputSize,
-        .outputSize = outputSize,
-        .name = "test dense layer",
-        .type = "DenseLayer",
-        .info = "deterministic test layer",
-    };
+    DenseLayerConfig config;
+    config.name = "test dense layer";
+    config.type = "DenseLayer";
+    config.info = "deterministic test layer";
+    config.learningRule = rule;
+    config.activation = activation;
+    config.inputSize = inputSize;
+    config.outputSize = outputSize;
 
     if (!randomInitialize) {
         config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
@@ -44,6 +43,13 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
 void requireClose(const Scalar actual, const Scalar expected)
 {
     REQUIRE(std::fabs(actual - expected) < tolerance);
+}
+
+TrainableLayer &trainableLayer(Model &network, const size_t index)
+{
+    auto *layer = dynamic_cast<TrainableLayer *>(&network.getLayer(index));
+    REQUIRE(layer != nullptr);
+    return *layer;
 }
 }
 
@@ -89,8 +95,8 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    requireClose(network.getLayer(0).getWeights().at({0, 0}), 0.125F);
-    requireClose(network.getLayer(0).getBiases().at(0), 0.125F);
+    requireClose(trainableLayer(network, 0).getWeights().at({0, 0}), 0.125F);
+    requireClose(trainableLayer(network, 0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward inference rejects missing layers and invalid input sizes",
@@ -118,7 +124,7 @@ TEST_CASE("feedforward trainer can train the same model more than once",
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    REQUIRE(network.getLayer(0).getWeights().at({0, 0}) != 0.0F);
+    REQUIRE(trainableLayer(network, 0).getWeights().at({0, 0}) != 0.0F);
 }
 
 TEST_CASE("feedforward trainer direct API updates weights and biases",
@@ -131,8 +137,8 @@ TEST_CASE("feedforward trainer direct API updates weights and biases",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    requireClose(network.getLayer(0).getWeights().at({0, 0}), 0.125F);
-    requireClose(network.getLayer(0).getBiases().at(0), 0.125F);
+    requireClose(trainableLayer(network, 0).getWeights().at({0, 0}), 0.125F);
+    requireClose(trainableLayer(network, 0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward trainer updates hidden and output layers",
@@ -155,8 +161,8 @@ TEST_CASE("feedforward trainer updates hidden and output layers",
     FeedforwardTrainer trainer;
     trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
-    REQUIRE(network.getLayer(0).getWeights().at({0, 0}) != hiddenWeightBefore);
-    REQUIRE(network.getLayer(1).getWeights().at({0, 0}) != outputWeightBefore);
+    REQUIRE(trainableLayer(network, 0).getWeights().at({0, 0}) != hiddenWeightBefore);
+    REQUIRE(trainableLayer(network, 1).getWeights().at({0, 0}) != outputWeightBefore);
 }
 
 TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][errors]")

@@ -51,17 +51,19 @@ inline void perceptronNetwork()
         {1.0}  // 1 AND 1
     };
 
-    LayerConfig config{
-        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize =inputs.at(0).size(),
-        .outputSize = labels.at(0).size(),
-        .name = "Model",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0}),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    DenseLayerConfig config;
+    config.name = "Model";
+    config.type = "DenseLayer";
+    config.info = "info";
+    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.weightInitializer =
+        std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.inputSize = inputs.at(0).size();
+    config.outputSize = labels.at(0).size();
+    config.expectedInputShape = {inputs.at(0).size()};
+    config.expectedOutputShape = {labels.at(0).size()};
 
     auto l = makeLayer<DenseLayer>(config);
 
@@ -92,17 +94,18 @@ inline void perceptronNaturalSelection()
         {1.0}  // 1 AND 1
     };
 
-    LayerConfig config{
-        .learningRule = std::make_shared<PerceptronRule<Scalar>>(),
-        .activation = std::make_shared<SigmoidActivation<Scalar>>(),
-        .inputSize = 2,
-        .outputSize = 1,
-        .name = "Model",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-    };
+    DenseLayerConfig config;
+    config.name = "Model";
+    config.type = "DenseLayer";
+    config.info = "info";
+    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = 1;
+    config.expectedInputShape = {2};
+    config.expectedOutputShape = {1};
 
     auto l = makeLayer<DenseLayer>(config);
 
@@ -148,53 +151,57 @@ inline void feedforwardExperiment()
     auto weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
     auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
-    LayerConfig config1{
-        .learningRule = rule,
-        .activation = activation,
-        .inputSize = col,
-        .outputSize = 32,
-        .name = "Input",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = weightInitializer,
-        .biasInitializer = biasInitializer,
-    };
+    DenseLayerConfig config1;
+    config1.name = "Input";
+    config1.type = "DenseLayer";
+    config1.info = "info";
+    config1.learningRule = rule;
+    config1.activation = activation;
+    config1.weightInitializer = weightInitializer;
+    config1.biasInitializer = biasInitializer;
+    config1.inputSize = col;
+    config1.outputSize = 32;
+    config1.expectedInputShape = {col};
+    config1.expectedOutputShape = {32};
 
-    LayerConfig config2{
-        .learningRule = rule,
-        .activation = activation,
-        .inputSize = 32,
-        .outputSize = 16,
-        .name = "Hidden Layer",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = weightInitializer,
-        .biasInitializer = biasInitializer,
-    };
+    DenseLayerConfig config2;
+    config2.name = "Hidden Layer";
+    config2.type = "DenseLayer";
+    config2.info = "info";
+    config2.learningRule = rule;
+    config2.activation = activation;
+    config2.weightInitializer = weightInitializer;
+    config2.biasInitializer = biasInitializer;
+    config2.inputSize = 32;
+    config2.outputSize = 16;
+    config2.expectedInputShape = {32};
+    config2.expectedOutputShape = {16};
 
-    LayerConfig config3{
-        .learningRule = rule,
-        .activation = activation,
-        .inputSize = 16,
-        .outputSize = 8,
-        .name = "Hidden Layer",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = weightInitializer,
-        .biasInitializer = biasInitializer,
-    };
-    
-    LayerConfig config4{
-        .learningRule = rule,
-        .activation = activation,
-        .inputSize = 8,
-        .outputSize = labels.size(),
-        .name = "Output",
-        .type = "DenseLayer",
-        .info = "info",
-        .weightInitializer = weightInitializer,
-        .biasInitializer = biasInitializer,
-    };
+    DenseLayerConfig config3;
+    config3.name = "Hidden Layer";
+    config3.type = "DenseLayer";
+    config3.info = "info";
+    config3.learningRule = rule;
+    config3.activation = activation;
+    config3.weightInitializer = weightInitializer;
+    config3.biasInitializer = biasInitializer;
+    config3.inputSize = 16;
+    config3.outputSize = 8;
+    config3.expectedInputShape = {16};
+    config3.expectedOutputShape = {8};
+
+    DenseLayerConfig config4;
+    config4.name = "Output";
+    config4.type = "DenseLayer";
+    config4.info = "info";
+    config4.learningRule = rule;
+    config4.activation = activation;
+    config4.weightInitializer = weightInitializer;
+    config4.biasInitializer = biasInitializer;
+    config4.inputSize = 8;
+    config4.outputSize = labels.size();
+    config4.expectedInputShape = {8};
+    config4.expectedOutputShape = {labels.size()};
 
     auto l1 = makeLayer<DenseLayer>(config1);
     auto l2 = makeLayer<DenseLayer>(config2);

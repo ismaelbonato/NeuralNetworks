@@ -14,6 +14,21 @@ public:
 };
 
 template<typename T>
+class IdentityActivation : public ActivationFunction<T>
+{
+public:
+    inline T operator()(T x) const override
+    {
+        return x;
+    }
+
+    inline T derivative(T) const override
+    {
+        return static_cast<T>(1);
+    }
+};
+
+template<typename T>
 class SigmoidActivation : public ActivationFunction<T>
 {
 public:

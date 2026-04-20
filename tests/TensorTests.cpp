@@ -119,6 +119,17 @@ TEST_CASE("tensor rejects shaped indexes with wrong rank or bounds", "[tensor]")
     REQUIRE_THROWS_AS(tensor.at({0, 3, 0}), std::runtime_error);
 }
 
+TEST_CASE("tensor indexes shaped storage with dynamic index vectors", "[tensor]")
+{
+    auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
+    const std::vector<size_t> index{1, 2, 3};
+
+    tensor.at(index) = 42.0F;
+
+    REQUIRE(tensor.offsetOf(index) == 23);
+    REQUIRE(tensor.at(index) == 42.0F);
+}
+
 TEST_CASE("tensor can reshape when element count matches", "[tensor]")
 {
     Pattern values = {1.0F, 2.0F, 3.0F, 4.0F};
@@ -147,6 +158,16 @@ TEST_CASE("tensor elementwise operations reject mismatched sizes", "[tensor]")
     REQUIRE_THROWS_AS(a + b, std::runtime_error);
     REQUIRE_THROWS_AS(a - b, std::runtime_error);
     REQUIRE_THROWS_AS(a * b, std::runtime_error);
+}
+
+TEST_CASE("tensor elementwise operations reject mismatched shapes", "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::withShape({2, 2}, 1.0F);
+    const auto vector = Tensor<Scalar>::withShape({4}, 1.0F);
+
+    REQUIRE_THROWS_AS(matrix + vector, std::runtime_error);
+    REQUIRE_THROWS_AS(matrix - vector, std::runtime_error);
+    REQUIRE_THROWS_AS(matrix * vector, std::runtime_error);
 }
 
 TEST_CASE("tensor matrix vector multiplication uses explicit shape", "[tensor]")

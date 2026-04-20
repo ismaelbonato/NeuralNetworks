@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/Types.h"
+#include <algorithm>
 #include <cstddef>
 #include <initializer_list>
 #include <iostream>
@@ -16,6 +17,37 @@ struct Shape
     Shape(std::initializer_list<size_t> newDimensions)
         : dimensions(newDimensions)
     {}
+
+    explicit Shape(const std::vector<size_t> &newDimensions)
+        : dimensions(newDimensions)
+    {}
+
+    bool empty() const { return dimensions.empty(); }
+
+    bool isValid() const
+    {
+        return !dimensions.empty()
+               && std::all_of(dimensions.begin(), dimensions.end(), [](const size_t dimension) {
+                      return dimension > 0;
+                  });
+    }
+
+    size_t elementCount() const
+    {
+        if (dimensions.empty()) {
+            return 0;
+        }
+
+        size_t count = 1;
+        for (const size_t dimension : dimensions) {
+            if (dimension == 0) {
+                return 0;
+            }
+            count *= dimension;
+        }
+
+        return count;
+    }
 };
 
 template<typename T>
@@ -53,7 +85,7 @@ std::ostream &operator<<(std::ostream &os, const Tensor<T> &item)
 template<typename T>
 Tensor<T> operator*(const Tensor<T> &a, const Tensor<T> &b)
 {
-    if (a.size() != b.size())
+    if (!a.hasSameShapeAs(b))
         throw std::runtime_error("Size mismatch in elementwise_mul.");
 
     Tensor<T> result(b.size());
@@ -71,7 +103,7 @@ Tensor<T> operator*(const Tensor<T> &a, const Tensor<T> &b)
 template<typename T>
 Tensor<T> operator+(const Tensor<T> &a, const Tensor<T> &b)
 {
-    if (a.size() != b.size())
+    if (!a.hasSameShapeAs(b))
         throw std::runtime_error("Size mismatch in elementwise_sum.");
 
     Tensor<T> result(a.size());
@@ -89,7 +121,7 @@ Tensor<T> operator+(const Tensor<T> &a, const Tensor<T> &b)
 template<typename T>
 Tensor<T> operator-(const Tensor<T> &a, const Tensor<T> &b)
 {
-    if (a.size() != b.size())
+    if (!a.hasSameShapeAs(b))
         throw std::runtime_error("Size mismatch in elementwise_sum.");
 
     Tensor<T> result(a.size());
@@ -260,7 +292,7 @@ public:
     template<typename BinaryOperation>
     Tensor<T> zip(const Tensor<T> &other, BinaryOperation operation) const
     {
-        if (size() != other.size())
+        if (!hasSameShapeAs(other))
             throw std::runtime_error("Size mismatch in tensor zip.");
 
         Tensor<T> result(size());
@@ -275,7 +307,7 @@ public:
     template<typename BinaryOperation>
     Tensor<T> zipValues(const Tensor<T> &other, BinaryOperation operation) const
     {
-        if (size() != other.size())
+        if (!hasSameShapeAs(other))
             throw std::runtime_error("Size mismatch in tensor zip values.");
 
         Tensor<T> result(size());
@@ -294,6 +326,11 @@ public:
     bool hasShape(const Shape &shape) const
     {
         return dimensions == shape.dimensions;
+    }
+
+    bool hasSameShapeAs(const Tensor<T> &other) const
+    {
+        return dimensions == other.dimensions;
     }
 
     template<typename Value>
@@ -452,21 +489,35 @@ public:
         return data.at(offsetOf(indices));
     }
 
+    T &at(const std::vector<size_t> &indices)
+    {
+        return data.at(offsetOf(indices));
+    }
+
+    const T &at(const std::vector<size_t> &indices) const
+    {
+        return data.at(offsetOf(indices));
+    }
+
     size_t offsetOf(const std::initializer_list<size_t> indices) const
+    {
+        return offsetOf(std::vector<size_t>(indices));
+    }
+
+    size_t offsetOf(const std::vector<size_t> &indices) const
     {
         if (indices.size() != dimensions.size()) {
             throw std::runtime_error("Tensor index rank does not match tensor rank.");
         }
 
         size_t offset = 0;
-        size_t axis = 0;
-        for (const size_t index : indices) {
+        for (size_t axis = 0; axis < indices.size(); ++axis) {
+            const size_t index = indices.at(axis);
             if (index >= dimensions.at(axis)) {
                 throw std::runtime_error("Tensor index is out of bounds.");
             }
 
             offset += index * dimensionStrides.at(axis);
-            ++axis;
         }
 
         return offset;

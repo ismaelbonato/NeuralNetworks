@@ -4,10 +4,12 @@
 
 #include <memory>
 
-template<typename LayerType>
-std::unique_ptr<LayerType> makeLayer(const LayerConfig &config)
+template<typename LayerType, typename ConfigType>
+std::unique_ptr<LayerType> makeLayer(const ConfigType &config)
 {
     auto layer = std::unique_ptr<LayerType>(new LayerType(config));
-    layer->initializeParameters();
+    if constexpr (requires { layer->initializeParameters(); }) {
+        layer->initializeParameters();
+    }
     return layer;
 }
