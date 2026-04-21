@@ -60,7 +60,6 @@
         "CppcheckSolutionsAB.cppcheck-official",
         "ms-vscode.cmake-tools",
         "vadimcn.vscode-lldb",
-        "matepek.vscode-catch2-test-adapter",
         "alefragnani.bookmarks",
         "xaver.clang-format",
         "streetsidesoftware.code-spell-checker",
