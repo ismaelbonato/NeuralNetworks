@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y \
     && update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-20 100 \
     && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-20 100 \
     && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-20 100 \
+    && update-alternatives --install /usr/bin/lldb lldb /usr/bin/lldb-20 100 \
     && update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-14 100 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
