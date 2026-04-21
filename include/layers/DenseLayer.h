@@ -1,7 +1,6 @@
 #pragma once
 
 #include "base/Layer.h"
-#include "base/Types.h"
 
 class DenseLayer : public TrainableLayer
 {
