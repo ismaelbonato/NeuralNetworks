@@ -54,15 +54,9 @@ if(ENABLE_CLANG_TIDY)
 endif()
 
 find_package(OpenCV REQUIRED)
-#find_package(OpenMP REQUIRED)
-
-#if(NOT OpenMP_CXX_FOUND)
-#    message(FATAL_ERROR "OpenMP C++ support not found. Please ensure OpenMP is installed and configured correctly.")
-#endif()
 
 set(LIBRARIES
     ${OpenCV_LIBS}
-  #  OpenMP::OpenMP_CXX
 )
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -115,6 +109,7 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
         add_executable(NetworkTests
             tests/ActivationTests.cpp
             tests/ConvolutionGeometryTests.cpp
+            tests/ConvolutionTests.cpp
             tests/FeedForwardTests.cpp
             tests/HopfieldTests.cpp
             tests/LayerTests.cpp
