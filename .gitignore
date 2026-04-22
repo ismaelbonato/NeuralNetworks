@@ -21,6 +21,13 @@ heaptrack*
 build/
 CMakeLists.txt.*
 
+# code coverage
+build-coverage/
+coverage/
+*.gcda
+*.gcno
+*.gcov
+
 # kate
 *kate-swp
 
