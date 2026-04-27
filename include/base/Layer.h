@@ -138,16 +138,14 @@ public:
     bool isInitialized() const;
     void requireInitialized() const;
 
+    Pattern forward(const Pattern &input) const override;
+    virtual Pattern preActivation(const Pattern &input) const;
+    virtual Pattern activate(const Pattern &values) const;
+
+    virtual Pattern activationDerivatives(const Pattern &values) const;
     virtual void updateWeights(const Pattern &prev_activations,
                                const Pattern &layerDelta,
                                Scalar learningRate);
-
-    Pattern forward(const Pattern &input) const override;
-    virtual Pattern preActivation(const Pattern &input) const;
-
-    virtual Pattern activationDerivatives(const Pattern &values) const;
-    virtual Pattern activate(const Pattern &values) const;
-
     virtual Pattern backwardPass(const Pattern &layerDelta,
                                  const Pattern &layerInput) const;
     LayerParameters naturalUpdatedParameters(const LayerParameters &parameters,
