@@ -14,10 +14,8 @@ FlattenLayer::FlattenLayer(const FlattenLayerConfig &newConfig)
 
 FlattenLayer::~FlattenLayer() = default;
 
-Pattern FlattenLayer::infer(const Pattern &input) const
+Pattern FlattenLayer::forward(const Pattern &input) const
 {
-    requireInputShape(input);
-
     Pattern output = input;
     output.reshape(getExpectedOutputShape());
     return output;

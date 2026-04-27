@@ -29,7 +29,7 @@ Shape HopfieldLayer::expectedBiasShape() const
     return {};
 }
 
-Pattern HopfieldLayer::infer(const Pattern &input) const
+Pattern HopfieldLayer::forward(const Pattern &input) const
 {
     return recall(input);
 }

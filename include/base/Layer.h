@@ -84,6 +84,7 @@ protected:
     Shape expectedOutput;
 
     void requireInputShape(const Pattern &input) const;
+    virtual Pattern forward(const Pattern &input) const = 0;
 
 public:
     Layer() = delete;
@@ -100,7 +101,7 @@ public:
     const Shape &getOutputShape() const;
     virtual bool isTrainable() const;
 
-    virtual Pattern infer(const Pattern &input) const = 0;
+    Pattern infer(const Pattern &input) const;
 };
 
 class TrainableLayer : public Layer
@@ -141,7 +142,7 @@ public:
                                const Pattern &layerDelta,
                                Scalar learningRate);
 
-    Pattern infer(const Pattern &input) const override;
+    Pattern forward(const Pattern &input) const override;
     virtual Pattern weightedSum(const Pattern &input) const;
 
     virtual Pattern activationDerivatives(const Pattern &values) const;

@@ -103,6 +103,12 @@ void Layer::requireInputShape(const Pattern &input) const
     }
 }
 
+Pattern Layer::infer(const Pattern &input) const
+{
+    requireInputShape(input);
+    return forward(input);
+}
+
 TrainableLayer::TrainableLayer(const TrainableLayerConfig &newConfig,
                                const Shape &newExpectedInput,
                                const Shape &newExpectedOutput)
@@ -265,9 +271,8 @@ void TrainableLayer::updateWeights(const Pattern &prev_activations,
     }
 }
 
-Pattern TrainableLayer::infer(const Pattern &input) const
-{ //todo place that function in the layer.
-    requireInputShape(input);
+Pattern TrainableLayer::forward(const Pattern &input) const
+{
     Pattern sums = weightedSum(input);
     return activate(sums);
 }

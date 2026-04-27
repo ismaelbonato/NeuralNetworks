@@ -50,7 +50,7 @@ Shape ConvolutionalLayer::expectedBiasShape() const
 }
 
 Pattern ConvolutionalLayer::weightedSum(const Pattern &input) const
-{ //todo place that function in the layer.
+{
     requireInitialized();
 
     if (input.empty()) {

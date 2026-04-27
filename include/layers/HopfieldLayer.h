@@ -8,13 +8,13 @@ class HopfieldLayer : public TrainableLayer
 public:
     HopfieldLayer() = delete;
     ~HopfieldLayer() override;
-    Pattern infer(const Pattern &input) const override;
     void updateWeights(const Pattern &pattern,
                        const Pattern &layerDelta,
                        Scalar learningRate = Scalar{1.0f}) override;
     Pattern recall(const Pattern &input) const;
 
 protected:
+    Pattern forward(const Pattern &input) const override;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
 
