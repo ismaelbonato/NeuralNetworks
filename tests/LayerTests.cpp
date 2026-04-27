@@ -108,7 +108,7 @@ TEST_CASE("base layer infer delegates valid input to forward", "[layer][infer]")
     REQUIRE(output == Pattern{4.0F, 7.0F});
 }
 
-TEST_CASE("dense layer adds configured bias to weighted sum", "[layer][dense]")
+TEST_CASE("dense layer adds configured bias to pre-activation", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
     layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));

@@ -53,7 +53,7 @@ TrainableLayer &trainableLayer(Model &network, const size_t index)
 }
 }
 
-TEST_CASE("dense layer computes deterministic weighted sums and activations",
+TEST_CASE("dense layer computes deterministic pre-activations and activations",
           "[feedforward][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
