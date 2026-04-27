@@ -3,13 +3,22 @@
 #include <random>
 #include <stdexcept>
 
-namespace
-{
+namespace {
 bool isSizeCompatibleWithShape(const size_t size, const Shape &shape)
 {
-    return size == 0 || shape.empty() || (shape.isValid() && shape.elementCount() == size);
+    return size == 0 || shape.empty()
+           || (shape.isValid() && shape.elementCount() == size);
 }
 
+} // namespace
+
+bool ConvolutionalLayerConfig::isValid() const
+{
+    const size_t paddedInputLength = inputLength + (2 * padding);
+
+    return learningRule && activation && inputChannels > 0 && inputLength > 0
+           && outputChannels > 0 && kernelSize > 0 && stride > 0
+           && kernelSize <= paddedInputLength;
 }
 
 bool DenseLayerConfig::isValid() const
@@ -23,8 +32,7 @@ bool DenseLayerConfig::isValid() const
 
 bool HopfieldLayerConfig::isValid() const
 {
-    return learningRule && activation
-           && (size > 0 || expectedShape.isValid())
+    return learningRule && activation && (size > 0 || expectedShape.isValid())
            && isSizeCompatibleWithShape(size, expectedShape);
 }
 
@@ -41,9 +49,9 @@ Shape FlattenLayerConfig::expectedOutputShape() const
 Layer::Layer(const LayerConfig &newConfig,
              const Shape &newExpectedInput,
              const Shape &newExpectedOutput)
-    : config(newConfig),
-      expectedInput(newExpectedInput),
-      expectedOutput(newExpectedOutput)
+    : config(newConfig)
+    , expectedInput(newExpectedInput)
+    , expectedOutput(newExpectedOutput)
 {
     if (!expectedInput.isValid() || !expectedOutput.isValid()) {
         throw std::invalid_argument("Invalid layer configuration");
@@ -90,15 +98,16 @@ bool Layer::isTrainable() const
 void Layer::requireInputShape(const Pattern &input) const
 {
     if (!input.hasShape(expectedInput)) {
-        throw std::runtime_error("Input shape does not match layer input shape.");
+        throw std::runtime_error(
+            "Input shape does not match layer input shape.");
     }
 }
 
 TrainableLayer::TrainableLayer(const TrainableLayerConfig &newConfig,
                                const Shape &newExpectedInput,
                                const Shape &newExpectedOutput)
-    : Layer(newConfig, newExpectedInput, newExpectedOutput),
-      trainableConfig(newConfig)
+    : Layer(newConfig, newExpectedInput, newExpectedOutput)
+    , trainableConfig(newConfig)
 {
     if (!trainableConfig.learningRule || !trainableConfig.activation) {
         throw std::invalid_argument("Invalid trainable layer configuration");
@@ -122,9 +131,10 @@ bool TrainableLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-Pattern TrainableLayer::initializeParameter(const Shape &shape,
-                                            const std::shared_ptr<Initializer<Scalar>> &initializer,
-                                            Scalar fallbackValue)
+Pattern TrainableLayer::initializeParameter(
+    const Shape &shape,
+    const std::shared_ptr<Initializer<Scalar>> &initializer,
+    Scalar fallbackValue)
 {
     Pattern parameter = Pattern::withShape(shape, fallbackValue);
 
@@ -186,7 +196,8 @@ void TrainableLayer::setWeights(const Pattern &newWeights)
     }
 
     if (!newWeights.hasShape(expectedWeightShape())) {
-        throw std::runtime_error("Layer weights shape does not match layer configuration.");
+        throw std::runtime_error(
+            "Layer weights shape does not match layer configuration.");
     }
 
     weights = newWeights;
@@ -204,7 +215,8 @@ void TrainableLayer::setBiases(const Pattern &newBiases)
     }
 
     if (!newBiases.hasShape(expectedBiasShape())) {
-        throw std::runtime_error("Layer bias size does not match layer output size.");
+        throw std::runtime_error(
+            "Layer bias size does not match layer output size.");
     }
 
     biases = newBiases;
@@ -239,8 +251,11 @@ void TrainableLayer::updateWeights(const Pattern &prev_activations,
     }
 
     const Pattern weightGradients = layerDelta.outer(prev_activations);
-    const auto updateValue = [this, learningRate](Scalar value, Scalar gradient) {
-        return trainableConfig.learningRule->updateWeight(value, gradient, learningRate);
+    const auto updateValue = [this, learningRate](Scalar value,
+                                                  Scalar gradient) {
+        return trainableConfig.learningRule->updateWeight(value,
+                                                          gradient,
+                                                          learningRate);
     };
 
     weights = weights.zip(weightGradients, updateValue);
@@ -251,7 +266,7 @@ void TrainableLayer::updateWeights(const Pattern &prev_activations,
 }
 
 Pattern TrainableLayer::infer(const Pattern &input) const
-{
+{ //todo place that function in the layer.
     requireInputShape(input);
     Pattern sums = weightedSum(input);
     return activate(sums);
@@ -264,7 +279,7 @@ Pattern TrainableLayer::weightedSum(const Pattern &input) const
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
-
+    //todo: invert the logic, input.matVec(weights) in all cases and make sure the shapes are correct.
     Pattern sums = weights.matVec(input);
     return hasBias() ? sums + biases : sums;
 }
@@ -291,31 +306,37 @@ Pattern TrainableLayer::activate(const Pattern &values) const
 }
 
 Pattern TrainableLayer::backwardPass(const Pattern &layerDelta,
-                                     const Pattern &preActivation) const
+                                     const Pattern &layerInput) const
 {
     requireInitialized();
-    return weights.transposedMatVec(layerDelta)
-           * activationDerivatives(preActivation);
+    if (!layerDelta.hasShape(expectedOutput)) {
+        throw std::runtime_error(
+            "Layer delta shape does not match layer output shape.");
+    }
+    if (!layerInput.hasShape(expectedInput)) {
+        throw std::runtime_error(
+            "Layer input shape does not match layer input shape.");
+    }
+    return weights.transposedMatVec(layerDelta);
 }
 
-LayerParameters TrainableLayer::naturalUpdatedParameters(const LayerParameters &parameters,
-                                                        Scalar mutationStrength) const
+LayerParameters TrainableLayer::naturalUpdatedParameters(
+    const LayerParameters &parameters, Scalar mutationStrength) const
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<Scalar> dis(-mutationStrength, mutationStrength);
+    std::uniform_real_distribution<Scalar> dis(-mutationStrength,
+                                               mutationStrength);
 
     LayerParameters updated{
-        .weights = parameters.weights.map([&dis, &gen](Scalar value) {
-            return value + dis(gen);
-        }),
+        .weights = parameters.weights.map(
+            [&dis, &gen](Scalar value) { return value + dis(gen); }),
         .biases = parameters.biases,
     };
 
     if (hasBias()) {
-        updated.biases = parameters.biases.mapValues([&dis, &gen](Scalar value) {
-            return value + dis(gen);
-        });
+        updated.biases = parameters.biases.mapValues(
+            [&dis, &gen](Scalar value) { return value + dis(gen); });
     }
 
     return updated;

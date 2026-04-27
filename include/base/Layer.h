@@ -15,17 +15,30 @@ struct LayerConfig
     std::string name;
     std::string type;
     std::string info;
+    std::shared_ptr<ActivationFunction<Scalar>> activation;
 };
 
 struct TrainableLayerConfig : LayerConfig
 {
     std::shared_ptr<LearningRule<Scalar>> learningRule;
-    std::shared_ptr<ActivationFunction<Scalar>> activation;
 
-    std::shared_ptr<Initializer<Scalar>> weightInitializer =
-        std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
-    std::shared_ptr<Initializer<Scalar>> biasInitializer =
-        std::make_shared<ConstantInitializer<Scalar>>(Scalar{0.0});
+    std::shared_ptr<Initializer<Scalar>> weightInitializer
+        = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
+                                                       Scalar{1.0});
+    std::shared_ptr<Initializer<Scalar>> biasInitializer
+        = std::make_shared<ConstantInitializer<Scalar>>(Scalar{0.0});
+};
+
+struct ConvolutionalLayerConfig : TrainableLayerConfig
+{
+    size_t inputChannels = 0;
+    size_t inputLength = 0;
+    size_t outputChannels = 0;
+    size_t kernelSize = 0;
+    size_t stride = 1;
+    size_t padding = 0;
+
+    bool isValid() const;
 };
 
 struct DenseLayerConfig : TrainableLayerConfig
@@ -72,9 +85,7 @@ protected:
 
     void requireInputShape(const Pattern &input) const;
 
-
 public:
-
     Layer() = delete;
     Layer(const LayerConfig &newConfig,
           const Shape &newExpectedInput,
@@ -107,9 +118,10 @@ protected:
     virtual Shape expectedBiasShape() const = 0;
     bool hasWeights() const;
     bool hasBias() const;
-    Pattern initializeParameter(const Shape &shape,
-                                const std::shared_ptr<Initializer<Scalar>> &initializer,
-                                Scalar fallbackValue = Scalar{});
+    Pattern initializeParameter(
+        const Shape &shape,
+        const std::shared_ptr<Initializer<Scalar>> &initializer,
+        Scalar fallbackValue = Scalar{});
 
 public:
     ~TrainableLayer() override;
@@ -131,10 +143,12 @@ public:
 
     Pattern infer(const Pattern &input) const override;
     virtual Pattern weightedSum(const Pattern &input) const;
+
     virtual Pattern activationDerivatives(const Pattern &values) const;
     virtual Pattern activate(const Pattern &values) const;
 
-    virtual Pattern backwardPass(const Pattern &layerDelta, const Pattern &preActivation) const;
+    virtual Pattern backwardPass(const Pattern &layerDelta,
+                                 const Pattern &layerInput) const;
     LayerParameters naturalUpdatedParameters(const LayerParameters &parameters,
                                              Scalar mutationStrength) const;
 };

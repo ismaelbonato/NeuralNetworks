@@ -15,7 +15,13 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "editor.formatOnSave": false, 
+        "editor.formatOnSave": true,
+        "[cpp]": {
+          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "[c]": {
+          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
         "editor.rulers": [80],
         "cmake.configureOnOpen": true,
         "cmake.generator": "Ninja",
@@ -35,10 +41,6 @@
           "--compile-commands-dir=${workspaceFolder}/build"
         ],
         "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-        "testMate.cpp.test.executables": "**/{build,Build,BUILD}/**/*{Test,test,TEST}*",
-        "testMate.cpp.log.logpanel": true,
-        "testMate.cpp.discovery.loadOnStartup": true,
-        "testMate.cpp.test.workingDirectory": "${absDirpath}",
         "coverage-gutters.coverageFileNames": [
           "coverage.lcov",
           "lcov.info",

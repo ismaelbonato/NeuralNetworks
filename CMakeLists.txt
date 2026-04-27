@@ -85,7 +85,7 @@ set(LIBRARIES
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h")
-
+#todo add support to gcc using cmake profile
 if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
         COMMAND ${CPPCHECK_EXECUTABLE}
@@ -133,7 +133,7 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
         add_executable(NetworkTests
             tests/ActivationTests.cpp
             tests/ConvolutionGeometryTests.cpp
-            tests/ConvolutionTests.cpp
+            tests/ConvolutionalLayerTests.cpp
             tests/FeedForwardTests.cpp
             tests/HopfieldTests.cpp
             tests/LayerTests.cpp

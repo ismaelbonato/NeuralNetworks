@@ -197,7 +197,9 @@ public:
     void generate(Generator generator);
 
     T dot(const Tensor<T> &b) const;
-
+    Tensor<T> conv1D(const Tensor<T> &kernel,
+                     size_t stride = 1,
+                     size_t padding = 0) const;
     Tensor<T> matVec(const Tensor<T> &b) const;
     Tensor<T> transposedMatVec(const Tensor<T> &b) const;
     Tensor<T> outer(const Tensor<T> &b) const;
@@ -239,6 +241,14 @@ public:
 
 protected:
     void updateStrides();
+    size_t conv1DOutputLength(const Tensor<T> &kernel,
+                              size_t stride,
+                              size_t padding) const;
+    T conv1DWindowSum(const Tensor<T> &kernel,
+                      size_t outputChannel,
+                      size_t outputIndex,
+                      size_t stride,
+                      size_t padding) const;
 
     std::vector<T> data; // Store the tensor data
     std::vector<size_t> dimensions;
@@ -508,6 +518,97 @@ T Tensor<T>::dot(const Tensor<T> &b) const
     return result;
 }
 
+template<typename T>
+Tensor<T> Tensor<T>::conv1D(const Tensor<T> &kernel,
+                            size_t stride,
+                            size_t padding) const
+{
+    const size_t outputLength = conv1DOutputLength(kernel, stride, padding);
+    const size_t outputChannels = kernel.dimensions.at(0);
+    Tensor<T> result = Tensor<T>::withShape({outputChannels, outputLength});
+
+    for (size_t outputChannel = 0; outputChannel < outputChannels;
+         ++outputChannel) {
+        for (size_t outputIndex = 0; outputIndex < outputLength; ++outputIndex) {
+            result.at({outputChannel, outputIndex})
+                = conv1DWindowSum(kernel,
+                                  outputChannel,
+                                  outputIndex,
+                                  stride,
+                                  padding);
+        }
+    }
+
+    return result;
+}
+
+template<typename T>
+size_t Tensor<T>::conv1DOutputLength(const Tensor<T> &kernel,
+                                     size_t stride,
+                                     size_t padding) const
+{
+    if (rank() != 2) {
+        throw std::runtime_error("1D convolution requires a rank-2 tensor.");
+    }
+    if (kernel.rank() != 3) {
+        throw std::runtime_error(
+            "1D convolution kernel requires a rank-3 tensor.");
+    }
+    if (stride == 0) {
+        throw std::runtime_error(
+            "1D convolution stride must be greater than zero.");
+    }
+
+    const size_t inputChannels = dimensions.at(0);
+    const size_t inputLength = dimensions.at(1);
+    const size_t kernelChannels = kernel.dimensions.at(1);
+    const size_t kernelSize = kernel.dimensions.at(2);
+    const size_t paddedInputLength = inputLength + (2 * padding);
+
+    if (inputChannels != kernelChannels) {
+        throw std::runtime_error(
+            "1D convolution input channels must match kernel channels.");
+    }
+    if (kernelSize > paddedInputLength) {
+        throw std::runtime_error(
+            "1D convolution kernel is larger than padded input.");
+    }
+
+    return ((paddedInputLength - kernelSize) / stride) + 1;
+}
+
+template<typename T>
+T Tensor<T>::conv1DWindowSum(const Tensor<T> &kernel,
+                             size_t outputChannel,
+                             size_t outputIndex,
+                             size_t stride,
+                             size_t padding) const
+{
+    const size_t inputChannels = dimensions.at(0);
+    const size_t inputLength = dimensions.at(1);
+    const size_t kernelSize = kernel.dimensions.at(2);
+
+    T sum = T{};
+    for (size_t inputChannel = 0; inputChannel < inputChannels; ++inputChannel) {
+        for (size_t kernelIndex = 0; kernelIndex < kernelSize; ++kernelIndex) {
+            const size_t paddedInputIndex = (outputIndex * stride)
+                                            + kernelIndex;
+            if (paddedInputIndex < padding) {
+                continue;
+            }
+
+            const size_t inputIndex = paddedInputIndex - padding;
+            if (inputIndex >= inputLength) {
+                continue;
+            }
+
+            sum += at({inputChannel, inputIndex})
+                   * kernel.at({outputChannel, inputChannel, kernelIndex});
+        }
+    }
+
+    return sum;
+}
 
 template<typename T>
 Tensor<T> Tensor<T>::matVec(const Tensor<T> &b) const

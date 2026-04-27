@@ -51,7 +51,7 @@ inline void perceptronNetwork()
         {1.0}  // 1 AND 1
     };
 
-    DenseLayerConfig config;
+    DenseLayerConfig config{};
     config.name = "Model";
     config.type = "DenseLayer";
     config.info = "info";
@@ -94,7 +94,7 @@ inline void perceptronNaturalSelection()
         {1.0}  // 1 AND 1
     };
 
-    DenseLayerConfig config;
+    DenseLayerConfig config{};
     config.name = "Model";
     config.type = "DenseLayer";
     config.info = "info";
@@ -151,7 +151,7 @@ inline void feedforwardExperiment()
     auto weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
     auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
-    DenseLayerConfig config1;
+    DenseLayerConfig config1{};
     config1.name = "Input";
     config1.type = "DenseLayer";
     config1.info = "info";
@@ -164,7 +164,7 @@ inline void feedforwardExperiment()
     config1.expectedInputShape = {col};
     config1.expectedOutputShape = {32};
 
-    DenseLayerConfig config2;
+    DenseLayerConfig config2{};
     config2.name = "Hidden Layer";
     config2.type = "DenseLayer";
     config2.info = "info";
@@ -177,7 +177,7 @@ inline void feedforwardExperiment()
     config2.expectedInputShape = {32};
     config2.expectedOutputShape = {16};
 
-    DenseLayerConfig config3;
+    DenseLayerConfig config3{};
     config3.name = "Hidden Layer";
     config3.type = "DenseLayer";
     config3.info = "info";
@@ -190,7 +190,7 @@ inline void feedforwardExperiment()
     config3.expectedInputShape = {16};
     config3.expectedOutputShape = {8};
 
-    DenseLayerConfig config4;
+    DenseLayerConfig config4{};
     config4.name = "Output";
     config4.type = "DenseLayer";
     config4.info = "info";
