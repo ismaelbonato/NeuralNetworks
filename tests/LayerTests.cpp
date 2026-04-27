@@ -64,6 +64,48 @@ protected:
         return {getOutputSize()};
     }
 };
+
+class DelegatingLayer : public Layer
+{
+public:
+    DelegatingLayer()
+        : Layer(LayerConfig{}, {2}, {2})
+    {}
+
+    size_t forwardCalls() const
+    {
+        return calls;
+    }
+
+protected:
+    Pattern forward(const Pattern &input) const override
+    {
+        ++calls;
+        return input + Pattern{1.0F, 2.0F};
+    }
+
+private:
+    mutable size_t calls = 0;
+};
+}
+
+TEST_CASE("base layer infer rejects shape mismatches before delegation",
+          "[layer][infer][errors]")
+{
+    DelegatingLayer layer;
+
+    REQUIRE_THROWS_AS(layer.infer({1.0F}), std::runtime_error);
+    REQUIRE(layer.forwardCalls() == 0);
+}
+
+TEST_CASE("base layer infer delegates valid input to forward", "[layer][infer]")
+{
+    DelegatingLayer layer;
+
+    const Pattern output = layer.infer({3.0F, 5.0F});
+
+    REQUIRE(layer.forwardCalls() == 1);
+    REQUIRE(output == Pattern{4.0F, 7.0F});
 }
 
 TEST_CASE("dense layer adds configured bias to weighted sum", "[layer][dense]")
