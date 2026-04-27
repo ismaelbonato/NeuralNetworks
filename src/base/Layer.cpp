@@ -253,8 +253,7 @@ Pattern TrainableLayer::preActivation(const Pattern &input) const
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
-    //todo: invert the logic, input.matVec(weights) in all cases and make sure the shapes are correct.
-    Pattern sums = weights.matVec(input);
+    Pattern sums = input.matVec(weights);
     return hasBias() ? sums + biases : sums;
 }
 

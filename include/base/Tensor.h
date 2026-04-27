@@ -613,6 +613,25 @@ T Tensor<T>::conv1DWindowSum(const Tensor<T> &kernel,
 template<typename T>
 Tensor<T> Tensor<T>::matVec(const Tensor<T> &b) const
 {
+    if (rank() == 1 && b.rank() == 2) {
+        const size_t rows = b.dimensions.at(0);
+        const size_t cols = b.dimensions.at(1);
+        if (size() != cols) {
+            throw std::runtime_error("Matrix columns must match vector size.");
+        }
+
+        Tensor<T> result = Tensor<T>::withShape({rows});
+        for (size_t row = 0; row < rows; ++row) {
+            T sum = T{};
+            for (size_t col = 0; col < cols; ++col) {
+                sum += b.at({row, col}) * at(col);
+            }
+            result[row] = sum;
+        }
+
+        return result;
+    }
+
     if (rank() != 2) {
         throw std::runtime_error(
             "Matrix-vector multiplication requires a rank-2 matrix.");

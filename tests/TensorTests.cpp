@@ -188,6 +188,25 @@ TEST_CASE("tensor matrix vector multiplication uses explicit shape", "[tensor]")
     REQUIRE(result.shape() == std::vector<size_t>{2});
 }
 
+TEST_CASE("tensor vector matrix multiplication uses input receiver convention",
+          "[tensor]")
+{
+    auto matrix = Tensor<Scalar>::withShape({2, 3});
+    matrix.at({0, 0}) = 1.0F;
+    matrix.at({0, 1}) = 2.0F;
+    matrix.at({0, 2}) = 3.0F;
+    matrix.at({1, 0}) = 4.0F;
+    matrix.at({1, 1}) = 5.0F;
+    matrix.at({1, 2}) = 6.0F;
+
+    const Pattern vector = {7.0F, 8.0F, 9.0F};
+
+    const Pattern result = vector.matVec(matrix);
+
+    REQUIRE(result == Pattern{50.0F, 122.0F});
+    REQUIRE(result.shape() == std::vector<size_t>{2});
+}
+
 TEST_CASE("tensor matrix vector multiplication rejects invalid shapes", "[tensor]")
 {
     const auto notMatrix = Tensor<Scalar>::withShape({2, 3, 4});
