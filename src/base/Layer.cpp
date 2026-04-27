@@ -273,11 +273,11 @@ void TrainableLayer::updateWeights(const Pattern &prev_activations,
 
 Pattern TrainableLayer::forward(const Pattern &input) const
 {
-    Pattern sums = weightedSum(input);
+    Pattern sums = preActivation(input);
     return activate(sums);
 }
 
-Pattern TrainableLayer::weightedSum(const Pattern &input) const
+Pattern TrainableLayer::preActivation(const Pattern &input) const
 {
     requireInitialized();
 

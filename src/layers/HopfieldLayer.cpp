@@ -67,7 +67,7 @@ Pattern HopfieldLayer::recall(const Pattern &input) const
     Pattern prev_state;
     do {
         prev_state = state;
-        auto sum = weightedSum(state);
+        auto sum = preActivation(state);
         state = activate(sum);
     } while (state != prev_state);
     return state;

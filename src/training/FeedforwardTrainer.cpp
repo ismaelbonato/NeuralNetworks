@@ -77,7 +77,7 @@ void forward(Model &network,
         const auto &layer = network.getLayer(layerIndex);
         const auto *trainable = dynamic_cast<const TrainableLayer *>(&layer);
         if (trainable != nullptr) {
-            preActivations.at(layerIndex) = trainable->weightedSum(current);
+            preActivations.at(layerIndex) = trainable->preActivation(current);
             current = trainable->activate(preActivations.at(layerIndex));
         } else {
             current = layer.infer(current);

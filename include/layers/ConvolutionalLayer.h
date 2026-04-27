@@ -8,7 +8,7 @@ public:
     ConvolutionalLayer() = delete;
     ~ConvolutionalLayer() override;
 
-    Pattern weightedSum(const Pattern &input) const override;
+    Pattern preActivation(const Pattern &input) const override;
     Pattern backwardPass(const Pattern &layerDelta,
                          const Pattern &layerInput) const override;
 

@@ -49,7 +49,7 @@ Shape ConvolutionalLayer::expectedBiasShape() const
     return {convolutionalConfig.outputChannels};
 }
 
-Pattern ConvolutionalLayer::weightedSum(const Pattern &input) const
+Pattern ConvolutionalLayer::preActivation(const Pattern &input) const
 {
     requireInitialized();
 

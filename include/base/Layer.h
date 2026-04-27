@@ -143,7 +143,7 @@ public:
                                Scalar learningRate);
 
     Pattern forward(const Pattern &input) const override;
-    virtual Pattern weightedSum(const Pattern &input) const;
+    virtual Pattern preActivation(const Pattern &input) const;
 
     virtual Pattern activationDerivatives(const Pattern &values) const;
     virtual Pattern activate(const Pattern &values) const;
