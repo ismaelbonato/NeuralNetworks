@@ -1,5 +1,5 @@
-#include "base/Initializer.h"
 #include "base/Tensor.h"
+#include "training/Initializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 

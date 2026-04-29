@@ -3,6 +3,7 @@
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
 #include "training/HopfieldTrainer.h"
+#include "training/LayerParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -19,11 +20,12 @@ std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
     config.type = "HopfieldLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepPolarActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.size = size;
 
-    return makeLayer<HopfieldLayer>(config);
+    return makeInitializedLayer<HopfieldLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 }
 
 HopfieldLayer &hopfieldLayer(Model &network)

@@ -2,6 +2,7 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/PerceptronRuleTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -19,12 +20,13 @@ std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = outputSize;
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
     return layer;
 }
 }
@@ -67,6 +69,32 @@ TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
     REQUIRE(network.infer({1.0F, 0.0F}).at(0) == 0.0F);
     REQUIRE(network.infer({1.0F, 1.0F}).at(0) == 1.0F);
+}
+
+TEST_CASE("perceptron trainer initializes uninitialized layer",
+          "[perceptron][trainer]")
+{
+    DenseLayerRecipe config;
+    config.name = "uninitialized perceptron";
+    config.type = "DenseLayer";
+    config.info = "trainer initialization test layer";
+    config.activation = std::make_shared<StepActivation<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = 1;
+
+    auto layer = std::make_unique<DenseLayer>(config);
+    REQUIRE_FALSE(layer->isInitialized());
+
+    Model network;
+    network.addLayer(std::move(layer));
+    PerceptronRuleTrainer trainer;
+
+    REQUIRE_NOTHROW(trainer.learn(network,
+                                  {{0.0F, 0.0F}},
+                                  {{0.0F}},
+                                  0.1F,
+                                  1));
+    REQUIRE(dynamic_cast<DenseLayer &>(network.getLayer(0)).isInitialized());
 }
 
 TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")

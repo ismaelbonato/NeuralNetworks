@@ -6,6 +6,7 @@
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
 #include "training/GradientEngine.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/Optimizer.h"
 
 #include <functional>
@@ -197,6 +198,7 @@ void FeedforwardTrainer::learn(Model &network,
 
     Batch activations;
     Batch preActivations;
+    initializeModelParameters(network);
     initializeTrainingBuffers(network, activations, preActivations);
     const LearningRuleOptimizer optimizer{
         std::make_shared<SGDRule<Scalar>>()};

@@ -2,6 +2,7 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/NaturalSelectionTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -20,12 +21,13 @@ std::unique_ptr<DenseLayer> makePerceptronLayer()
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 1;
 
-    return makeLayer<DenseLayer>(config);
+    return makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 }
 
 std::unique_ptr<DenseLayer> makeMultiOutputLayer()
@@ -35,12 +37,13 @@ std::unique_ptr<DenseLayer> makeMultiOutputLayer()
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 2;
 
-    return makeLayer<DenseLayer>(config);
+    return makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 }
 }
 

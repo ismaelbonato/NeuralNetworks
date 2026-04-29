@@ -27,8 +27,6 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe
             convolutionalInputShape(newRecipe),
             convolutionalOutputShape(newRecipe))
     , convolutionalRecipe(newRecipe)
-    , weightInitializer(newRecipe.weightInitializer)
-    , biasInitializer(newRecipe.biasInitializer)
 {
     if (!newRecipe.isValid()) {
         throw std::invalid_argument(
@@ -58,35 +56,6 @@ bool ConvolutionalLayer::hasBias() const
 bool ConvolutionalLayer::hasWeights() const
 {
     return !expectedWeightShape().dimensions.empty();
-}
-
-Pattern ConvolutionalLayer::initializeParameter(
-    const Shape &shape,
-    const std::shared_ptr<Initializer<Scalar>> &initializer,
-    Scalar fallbackValue)
-{
-    Pattern parameter = Pattern::withShape(shape, fallbackValue);
-
-    if (initializer) {
-        initializer->fill(parameter);
-    }
-
-    return parameter;
-}
-
-void ConvolutionalLayer::initializeParameters(Scalar value)
-{
-    if (hasWeights() && weights.empty()) {
-        setWeights(initializeParameter(expectedWeightShape(),
-                                       weightInitializer,
-                                       value));
-    }
-
-    if (hasBias() && biases.empty()) {
-        setBiases(initializeParameter(expectedBiasShape(),
-                                      biasInitializer,
-                                      Scalar{}));
-    }
 }
 
 const Pattern &ConvolutionalLayer::getWeights() const
@@ -166,11 +135,11 @@ void ConvolutionalLayer::requireInitialized() const
 
 Pattern ConvolutionalLayer::forward(const Pattern &input) const
 {
-    Pattern sums = preActivation(input);
+    Pattern sums = weightedInput(input);
     return activate(sums);
 }
 
-Pattern ConvolutionalLayer::preActivation(const Pattern &input) const
+Pattern ConvolutionalLayer::weightedInput(const Pattern &input) const
 {
     requireInitialized();
 

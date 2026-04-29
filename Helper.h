@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "training/FeedforwardTrainer.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/NaturalSelectionTrainer.h"
 #include "training/PerceptronRuleTrainer.h"
 
@@ -54,15 +55,17 @@ inline void perceptronNetwork()
     config.type = "DenseLayer";
     config.info = "info";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer =
-        std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = inputs.at(0).size();
     config.outputSize = labels.at(0).size();
     config.expectedInputShape = {inputs.at(0).size()};
     config.expectedOutputShape = {labels.at(0).size()};
 
-    auto l = makeLayer<DenseLayer>(config);
+    auto l = makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
+             Scalar{-1.0},
+             Scalar{1.0}),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 
     Model net;
     net.addLayer(std::move(l));
@@ -96,14 +99,15 @@ inline void perceptronNaturalSelection()
     config.type = "DenseLayer";
     config.info = "info";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 1;
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto l = makeLayer<DenseLayer>(config);
+    auto l = makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 
     Model net;
     net.addLayer(std::move(l));
@@ -141,16 +145,11 @@ inline void feedforwardExperiment()
     auto col = inputs.at(0).size();
 
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-    auto weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
-    auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-
     DenseLayerRecipe config1{};
     config1.name = "Input";
     config1.type = "DenseLayer";
     config1.info = "info";
     config1.activation = activation;
-    config1.weightInitializer = weightInitializer;
-    config1.biasInitializer = biasInitializer;
     config1.inputSize = col;
     config1.outputSize = 32;
     config1.expectedInputShape = {col};
@@ -161,8 +160,6 @@ inline void feedforwardExperiment()
     config2.type = "DenseLayer";
     config2.info = "info";
     config2.activation = activation;
-    config2.weightInitializer = weightInitializer;
-    config2.biasInitializer = biasInitializer;
     config2.inputSize = 32;
     config2.outputSize = 16;
     config2.expectedInputShape = {32};
@@ -173,8 +170,6 @@ inline void feedforwardExperiment()
     config3.type = "DenseLayer";
     config3.info = "info";
     config3.activation = activation;
-    config3.weightInitializer = weightInitializer;
-    config3.biasInitializer = biasInitializer;
     config3.inputSize = 16;
     config3.outputSize = 8;
     config3.expectedInputShape = {16};
@@ -185,17 +180,20 @@ inline void feedforwardExperiment()
     config4.type = "DenseLayer";
     config4.info = "info";
     config4.activation = activation;
-    config4.weightInitializer = weightInitializer;
-    config4.biasInitializer = biasInitializer;
     config4.inputSize = 8;
     config4.outputSize = labels.size();
     config4.expectedInputShape = {8};
     config4.expectedOutputShape = {labels.size()};
 
-    auto l1 = makeLayer<DenseLayer>(config1);
-    auto l2 = makeLayer<DenseLayer>(config2);
-    auto l3 = makeLayer<DenseLayer>(config3);
-    auto l4 = makeLayer<DenseLayer>(config4);
+    LayerParameterInitialization initialization{
+        .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
+            Scalar{-1.0},
+            Scalar{1.0}),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()};
+    auto l1 = makeInitializedLayer<DenseLayer>(config1, initialization);
+    auto l2 = makeInitializedLayer<DenseLayer>(config2, initialization);
+    auto l3 = makeInitializedLayer<DenseLayer>(config3, initialization);
+    auto l4 = makeInitializedLayer<DenseLayer>(config4, initialization);
     
 
     Model net;

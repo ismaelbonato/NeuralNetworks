@@ -1,8 +1,9 @@
-#include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "base/Types.h"
 #include "layers/DenseLayer.h"
+#include "training/LayerParameterInitializer.h"
+#include "training/LearningRule.h"
 #include "training/Optimizer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -35,13 +36,14 @@ TEST_CASE("optimizer step applies layer deltas to model parameters",
     recipe.name = "optimizer dense";
     recipe.type = "DenseLayer";
     recipe.activation = std::make_shared<IdentityActivation<Scalar>>();
-    recipe.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    recipe.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     recipe.inputSize = 1;
     recipe.outputSize = 1;
 
     Model network;
-    network.addLayer(makeLayer<DenseLayer>(recipe));
+    network.addLayer(makeInitializedLayer<DenseLayer>(
+        recipe,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()}));
 
     Batch activations(2);
     activations.at(0) = Pattern{3.0F};

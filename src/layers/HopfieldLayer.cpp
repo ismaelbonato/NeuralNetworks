@@ -11,8 +11,6 @@ Shape hopfieldShape(const HopfieldLayerRecipe &recipe)
 
 HopfieldLayer::HopfieldLayer(const HopfieldLayerRecipe &newRecipe)
     : Layer(newRecipe, hopfieldShape(newRecipe), hopfieldShape(newRecipe))
-    , weightInitializer(newRecipe.weightInitializer)
-    , biasInitializer(newRecipe.biasInitializer)
 {
     if (!newRecipe.isValid()) {
         throw std::invalid_argument("Invalid hopfield layer recipe");
@@ -39,35 +37,6 @@ bool HopfieldLayer::hasBias() const
 bool HopfieldLayer::hasWeights() const
 {
     return !expectedWeightShape().dimensions.empty();
-}
-
-Pattern HopfieldLayer::initializeParameter(
-    const Shape &shape,
-    const std::shared_ptr<Initializer<Scalar>> &initializer,
-    Scalar fallbackValue)
-{
-    Pattern parameter = Pattern::withShape(shape, fallbackValue);
-
-    if (initializer) {
-        initializer->fill(parameter);
-    }
-
-    return parameter;
-}
-
-void HopfieldLayer::initializeParameters(Scalar value)
-{
-    if (hasWeights() && weights.empty()) {
-        setWeights(initializeParameter(expectedWeightShape(),
-                                       weightInitializer,
-                                       value));
-    }
-
-    if (hasBias() && biases.empty()) {
-        setBiases(initializeParameter(expectedBiasShape(),
-                                      biasInitializer,
-                                      Scalar{}));
-    }
 }
 
 const Pattern &HopfieldLayer::getWeights() const
@@ -150,7 +119,7 @@ Pattern HopfieldLayer::forward(const Pattern &input) const
     return recall(input);
 }
 
-Pattern HopfieldLayer::preActivation(const Pattern &input) const
+Pattern HopfieldLayer::weightedInput(const Pattern &input) const
 {
     requireInitialized();
 
@@ -182,7 +151,7 @@ Pattern HopfieldLayer::recall(const Pattern &input) const
     Pattern prev_state;
     do {
         prev_state = state;
-        auto sum = preActivation(state);
+        auto sum = weightedInput(state);
         state = activate(sum);
     } while (state != prev_state);
     return state;

@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/Initializer.h"
 #include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/ConvolutionalLayer.h"
@@ -19,11 +18,6 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     signal.reshape({1, signal.size()});
 
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-    auto weightInitializer
-        = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
-                                                       Scalar{1.0});
-    auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-
     ConvolutionalLayerRecipe config{};
     config.inputChannels = 1;
     config.inputLength = signal.size();
@@ -35,8 +29,6 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     config.type = "ConvolutionalLayer";
     config.info = "deterministic test layer";
     config.activation = activation;
-    config.weightInitializer = weightInitializer;
-    config.biasInitializer = biasInitializer;
 
     const size_t outputLength = config.inputLength - config.kernelSize + 1;
 
@@ -50,6 +42,7 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     auto layer = makeLayer<ConvolutionalLayer>(config);
 
     layer->setWeights(weights);
+    layer->setBiases({0.0F});
     net.addLayer(std::move(layer));
     Pattern output = net.infer(signal);
 
@@ -91,6 +84,7 @@ TEST_CASE("1D convolution backward spreads output deltas over input windows",
 
     auto layer = makeLayer<ConvolutionalLayer>(config);
     layer->setWeights(weights);
+    layer->setBiases({0.0F});
 
     Pattern layerDelta = Pattern::withShape({1, 3});
     layerDelta.at({0, 0}) = 5.0F;
@@ -116,11 +110,6 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
     signal.reshape({1, signal.size()});
 
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-    auto weightInitializer
-        = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
-                                                       Scalar{1.0});
-    auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-
     ConvolutionalLayerRecipe config{};
     config.inputChannels = 1;
     config.inputLength = signal.size();
@@ -132,8 +121,6 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
     config.type = "ConvolutionalLayer";
     config.info = "deterministic test layer";
     config.activation = activation;
-    config.weightInitializer = weightInitializer;
-    config.biasInitializer = biasInitializer;
 
     const size_t outputLength = config.inputLength - config.kernelSize + 1;
 

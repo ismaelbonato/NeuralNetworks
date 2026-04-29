@@ -1,10 +1,11 @@
 #include "base/ActivationFunction.h"
-#include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
 #include "layers/FlattenLayer.h"
 #include "training/GradientEngine.h"
+#include "training/LayerParameterInitializer.h"
+#include "training/LearningRule.h"
 #include "training/Optimizer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -24,12 +25,13 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     denseRecipe.type = "DenseLayer";
     denseRecipe.info = "deterministic test layer";
     denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    denseRecipe.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    denseRecipe.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     denseRecipe.inputSize = inputSize;
     denseRecipe.outputSize = outputSize;
 
-    return makeLayer<DenseLayer>(denseRecipe);
+    return makeInitializedLayer<DenseLayer>(
+        denseRecipe,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 }
 
 std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
@@ -140,24 +142,28 @@ TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dens
     REQUIRE(target->getBiases() == source->getBiases());
 }
 
-TEST_CASE("dense layer initializes biases from recipe", "[layer][dense]")
+TEST_CASE("parameter initializer initializes dense layer biases",
+          "[layer][dense]")
 {
     DenseLayerRecipe config;
     config.name = "bias init layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ConstantInitializer<Scalar>>(0.25F);
     config.inputSize = 2;
     config.outputSize = 2;
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer
+         = std::make_shared<ConstantInitializer<Scalar>>(0.25F)});
 
     REQUIRE(layer->getBiases() == Pattern{0.25F, 0.25F});
 }
 
-TEST_CASE("layer initializes weights through base implementation", "[layer][dense]")
+TEST_CASE("parameter initializer initializes dense layer parameters",
+          "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
 
@@ -173,12 +179,10 @@ TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape
     config.type = "DenseLayer";
     config.info = "shape-only test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = makeInitializedLayer<DenseLayer>(config);
 
     REQUIRE(layer->getInputSize() == 2);
     REQUIRE(layer->getOutputSize() == 1);
@@ -234,18 +238,21 @@ TEST_CASE("flatten layer restores previous activation shape during backward pass
     REQUIRE(previousDelta.at({1, 1}) == 4.0F);
 }
 
-TEST_CASE("layer initializes weights using recipe scale", "[layer][dense]")
+TEST_CASE("parameter initializer initializes weights using configured scale",
+          "[layer][dense]")
 {
     DenseLayerRecipe config;
     config.name = "scaled init layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F);
     config.inputSize = 2;
     config.outputSize = 2;
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = makeInitializedLayer<DenseLayer>(
+        config,
+        {.weightInitializer
+         = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F)});
 
     for (const Scalar weight : layer->getWeights()) {
         REQUIRE(weight >= -0.25F);
@@ -288,7 +295,7 @@ TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors
     REQUIRE_NOTHROW(layer->setBiases({0.0F, 0.0F}));
 }
 
-TEST_CASE("factory initializes dense layer", "[layer][dense]")
+TEST_CASE("initialized factory initializes dense layer", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
 
@@ -303,8 +310,6 @@ TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer
     config.type = "TestLayer";
     config.info = "intentionally skips construction initialization";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 1;
     auto layer = std::make_unique<UninitializedLayer>(config);

@@ -21,8 +21,6 @@ Shape denseOutputShape(const DenseLayerRecipe &recipe)
 
 DenseLayer::DenseLayer(const DenseLayerRecipe &newRecipe)
     : Layer(newRecipe, denseInputShape(newRecipe), denseOutputShape(newRecipe))
-    , weightInitializer(newRecipe.weightInitializer)
-    , biasInitializer(newRecipe.biasInitializer)
 {
     if (!newRecipe.isValid()) {
         throw std::invalid_argument("Invalid dense layer recipe");
@@ -49,35 +47,6 @@ bool DenseLayer::hasBias() const
 bool DenseLayer::hasWeights() const
 {
     return !expectedWeightShape().dimensions.empty();
-}
-
-Pattern DenseLayer::initializeParameter(
-    const Shape &shape,
-    const std::shared_ptr<Initializer<Scalar>> &initializer,
-    Scalar fallbackValue)
-{
-    Pattern parameter = Pattern::withShape(shape, fallbackValue);
-
-    if (initializer) {
-        initializer->fill(parameter);
-    }
-
-    return parameter;
-}
-
-void DenseLayer::initializeParameters(Scalar value)
-{
-    if (hasWeights() && weights.empty()) {
-        setWeights(initializeParameter(expectedWeightShape(),
-                                       weightInitializer,
-                                       value));
-    }
-
-    if (hasBias() && biases.empty()) {
-        setBiases(initializeParameter(expectedBiasShape(),
-                                      biasInitializer,
-                                      Scalar{}));
-    }
 }
 
 const Pattern &DenseLayer::getWeights() const
@@ -157,11 +126,11 @@ void DenseLayer::requireInitialized() const
 
 Pattern DenseLayer::forward(const Pattern &input) const
 {
-    Pattern sums = preActivation(input);
+    Pattern sums = weightedInput(input);
     return activate(sums);
 }
 
-Pattern DenseLayer::preActivation(const Pattern &input) const
+Pattern DenseLayer::weightedInput(const Pattern &input) const
 {
     requireInitialized();
 

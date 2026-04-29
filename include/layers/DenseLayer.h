@@ -9,7 +9,6 @@ public:
     explicit DenseLayer(const DenseLayerRecipe &newRecipe);
     ~DenseLayer() override;
 
-    void initializeParameters(Scalar value = Scalar{});
     const Pattern &getWeights() const;
     const Pattern &getBiases() const;
     LayerParameters getParameters() const;
@@ -23,8 +22,6 @@ protected:
     Pattern forward(const Pattern &input) const override;
 
 private:
-    std::shared_ptr<Initializer<Scalar>> weightInitializer;
-    std::shared_ptr<Initializer<Scalar>> biasInitializer;
     Pattern weights;
     Pattern biases;
 
@@ -32,10 +29,6 @@ private:
     Shape expectedBiasShape() const;
     bool hasWeights() const;
     bool hasBias() const;
-    Pattern preActivation(const Pattern &input) const;
+    Pattern weightedInput(const Pattern &input) const;
     Pattern activate(const Pattern &values) const;
-    Pattern initializeParameter(
-        const Shape &shape,
-        const std::shared_ptr<Initializer<Scalar>> &initializer,
-        Scalar fallbackValue = Scalar{});
 };

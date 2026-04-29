@@ -4,6 +4,7 @@
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
+#include "training/LayerParameterInitializer.h"
 
 #include <functional>
 #include <limits>
@@ -182,6 +183,7 @@ void NaturalSelectionTrainer::learn(Model &network,
         throw std::runtime_error("Natural-selection mutation strength cannot be negative.");
     }
 
+    initializeModelParameters(network);
     const ModelParameters initialParameters = snapshotParameters(network);
     std::vector<ModelParameters> candidateParameters(config.populationSize, initialParameters);
     ModelParameters bestParameters = initialParameters;

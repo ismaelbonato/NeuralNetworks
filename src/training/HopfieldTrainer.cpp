@@ -2,6 +2,7 @@
 
 #include "base/Model.h"
 #include "layers/HopfieldLayer.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/Optimizer.h"
 
 #include <memory>
@@ -33,6 +34,7 @@ void HopfieldTrainer::learn(Model &network,
 
     const LearningRuleOptimizer optimizer{
         std::make_shared<HebbianRule<Scalar>>()};
+    initializeModelParameters(network);
 
     for (const auto &pattern : inputs) {
         const Batch activations(network.numLayers(), pattern);

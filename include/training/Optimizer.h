@@ -1,7 +1,7 @@
 #pragma once
 
-#include "base/LearningRule.h"
 #include "base/Types.h"
+#include "training/LearningRule.h"
 
 #include <memory>
 #include <stdexcept>

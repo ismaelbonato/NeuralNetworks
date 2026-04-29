@@ -3,6 +3,7 @@
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 #include "training/FeedforwardTrainer.h"
+#include "training/LayerParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -28,12 +29,14 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.inputSize = inputSize;
     config.outputSize = outputSize;
 
-    if (!randomInitialize) {
-        config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-        config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    }
-
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = randomInitialize
+                     ? makeInitializedLayer<DenseLayer>(config)
+                     : makeInitializedLayer<DenseLayer>(
+                           config,
+                           {.weightInitializer
+                            = std::make_shared<ZeroInitializer<Scalar>>(),
+                            .biasInitializer
+                            = std::make_shared<ZeroInitializer<Scalar>>()});
     return layer;
 }
 

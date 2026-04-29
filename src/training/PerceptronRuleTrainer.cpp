@@ -2,6 +2,7 @@
 
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
+#include "training/LayerParameterInitializer.h"
 #include "training/Optimizer.h"
 
 #include <memory>
@@ -45,6 +46,7 @@ void PerceptronRuleTrainer::learn(Model &network,
 
     const LearningRuleOptimizer optimizer{
         std::make_shared<PerceptronRule<Scalar>>()};
+    initializeModelParameters(network);
 
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         for (size_t i = 0; i < inputs.size(); ++i) {
