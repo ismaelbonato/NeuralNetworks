@@ -334,6 +334,28 @@ TEST_CASE("skill exposes parameter snapshots for parameterized layers",
     REQUIRE_NOTHROW(skill.requireInitialized());
 }
 
+TEST_CASE("skill-owned parameters drive runtime execution",
+          "[skill][parameters]")
+{
+    auto layer = makeDenseLayer(1, 1);
+    Skill skill(std::move(layer));
+    skill.setParameters({
+        .weights = Pattern::matrix({{2.0F}}),
+        .biases = {-1.0F},
+    });
+
+    dynamic_cast<DenseLayer &>(skill.layer()).setParameters({
+        .weights = Pattern::matrix({{0.0F}}),
+        .biases = {0.0F},
+    });
+
+    const Pattern output = skill.perform({1.0F});
+
+    requireClose(output.at(0), 0.7310586F);
+    REQUIRE(skill.getParameters().weights == Pattern::matrix({{2.0F}}));
+    REQUIRE(skill.getParameters().biases == Pattern{-1.0F});
+}
+
 TEST_CASE("runtime-only skills do not expose parameters",
           "[skill][parameters]")
 {

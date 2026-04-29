@@ -10,13 +10,7 @@
 class Skill
 {
 public:
-    explicit Skill(std::unique_ptr<Layer> newLayer)
-        : runtimeLayer(std::move(newLayer))
-    {
-        if (!runtimeLayer) {
-            throw std::invalid_argument("Cannot create a skill without a layer.");
-        }
-    }
+    explicit Skill(std::unique_ptr<Layer> newLayer);
 
     Skill(const Skill &) = delete;
     Skill &operator=(const Skill &) = delete;
@@ -34,15 +28,13 @@ public:
         return *runtimeLayer;
     }
 
-    Pattern perform(const Pattern &input) const
-    {
-        return runtimeLayer->infer(input);
-    }
+    Pattern perform(const Pattern &input) const;
 
     bool hasParameters() const;
     std::optional<LayerParameters> parameters() const;
     LayerParameters getParameters() const;
     void setParameters(const LayerParameters &parameters);
+    void adoptLayerParameters();
     void requireInitialized() const;
 
     std::unique_ptr<Layer> intoLayer()
@@ -50,9 +42,13 @@ public:
         if (!runtimeLayer) {
             throw std::runtime_error("Cannot move a layer out of an empty skill.");
         }
+        syncParametersToLayer();
         return std::move(runtimeLayer);
     }
 
 private:
     std::unique_ptr<Layer> runtimeLayer;
+    std::optional<LayerParameters> ownedParameters;
+
+    void syncParametersToLayer() const;
 };

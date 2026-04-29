@@ -7,6 +7,7 @@
 #include <functional>
 #include <optional>
 #include <typeinfo>
+#include <utility>
 
 namespace {
 template<typename LayerType>
@@ -31,6 +32,21 @@ std::optional<std::reference_wrapper<const LayerType>> layerAs(
 }
 } // namespace
 
+Skill::Skill(std::unique_ptr<Layer> newLayer)
+    : runtimeLayer(std::move(newLayer))
+{
+    if (!runtimeLayer) {
+        throw std::invalid_argument("Cannot create a skill without a layer.");
+    }
+    adoptLayerParameters();
+}
+
+Pattern Skill::perform(const Pattern &input) const
+{
+    syncParametersToLayer();
+    return runtimeLayer->infer(input);
+}
+
 bool Skill::hasParameters() const
 {
     return layerAs<const DenseLayer>(layer()).has_value()
@@ -40,17 +56,11 @@ bool Skill::hasParameters() const
 
 std::optional<LayerParameters> Skill::parameters() const
 {
-    if (auto dense = layerAs<const DenseLayer>(layer())) {
-        return dense->get().getParameters();
-    }
-    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer())) {
-        return convolutional->get().getParameters();
-    }
-    if (auto hopfield = layerAs<const HopfieldLayer>(layer())) {
-        return hopfield->get().getParameters();
+    if (!hasParameters()) {
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    return ownedParameters.value_or(LayerParameters{});
 }
 
 LayerParameters Skill::getParameters() const
@@ -66,22 +76,44 @@ void Skill::setParameters(const LayerParameters &parameters)
 {
     if (auto dense = layerAs<DenseLayer>(layer())) {
         dense->get().setParameters(parameters);
+        ownedParameters = parameters;
         return;
     }
     if (auto convolutional = layerAs<ConvolutionalLayer>(layer())) {
         convolutional->get().setParameters(parameters);
+        ownedParameters = parameters;
         return;
     }
     if (auto hopfield = layerAs<HopfieldLayer>(layer())) {
         hopfield->get().setParameters(parameters);
+        ownedParameters = parameters;
         return;
     }
 
     throw std::runtime_error("Skill does not accept parameters.");
 }
 
+void Skill::adoptLayerParameters()
+{
+    if (auto dense = layerAs<DenseLayer>(layer())) {
+        ownedParameters = dense->get().getParameters();
+        return;
+    }
+    if (auto convolutional = layerAs<ConvolutionalLayer>(layer())) {
+        ownedParameters = convolutional->get().getParameters();
+        return;
+    }
+    if (auto hopfield = layerAs<HopfieldLayer>(layer())) {
+        ownedParameters = hopfield->get().getParameters();
+        return;
+    }
+
+    ownedParameters = std::nullopt;
+}
+
 void Skill::requireInitialized() const
 {
+    syncParametersToLayer();
     if (auto dense = layerAs<const DenseLayer>(layer())) {
         dense->get().requireInitialized();
         return;
@@ -92,5 +124,24 @@ void Skill::requireInitialized() const
     }
     if (auto hopfield = layerAs<const HopfieldLayer>(layer())) {
         hopfield->get().requireInitialized();
+    }
+}
+
+void Skill::syncParametersToLayer() const
+{
+    if (!ownedParameters) {
+        return;
+    }
+
+    if (auto dense = layerAs<DenseLayer>(*runtimeLayer)) {
+        dense->get().setParameters(*ownedParameters);
+        return;
+    }
+    if (auto convolutional = layerAs<ConvolutionalLayer>(*runtimeLayer)) {
+        convolutional->get().setParameters(*ownedParameters);
+        return;
+    }
+    if (auto hopfield = layerAs<HopfieldLayer>(*runtimeLayer)) {
+        hopfield->get().setParameters(*ownedParameters);
     }
 }

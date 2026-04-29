@@ -105,6 +105,7 @@ void initializeSkillParameters(
     const LayerParameterInitialization &initialization)
 {
     initializeLayerParameters(skill.layer(), initialization);
+    skill.adoptLayerParameters();
 }
 
 void initializeModelParameters(
