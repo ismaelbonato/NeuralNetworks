@@ -1,14 +1,12 @@
 #pragma once
 
 #include "base/ActivationFunction.h"
-#include "base/Layer.h"
 #include "base/LayerFactory.h"
-#include "base/LearningRule.h"
 #include "layers/DenseLayer.h"
-#include "base/Types.h"
 #include "base/Model.h"
 #include <opencv2/opencv.hpp>
 
+#include <iostream>
 #include <utility>
 
 #include "training/FeedforwardTrainer.h"
@@ -51,11 +49,10 @@ inline void perceptronNetwork()
         {1.0}  // 1 AND 1
     };
 
-    DenseLayerConfig config{};
+    DenseLayerRecipe config{};
     config.name = "Model";
     config.type = "DenseLayer";
     config.info = "info";
-    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer =
         std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
@@ -94,11 +91,10 @@ inline void perceptronNaturalSelection()
         {1.0}  // 1 AND 1
     };
 
-    DenseLayerConfig config{};
+    DenseLayerRecipe config{};
     config.name = "Model";
     config.type = "DenseLayer";
     config.info = "info";
-    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
@@ -135,8 +131,6 @@ inline void feedforwardExperiment()
     inputs.emplace_back(png_to_bits("../Misc/grandpa.png"));
     inputs.emplace_back(png_to_bits("../Misc/lisa.png"));
 
-    Pattern p(png_to_bits("../Misc/meg.png"));
-
     Batch labels = {{1.0, 0.0, 0.0, 0.0, 0.0, 0.0},  //bart
                        {0.0, 1.0, 0.0, 0.0, 0.0, 0.0},  //homer
                        {0.0, 0.0, 1.0, 0.0, 0.0, 0.0},  //marge
@@ -146,16 +140,14 @@ inline void feedforwardExperiment()
 
     auto col = inputs.at(0).size();
 
-    auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     auto weightInitializer = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0}, Scalar{1.0});
     auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
-    DenseLayerConfig config1{};
+    DenseLayerRecipe config1{};
     config1.name = "Input";
     config1.type = "DenseLayer";
     config1.info = "info";
-    config1.learningRule = rule;
     config1.activation = activation;
     config1.weightInitializer = weightInitializer;
     config1.biasInitializer = biasInitializer;
@@ -164,11 +156,10 @@ inline void feedforwardExperiment()
     config1.expectedInputShape = {col};
     config1.expectedOutputShape = {32};
 
-    DenseLayerConfig config2{};
+    DenseLayerRecipe config2{};
     config2.name = "Hidden Layer";
     config2.type = "DenseLayer";
     config2.info = "info";
-    config2.learningRule = rule;
     config2.activation = activation;
     config2.weightInitializer = weightInitializer;
     config2.biasInitializer = biasInitializer;
@@ -177,11 +168,10 @@ inline void feedforwardExperiment()
     config2.expectedInputShape = {32};
     config2.expectedOutputShape = {16};
 
-    DenseLayerConfig config3{};
+    DenseLayerRecipe config3{};
     config3.name = "Hidden Layer";
     config3.type = "DenseLayer";
     config3.info = "info";
-    config3.learningRule = rule;
     config3.activation = activation;
     config3.weightInitializer = weightInitializer;
     config3.biasInitializer = biasInitializer;
@@ -190,11 +180,10 @@ inline void feedforwardExperiment()
     config3.expectedInputShape = {16};
     config3.expectedOutputShape = {8};
 
-    DenseLayerConfig config4{};
+    DenseLayerRecipe config4{};
     config4.name = "Output";
     config4.type = "DenseLayer";
     config4.info = "info";
-    config4.learningRule = rule;
     config4.activation = activation;
     config4.weightInitializer = weightInitializer;
     config4.biasInitializer = biasInitializer;

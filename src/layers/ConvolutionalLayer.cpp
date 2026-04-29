@@ -1,37 +1,38 @@
 #include "layers/ConvolutionalLayer.h"
-#include "base/Layer.h"
 #include <stdexcept>
 
 namespace {
 
-size_t convolutionalOutputLength(const ConvolutionalLayerConfig &config)
+size_t convolutionalOutputLength(const ConvolutionalLayerRecipe &recipe)
 {
-    return ((config.inputLength + (2 * config.padding) - config.kernelSize)
-            / config.stride)
+    return ((recipe.inputLength + (2 * recipe.padding) - recipe.kernelSize)
+            / recipe.stride)
            + 1;
 }
 
-Shape convolutionalInputShape(const ConvolutionalLayerConfig &config)
+Shape convolutionalInputShape(const ConvolutionalLayerRecipe &recipe)
 {
-    return {config.inputChannels, config.inputLength};
+    return {recipe.inputChannels, recipe.inputLength};
 }
 
-Shape convolutionalOutputShape(const ConvolutionalLayerConfig &config)
+Shape convolutionalOutputShape(const ConvolutionalLayerRecipe &recipe)
 {
-    return {config.outputChannels, convolutionalOutputLength(config)};
+    return {recipe.outputChannels, convolutionalOutputLength(recipe)};
 }
 
 } // namespace
 
-ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerConfig &newConfig)
-    : TrainableLayer(newConfig,
-                     convolutionalInputShape(newConfig),
-                     convolutionalOutputShape(newConfig))
-    , convolutionalConfig(newConfig)
+ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe)
+    : Layer(newRecipe,
+            convolutionalInputShape(newRecipe),
+            convolutionalOutputShape(newRecipe))
+    , convolutionalRecipe(newRecipe)
+    , weightInitializer(newRecipe.weightInitializer)
+    , biasInitializer(newRecipe.biasInitializer)
 {
-    if (!newConfig.isValid()) {
+    if (!newRecipe.isValid()) {
         throw std::invalid_argument(
-            "Invalid convolutional layer configuration");
+            "Invalid convolutional layer recipe");
     }
 }
 
@@ -39,14 +40,134 @@ ConvolutionalLayer::~ConvolutionalLayer() = default;
 
 Shape ConvolutionalLayer::expectedWeightShape() const
 {
-    return {convolutionalConfig.outputChannels,
-            convolutionalConfig.inputChannels,
-            convolutionalConfig.kernelSize};
+    return {convolutionalRecipe.outputChannels,
+            convolutionalRecipe.inputChannels,
+            convolutionalRecipe.kernelSize};
 }
 
 Shape ConvolutionalLayer::expectedBiasShape() const
 {
-    return {convolutionalConfig.outputChannels};
+    return {convolutionalRecipe.outputChannels};
+}
+
+bool ConvolutionalLayer::hasBias() const
+{
+    return !expectedBiasShape().dimensions.empty();
+}
+
+bool ConvolutionalLayer::hasWeights() const
+{
+    return !expectedWeightShape().dimensions.empty();
+}
+
+Pattern ConvolutionalLayer::initializeParameter(
+    const Shape &shape,
+    const std::shared_ptr<Initializer<Scalar>> &initializer,
+    Scalar fallbackValue)
+{
+    Pattern parameter = Pattern::withShape(shape, fallbackValue);
+
+    if (initializer) {
+        initializer->fill(parameter);
+    }
+
+    return parameter;
+}
+
+void ConvolutionalLayer::initializeParameters(Scalar value)
+{
+    if (hasWeights() && weights.empty()) {
+        setWeights(initializeParameter(expectedWeightShape(),
+                                       weightInitializer,
+                                       value));
+    }
+
+    if (hasBias() && biases.empty()) {
+        setBiases(initializeParameter(expectedBiasShape(),
+                                      biasInitializer,
+                                      Scalar{}));
+    }
+}
+
+const Pattern &ConvolutionalLayer::getWeights() const
+{
+    return weights;
+}
+
+const Pattern &ConvolutionalLayer::getBiases() const
+{
+    return biases;
+}
+
+LayerParameters ConvolutionalLayer::getParameters() const
+{
+    return {
+        .weights = weights,
+        .biases = biases,
+    };
+}
+
+void ConvolutionalLayer::setParameters(const LayerParameters &parameters)
+{
+    setWeights(parameters.weights);
+    setBiases(parameters.biases);
+}
+
+void ConvolutionalLayer::setWeights(const Pattern &newWeights)
+{
+    if (!hasWeights()) {
+        if (!newWeights.empty()) {
+            throw std::runtime_error("Layer does not use weights.");
+        }
+
+        weights = newWeights;
+        return;
+    }
+
+    if (!newWeights.hasShape(expectedWeightShape())) {
+        throw std::runtime_error(
+            "Layer weights shape does not match layer recipe.");
+    }
+
+    weights = newWeights;
+}
+
+void ConvolutionalLayer::setBiases(const Pattern &newBiases)
+{
+    if (!hasBias()) {
+        if (!newBiases.empty()) {
+            throw std::runtime_error("Layer does not use bias.");
+        }
+
+        biases = newBiases;
+        return;
+    }
+
+    if (!newBiases.hasShape(expectedBiasShape())) {
+        throw std::runtime_error(
+            "Layer bias size does not match layer output size.");
+    }
+
+    biases = newBiases;
+}
+
+bool ConvolutionalLayer::isInitialized() const
+{
+    return (!hasWeights() || weights.hasShape(expectedWeightShape()))
+           && (!hasBias() || biases.hasShape(expectedBiasShape()));
+}
+
+void ConvolutionalLayer::requireInitialized() const
+{
+    if (!isInitialized()) {
+        throw std::runtime_error("Layer weights are not initialized.");
+    }
+}
+
+Pattern ConvolutionalLayer::forward(const Pattern &input) const
+{
+    Pattern sums = preActivation(input);
+    return activate(sums);
 }
 
 Pattern ConvolutionalLayer::preActivation(const Pattern &input) const
@@ -58,11 +179,11 @@ Pattern ConvolutionalLayer::preActivation(const Pattern &input) const
     }
 
     Pattern result = input.conv1D(weights,
-                                  convolutionalConfig.stride,
-                                  convolutionalConfig.padding);
+                                  convolutionalRecipe.stride,
+                                  convolutionalRecipe.padding);
     if (hasBias()) {
         for (size_t outputChannel = 0;
-             outputChannel < convolutionalConfig.outputChannels;
+             outputChannel < convolutionalRecipe.outputChannels;
              ++outputChannel) {
             for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
                  ++outputIndex) {
@@ -75,127 +196,18 @@ Pattern ConvolutionalLayer::preActivation(const Pattern &input) const
     return result;
 }
 
-Pattern ConvolutionalLayer::backwardPass(const Pattern &layerDelta,
-                                         const Pattern &layerInput) const
+Pattern ConvolutionalLayer::activate(const Pattern &values) const
 {
-    requireInitialized();
-
-    if (!layerDelta.hasShape(expectedOutput)) {
-        throw std::runtime_error("Layer delta shape does not match "
-                                 "convolutional layer output shape.");
-    }
-    if (!layerInput.hasShape(expectedInput)) {
-        throw std::runtime_error("Layer input shape does not match "
-                                 "convolutional layer input shape.");
-    }
-    Pattern inputDelta = Pattern::withShape(expectedInput, Scalar{0});
-
-    for (size_t outputChannel = 0;
-         outputChannel < convolutionalConfig.outputChannels;
-         ++outputChannel) {
-        for (size_t outputIndex = 0; outputIndex < layerDelta.shape().at(1);
-             ++outputIndex) {
-            for (size_t inputChannel = 0;
-                 inputChannel < convolutionalConfig.inputChannels;
-                 ++inputChannel) {
-                for (size_t kernelIndex = 0;
-                     kernelIndex < convolutionalConfig.kernelSize;
-                     ++kernelIndex) {
-                    const size_t paddedInputIndex
-                        = (outputIndex * convolutionalConfig.stride)
-                          + kernelIndex;
-
-                    if (paddedInputIndex < convolutionalConfig.padding) {
-                        continue;
-                    }
-
-                    const size_t inputIndex = paddedInputIndex
-                                              - convolutionalConfig.padding;
-                    if (inputIndex >= convolutionalConfig.inputLength) {
-                        continue;
-                    }
-
-                    // This is the convolution version of W^T * delta: each
-                    // output delta is spread back to the input cells that
-                    // contributed to that output.
-                    inputDelta.at({inputChannel, inputIndex})
-                        += layerDelta.at({outputChannel, outputIndex})
-                           * weights.at(
-                               {outputChannel, inputChannel, kernelIndex});
-                }
-            }
-        }
+    if (recipe.activation == nullptr) {
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
     }
 
-    return inputDelta;
+    return values.map(
+        [this](Scalar value) { return (*recipe.activation)(value); });
 }
 
-void ConvolutionalLayer::updateWeights(const Pattern &prev_activations,
-                                       const Pattern &layerDelta,
-                                       Scalar learningRate)
+const ConvolutionalLayerRecipe &ConvolutionalLayer::getConvolutionalRecipe() const
 {
-    requireInitialized();
-
-    if (!prev_activations.hasShape(expectedInput)) {
-        throw std::runtime_error("Previous activation shape does not match "
-                                 "convolutional layer input shape.");
-    }
-    if (!layerDelta.hasShape(expectedOutput)) {
-        throw std::runtime_error("Layer delta shape does not match "
-                                 "convolutional layer output shape.");
-    }
-
-    Pattern weightGradients = Pattern::withShape(expectedWeightShape(),
-                                                 Scalar{0});
-    Pattern biasGradients = Pattern::withShape(expectedBiasShape(), Scalar{0});
-
-    for (size_t outputChannel = 0;
-         outputChannel < convolutionalConfig.outputChannels;
-         ++outputChannel) {
-        for (size_t outputIndex = 0; outputIndex < layerDelta.shape().at(1);
-             ++outputIndex) {
-            biasGradients.at(outputChannel) += layerDelta.at(
-                {outputChannel, outputIndex});
-
-            for (size_t inputChannel = 0;
-                 inputChannel < convolutionalConfig.inputChannels;
-                 ++inputChannel) {
-                for (size_t kernelIndex = 0;
-                     kernelIndex < convolutionalConfig.kernelSize;
-                     ++kernelIndex) {
-                    const size_t paddedInputIndex
-                        = (outputIndex * convolutionalConfig.stride)
-                          + kernelIndex;
-
-                    if (paddedInputIndex < convolutionalConfig.padding) {
-                        continue;
-                    }
-
-                    const size_t inputIndex = paddedInputIndex
-                                              - convolutionalConfig.padding;
-                    if (inputIndex >= convolutionalConfig.inputLength) {
-                        continue;
-                    }
-
-                    weightGradients.at(
-                        {outputChannel, inputChannel, kernelIndex})
-                        += layerDelta.at({outputChannel, outputIndex})
-                           * prev_activations.at({inputChannel, inputIndex});
-                }
-            }
-        }
-    }
-
-    const auto updateValue = [this, learningRate](Scalar value,
-                                                  Scalar gradient) {
-        return trainableConfig.learningRule->updateWeight(value,
-                                                          gradient,
-                                                          learningRate);
-    };
-
-    weights = weights.zip(weightGradients, updateValue);
-
-    if (hasBias()) {
-        biases = biases.zipValues(biasGradients, updateValue);
-    }
+    return convolutionalRecipe;
 }

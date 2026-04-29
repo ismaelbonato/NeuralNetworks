@@ -1,19 +1,22 @@
 #include "training/HopfieldTrainer.h"
 
 #include "base/Model.h"
+#include "layers/HopfieldLayer.h"
+#include "training/Optimizer.h"
 
+#include <memory>
 #include <stdexcept>
+#include <typeinfo>
 
 namespace
 {
-TrainableLayer &requireTrainable(Layer &layer)
+HopfieldLayer &requireHopfieldLayer(Layer &layer)
 {
-    auto *trainable = dynamic_cast<TrainableLayer *>(&layer);
-    if (trainable == nullptr) {
-        throw std::runtime_error("Hopfield training requires trainable layers.");
+    try {
+        return dynamic_cast<HopfieldLayer &>(layer);
+    } catch (const std::bad_cast &) {
+        throw std::runtime_error("Hopfield training requires hopfield layers.");
     }
-
-    return *trainable;
 }
 }
 
@@ -28,9 +31,15 @@ void HopfieldTrainer::learn(Model &network,
         throw std::runtime_error("Batch is empty.");
     }
 
+    const LearningRuleOptimizer optimizer{
+        std::make_shared<HebbianRule<Scalar>>()};
+
     for (const auto &pattern : inputs) {
+        const Batch activations(network.numLayers(), pattern);
+        const Batch layerDeltas(network.numLayers());
         for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-            requireTrainable(network.getLayer(layerIndex)).updateWeights(pattern, {}, learningRate);
+            requireHopfieldLayer(network.getLayer(layerIndex));
         }
+        optimizer.step(network, activations, layerDeltas, learningRate);
     }
 }

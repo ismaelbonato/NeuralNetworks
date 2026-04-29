@@ -3,17 +3,19 @@
 
 namespace
 {
-Shape hopfieldShape(const HopfieldLayerConfig &config)
+Shape hopfieldShape(const HopfieldLayerRecipe &recipe)
 {
-    return config.expectedShape.isValid() ? config.expectedShape : Shape{config.size};
+    return recipe.expectedShape.isValid() ? recipe.expectedShape : Shape{recipe.size};
 }
 }
 
-HopfieldLayer::HopfieldLayer(const HopfieldLayerConfig &newConfig)
-    : TrainableLayer(newConfig, hopfieldShape(newConfig), hopfieldShape(newConfig))
+HopfieldLayer::HopfieldLayer(const HopfieldLayerRecipe &newRecipe)
+    : Layer(newRecipe, hopfieldShape(newRecipe), hopfieldShape(newRecipe))
+    , weightInitializer(newRecipe.weightInitializer)
+    , biasInitializer(newRecipe.biasInitializer)
 {
-    if (!newConfig.isValid()) {
-        throw std::invalid_argument("Invalid hopfield layer configuration");
+    if (!newRecipe.isValid()) {
+        throw std::invalid_argument("Invalid hopfield layer recipe");
     }
 }
 
@@ -29,33 +31,146 @@ Shape HopfieldLayer::expectedBiasShape() const
     return {};
 }
 
+bool HopfieldLayer::hasBias() const
+{
+    return !expectedBiasShape().dimensions.empty();
+}
+
+bool HopfieldLayer::hasWeights() const
+{
+    return !expectedWeightShape().dimensions.empty();
+}
+
+Pattern HopfieldLayer::initializeParameter(
+    const Shape &shape,
+    const std::shared_ptr<Initializer<Scalar>> &initializer,
+    Scalar fallbackValue)
+{
+    Pattern parameter = Pattern::withShape(shape, fallbackValue);
+
+    if (initializer) {
+        initializer->fill(parameter);
+    }
+
+    return parameter;
+}
+
+void HopfieldLayer::initializeParameters(Scalar value)
+{
+    if (hasWeights() && weights.empty()) {
+        setWeights(initializeParameter(expectedWeightShape(),
+                                       weightInitializer,
+                                       value));
+    }
+
+    if (hasBias() && biases.empty()) {
+        setBiases(initializeParameter(expectedBiasShape(),
+                                      biasInitializer,
+                                      Scalar{}));
+    }
+}
+
+const Pattern &HopfieldLayer::getWeights() const
+{
+    return weights;
+}
+
+const Pattern &HopfieldLayer::getBiases() const
+{
+    return biases;
+}
+
+LayerParameters HopfieldLayer::getParameters() const
+{
+    return {
+        .weights = weights,
+        .biases = biases,
+    };
+}
+
+void HopfieldLayer::setParameters(const LayerParameters &parameters)
+{
+    setWeights(parameters.weights);
+    setBiases(parameters.biases);
+}
+
+void HopfieldLayer::setWeights(const Pattern &newWeights)
+{
+    if (!hasWeights()) {
+        if (!newWeights.empty()) {
+            throw std::runtime_error("Layer does not use weights.");
+        }
+
+        weights = newWeights;
+        return;
+    }
+
+    if (!newWeights.hasShape(expectedWeightShape())) {
+        throw std::runtime_error(
+            "Layer weights shape does not match layer recipe.");
+    }
+
+    weights = newWeights;
+}
+
+void HopfieldLayer::setBiases(const Pattern &newBiases)
+{
+    if (!hasBias()) {
+        if (!newBiases.empty()) {
+            throw std::runtime_error("Layer does not use bias.");
+        }
+
+        biases = newBiases;
+        return;
+    }
+
+    if (!newBiases.hasShape(expectedBiasShape())) {
+        throw std::runtime_error(
+            "Layer bias size does not match layer output size.");
+    }
+
+    biases = newBiases;
+}
+
+bool HopfieldLayer::isInitialized() const
+{
+    return (!hasWeights() || weights.hasShape(expectedWeightShape()))
+           && (!hasBias() || biases.hasShape(expectedBiasShape()));
+}
+
+void HopfieldLayer::requireInitialized() const
+{
+    if (!isInitialized()) {
+        throw std::runtime_error("Layer weights are not initialized.");
+    }
+}
+
 Pattern HopfieldLayer::forward(const Pattern &input) const
 {
     return recall(input);
 }
 
-void HopfieldLayer::updateWeights(const Pattern &pattern,
-                                  const Pattern &,
-                                  Scalar learningRate)
+Pattern HopfieldLayer::preActivation(const Pattern &input) const
 {
-    const size_t n = pattern.size();
-    if (n != getInputSize() || n != getOutputSize()) {
-        throw std::runtime_error("Pattern size does not match Hopfield layer size.");
-    }
-    if (!pattern.hasShape(getExpectedInputShape())) {
-        throw std::runtime_error("Pattern shape does not match Hopfield layer shape.");
-    }
+    requireInitialized();
 
-    Pattern weightGradients = pattern.outer(pattern);
-    weightGradients.setDiagonal(Scalar{});
-
-    weights = weights.zip(weightGradients, [this, learningRate](Scalar weight,
-                                                                      Scalar gradient) {
-        return trainableConfig.learningRule->updateWeight(weight, gradient, learningRate);
-    });
-    weights.setDiagonal(Scalar{});
+    if (input.empty()) {
+        throw std::runtime_error("Input is empty");
+    }
+    Pattern sums = input.matVec(weights);
+    return hasBias() ? sums + biases : sums;
 }
 
+Pattern HopfieldLayer::activate(const Pattern &values) const
+{
+    if (recipe.activation == nullptr) {
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
+    }
+
+    return values.map(
+        [this](Scalar value) { return (*recipe.activation)(value); });
+}
 
 Pattern HopfieldLayer::recall(const Pattern &input) const
 {

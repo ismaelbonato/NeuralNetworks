@@ -1,13 +1,10 @@
 #include "base/ActivationFunction.h"
 #include "base/Initializer.h"
-#include "base/Layer.h"
 #include "base/LayerFactory.h"
-#include "base/LearningRule.h"
 #include "base/Model.h"
-#include "base/Tensor.h"
-#include "base/Types.h"
 #include "layers/ConvolutionalLayer.h"
 #include "training/FeedforwardTrainer.h"
+#include "training/GradientEngine.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -21,14 +18,13 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
         = {0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F};
     signal.reshape({1, signal.size()});
 
-    auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     auto weightInitializer
         = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
                                                        Scalar{1.0});
     auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
-    ConvolutionalLayerConfig config{};
+    ConvolutionalLayerRecipe config{};
     config.inputChannels = 1;
     config.inputLength = signal.size();
     config.outputChannels = 1;
@@ -38,7 +34,6 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     config.name = "test convolutional layer";
     config.type = "ConvolutionalLayer";
     config.info = "deterministic test layer";
-    config.learningRule = rule;
     config.activation = activation;
     config.weightInitializer = weightInitializer;
     config.biasInitializer = biasInitializer;
@@ -56,8 +51,6 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
 
     layer->setWeights(weights);
     net.addLayer(std::move(layer));
-    //net.addLayer(makeLayer<ConvolutionalLayer>(config));
-
     Pattern output = net.infer(signal);
 
     Pattern expected = {0.880797F,
@@ -78,10 +71,9 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
 TEST_CASE("1D convolution backward spreads output deltas over input windows",
           "[convolution][1d][backward]")
 {
-    auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<IdentityActivation<Scalar>>();
 
-    ConvolutionalLayerConfig config{};
+    ConvolutionalLayerRecipe config{};
     config.inputChannels = 1;
     config.inputLength = 4;
     config.outputChannels = 1;
@@ -91,7 +83,6 @@ TEST_CASE("1D convolution backward spreads output deltas over input windows",
     config.name = "test convolutional layer";
     config.type = "ConvolutionalLayer";
     config.info = "deterministic backward test layer";
-    config.learningRule = rule;
     config.activation = activation;
 
     Pattern weights = Pattern::withShape({1, 1, 2});
@@ -107,7 +98,10 @@ TEST_CASE("1D convolution backward spreads output deltas over input windows",
     layerDelta.at({0, 2}) = 11.0F;
 
     const Pattern layerInput = Pattern::withShape({1, 4}, Scalar{0});
-    const Pattern previousDelta = layer->backwardPass(layerDelta, layerInput);
+    const BackpropagationGradientEngine gradientEngine;
+    const Pattern previousDelta = gradientEngine.backwardThroughLayer(*layer,
+                                                                      layerDelta,
+                                                                      layerInput);
 
     REQUIRE(previousDelta.at({0, 0}) == Catch::Approx(10.0F));
     REQUIRE(previousDelta.at({0, 1}) == Catch::Approx(29.0F));
@@ -121,14 +115,13 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
         = {0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F};
     signal.reshape({1, signal.size()});
 
-    auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     auto weightInitializer
         = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
                                                        Scalar{1.0});
     auto biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
 
-    ConvolutionalLayerConfig config{};
+    ConvolutionalLayerRecipe config{};
     config.inputChannels = 1;
     config.inputLength = signal.size();
     config.outputChannels = 1;
@@ -138,7 +131,6 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
     config.name = "test convolutional layer";
     config.type = "ConvolutionalLayer";
     config.info = "deterministic test layer";
-    config.learningRule = rule;
     config.activation = activation;
     config.weightInitializer = weightInitializer;
     config.biasInitializer = biasInitializer;

@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
@@ -20,13 +19,11 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
                                            const size_t outputSize,
                                            const bool randomInitialize = false)
 {
-    auto rule = std::make_shared<SGDRule<Scalar>>();
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "test dense layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = rule;
     config.activation = activation;
     config.inputSize = inputSize;
     config.outputSize = outputSize;
@@ -45,11 +42,9 @@ void requireClose(const Scalar actual, const Scalar expected)
     REQUIRE(std::fabs(actual - expected) < tolerance);
 }
 
-TrainableLayer &trainableLayer(Model &network, const size_t index)
+DenseLayer &denseLayer(Model &network, const size_t index)
 {
-    auto *layer = dynamic_cast<TrainableLayer *>(&network.getLayer(index));
-    REQUIRE(layer != nullptr);
-    return *layer;
+    return dynamic_cast<DenseLayer &>(network.getLayer(index));
 }
 }
 
@@ -95,8 +90,8 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    requireClose(trainableLayer(network, 0).getWeights().at({0, 0}), 0.125F);
-    requireClose(trainableLayer(network, 0).getBiases().at(0), 0.125F);
+    requireClose(denseLayer(network, 0).getWeights().at({0, 0}), 0.125F);
+    requireClose(denseLayer(network, 0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward inference rejects missing layers and invalid input sizes",
@@ -124,7 +119,7 @@ TEST_CASE("feedforward trainer can train the same model more than once",
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    REQUIRE(trainableLayer(network, 0).getWeights().at({0, 0}) != 0.0F);
+    REQUIRE(denseLayer(network, 0).getWeights().at({0, 0}) != 0.0F);
 }
 
 TEST_CASE("feedforward trainer direct API updates weights and biases",
@@ -137,8 +132,8 @@ TEST_CASE("feedforward trainer direct API updates weights and biases",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    requireClose(trainableLayer(network, 0).getWeights().at({0, 0}), 0.125F);
-    requireClose(trainableLayer(network, 0).getBiases().at(0), 0.125F);
+    requireClose(denseLayer(network, 0).getWeights().at({0, 0}), 0.125F);
+    requireClose(denseLayer(network, 0).getBiases().at(0), 0.125F);
 }
 
 TEST_CASE("feedforward trainer updates hidden and output layers",
@@ -161,8 +156,8 @@ TEST_CASE("feedforward trainer updates hidden and output layers",
     FeedforwardTrainer trainer;
     trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
-    REQUIRE(trainableLayer(network, 0).getWeights().at({0, 0}) != hiddenWeightBefore);
-    REQUIRE(trainableLayer(network, 1).getWeights().at({0, 0}) != outputWeightBefore);
+    REQUIRE(denseLayer(network, 0).getWeights().at({0, 0}) != hiddenWeightBefore);
+    REQUIRE(denseLayer(network, 1).getWeights().at({0, 0}) != outputWeightBefore);
 }
 
 TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][errors]")

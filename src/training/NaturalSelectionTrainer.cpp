@@ -1,14 +1,94 @@
 #include "training/NaturalSelectionTrainer.h"
 
 #include "base/Model.h"
+#include "layers/ConvolutionalLayer.h"
+#include "layers/DenseLayer.h"
+#include "layers/HopfieldLayer.h"
 
+#include <functional>
 #include <limits>
+#include <optional>
+#include <random>
 #include <stdexcept>
+#include <typeinfo>
 #include <vector>
 
 namespace
 {
 using ModelParameters = std::vector<LayerParameters>;
+
+template<typename LayerType>
+std::optional<std::reference_wrapper<LayerType>> layerAs(Layer &layer)
+{
+    try {
+        return std::ref(dynamic_cast<LayerType &>(layer));
+    } catch (const std::bad_cast &) {
+        return std::nullopt;
+    }
+}
+
+template<typename LayerType>
+std::optional<std::reference_wrapper<const LayerType>> layerAs(
+    const Layer &layer)
+{
+    try {
+        return std::cref(dynamic_cast<const LayerType &>(layer));
+    } catch (const std::bad_cast &) {
+        return std::nullopt;
+    }
+}
+
+std::optional<LayerParameters> layerParameters(const Layer &layer)
+{
+    if (auto dense = layerAs<const DenseLayer>(layer)) {
+        return dense->get().getParameters();
+    }
+    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
+        return convolutional->get().getParameters();
+    }
+    if (auto hopfield = layerAs<const HopfieldLayer>(layer)) {
+        return hopfield->get().getParameters();
+    }
+
+    return std::nullopt;
+}
+
+void setLayerParameters(Layer &layer, const LayerParameters &parameters)
+{
+    if (auto dense = layerAs<DenseLayer>(layer)) {
+        dense->get().setParameters(parameters);
+    } else if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
+        convolutional->get().setParameters(parameters);
+    } else if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
+        hopfield->get().setParameters(parameters);
+    }
+}
+
+LayerParameters mutatedLayerParameters(const LayerParameters &parameters,
+                                       Scalar mutationStrength)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<Scalar> dis(-mutationStrength,
+                                               mutationStrength);
+
+    LayerParameters updated{
+        .weights = parameters.weights,
+        .biases = parameters.biases,
+    };
+
+    if (!updated.weights.empty()) {
+        updated.weights = updated.weights.map(
+            [&dis, &gen](Scalar value) { return value + dis(gen); });
+    }
+
+    if (!updated.biases.empty()) {
+        updated.biases = updated.biases.mapValues(
+            [&dis, &gen](Scalar value) { return value + dis(gen); });
+    }
+
+    return updated;
+}
 
 void validateTrainingData(const Model &network,
                           const Batch &inputs,
@@ -39,9 +119,8 @@ ModelParameters snapshotParameters(const Model &network)
     parameters.reserve(network.numLayers());
 
     for (const auto &layer : network.getLayers()) {
-        const auto *trainable = dynamic_cast<const TrainableLayer *>(layer.get());
-        if (trainable != nullptr) {
-            parameters.push_back(trainable->getParameters());
+        if (auto params = layerParameters(*layer)) {
+            parameters.push_back(*params);
         } else {
             parameters.push_back({});
         }
@@ -57,10 +136,8 @@ void applyParameters(Model &network, const ModelParameters &parameters)
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        auto *trainable = dynamic_cast<TrainableLayer *>(&network.getLayer(layerIndex));
-        if (trainable != nullptr) {
-            trainable->setParameters(parameters.at(layerIndex));
-        }
+        setLayerParameters(network.getLayer(layerIndex),
+                           parameters.at(layerIndex));
     }
 }
 
@@ -75,14 +152,10 @@ ModelParameters mutateParameters(const Model &network,
     ModelParameters mutatedParameters;
     mutatedParameters.reserve(parameters.size());
 
-    for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        const auto *trainable = dynamic_cast<const TrainableLayer *>(&network.getLayer(layerIndex));
-        if (trainable != nullptr) {
-            mutatedParameters.push_back(
-                trainable->naturalUpdatedParameters(parameters.at(layerIndex), mutationStrength));
-        } else {
-            mutatedParameters.push_back({});
-        }
+    for (size_t layerIndex = 0; layerIndex < parameters.size(); ++layerIndex) {
+        mutatedParameters.push_back(mutatedLayerParameters(
+            parameters.at(layerIndex),
+            mutationStrength));
     }
 
     return mutatedParameters;

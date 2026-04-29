@@ -1,7 +1,13 @@
 #include "base/LearningRule.h"
+#include "base/LayerFactory.h"
+#include "base/Model.h"
 #include "base/Types.h"
+#include "layers/DenseLayer.h"
+#include "training/Optimizer.h"
 
 #include <catch2/catch_test_macros.hpp>
+
+#include <memory>
 
 TEST_CASE("learning rules update weights according to their formulas", "[learning-rule]")
 {
@@ -12,4 +18,43 @@ TEST_CASE("learning rules update weights according to their formulas", "[learnin
     REQUIRE(sgd.updateWeight(2.0F, 0.5F, 0.1F) == 1.95F);
     REQUIRE(perceptron.updateWeight(2.0F, 0.5F, 0.1F) == 2.05F);
     REQUIRE(hebbian.updateWeight(2.0F, 0.5F, 0.1F) == 2.5F);
+}
+
+TEST_CASE("learning-rule optimizer applies its learning rule", "[optimizer]")
+{
+    const LearningRuleOptimizer optimizer{
+        std::make_shared<SGDRule<Scalar>>()};
+
+    REQUIRE(optimizer.update(2.0F, 0.5F, 0.1F) == 1.95F);
+}
+
+TEST_CASE("optimizer step applies layer deltas to model parameters",
+          "[optimizer][dense]")
+{
+    DenseLayerRecipe recipe;
+    recipe.name = "optimizer dense";
+    recipe.type = "DenseLayer";
+    recipe.activation = std::make_shared<IdentityActivation<Scalar>>();
+    recipe.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    recipe.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    recipe.inputSize = 1;
+    recipe.outputSize = 1;
+
+    Model network;
+    network.addLayer(makeLayer<DenseLayer>(recipe));
+
+    Batch activations(2);
+    activations.at(0) = Pattern{3.0F};
+    activations.at(1) = Pattern{0.0F};
+
+    Batch layerDeltas(1);
+    layerDeltas.at(0) = Pattern{2.0F};
+
+    const LearningRuleOptimizer optimizer{
+        std::make_shared<SGDRule<Scalar>>()};
+    optimizer.step(network, activations, layerDeltas, 0.5F);
+
+    const auto &layer = dynamic_cast<const DenseLayer &>(network.getLayer(0));
+    REQUIRE(layer.getWeights().at({0, 0}) == -3.0F);
+    REQUIRE(layer.getBiases().at(0) == -1.0F);
 }

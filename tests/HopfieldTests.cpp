@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
@@ -15,11 +14,10 @@ namespace
 {
 std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
 {
-    HopfieldLayerConfig config;
+    HopfieldLayerRecipe config;
     config.name = "test hopfield";
     config.type = "HopfieldLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<HebbianRule<Scalar>>();
     config.activation = std::make_shared<StepPolarActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
@@ -28,11 +26,9 @@ std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
     return makeLayer<HopfieldLayer>(config);
 }
 
-TrainableLayer &trainableLayer(Model &network)
+HopfieldLayer &hopfieldLayer(Model &network)
 {
-    auto *layer = dynamic_cast<TrainableLayer *>(&network.getLayer(0));
-    REQUIRE(layer != nullptr);
-    return *layer;
+    return dynamic_cast<HopfieldLayer &>(network.getLayer(0));
 }
 }
 
@@ -73,7 +69,7 @@ TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfie
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    const Pattern &weights = trainableLayer(network).getWeights();
+    const Pattern &weights = hopfieldLayer(network).getWeights();
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
         REQUIRE(weights.at({i, i}) == 0.0F);
         for (size_t j = 0; j < weights.shape().at(1); ++j) {
@@ -91,7 +87,7 @@ TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    const Pattern &weights = trainableLayer(network).getWeights();
+    const Pattern &weights = hopfieldLayer(network).getWeights();
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
         REQUIRE(weights.at({i, i}) == 0.0F);
         for (size_t j = 0; j < weights.shape().at(1); ++j) {

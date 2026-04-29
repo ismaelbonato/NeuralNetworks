@@ -1,8 +1,11 @@
 #include "base/ActivationFunction.h"
 #include "base/LearningRule.h"
 #include "base/LayerFactory.h"
+#include "base/Model.h"
 #include "layers/DenseLayer.h"
 #include "layers/FlattenLayer.h"
+#include "training/GradientEngine.h"
+#include "training/Optimizer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,23 +19,22 @@ constexpr Scalar tolerance = 0.0001F;
 std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
                                            const size_t outputSize)
 {
-    DenseLayerConfig denseConfig;
-    denseConfig.name = "test dense layer";
-    denseConfig.type = "DenseLayer";
-    denseConfig.info = "deterministic test layer";
-    denseConfig.learningRule = std::make_shared<SGDRule<Scalar>>();
-    denseConfig.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    denseConfig.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    denseConfig.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
-    denseConfig.inputSize = inputSize;
-    denseConfig.outputSize = outputSize;
+    DenseLayerRecipe denseRecipe;
+    denseRecipe.name = "test dense layer";
+    denseRecipe.type = "DenseLayer";
+    denseRecipe.info = "deterministic test layer";
+    denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    denseRecipe.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    denseRecipe.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
+    denseRecipe.inputSize = inputSize;
+    denseRecipe.outputSize = outputSize;
 
-    return makeLayer<DenseLayer>(denseConfig);
+    return makeLayer<DenseLayer>(denseRecipe);
 }
 
 std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
 {
-    FlattenLayerConfig config;
+    FlattenLayerRecipe config;
     config.name = "test flatten layer";
     config.type = "FlattenLayer";
     config.info = "deterministic test layer";
@@ -46,30 +48,24 @@ void requireClose(const Scalar actual, const Scalar expected)
     REQUIRE(std::fabs(actual - expected) < tolerance);
 }
 
-class UninitializedLayer : public TrainableLayer
+LearningRuleOptimizer makeSgdOptimizer()
+{
+    return LearningRuleOptimizer{std::make_shared<SGDRule<Scalar>>()};
+}
+
+class UninitializedLayer : public DenseLayer
 {
 public:
-    explicit UninitializedLayer(const DenseLayerConfig &newConfig)
-        : TrainableLayer(newConfig, {newConfig.inputSize}, {newConfig.outputSize})
+    explicit UninitializedLayer(const DenseLayerRecipe &newRecipe)
+        : DenseLayer(newRecipe)
     {}
-
-protected:
-    Shape expectedWeightShape() const override
-    {
-        return {getOutputSize(), getInputSize()};
-    }
-
-    Shape expectedBiasShape() const override
-    {
-        return {getOutputSize()};
-    }
 };
 
 class DelegatingLayer : public Layer
 {
 public:
     DelegatingLayer()
-        : Layer(LayerConfig{}, {2}, {2})
+        : Layer(LayerRecipe{}, {2}, {2})
     {}
 
     size_t forwardCalls() const
@@ -108,7 +104,19 @@ TEST_CASE("base layer infer delegates valid input to forward", "[layer][infer]")
     REQUIRE(output == Pattern{4.0F, 7.0F});
 }
 
-TEST_CASE("dense layer adds configured bias to pre-activation", "[layer][dense]")
+TEST_CASE("gradient engine rejects unsupported layer backpropagation",
+          "[gradient][errors]")
+{
+    DelegatingLayer layer;
+    const BackpropagationGradientEngine gradientEngine;
+
+    REQUIRE_THROWS_AS(gradientEngine.backwardThroughLayer(layer,
+                                                          Pattern{1.0F, 1.0F},
+                                                          Pattern{1.0F, 1.0F}),
+                      std::runtime_error);
+}
+
+TEST_CASE("dense layer adds recipe bias to pre-activation", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
     layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
@@ -132,13 +140,12 @@ TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dens
     REQUIRE(target->getBiases() == source->getBiases());
 }
 
-TEST_CASE("dense layer initializes biases from config", "[layer][dense]")
+TEST_CASE("dense layer initializes biases from recipe", "[layer][dense]")
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "bias init layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ConstantInitializer<Scalar>>(0.25F);
@@ -159,13 +166,12 @@ TEST_CASE("layer initializes weights through base implementation", "[layer][dens
     REQUIRE(layer->getBiases().shape() == std::vector<size_t>{2});
 }
 
-TEST_CASE("layer config derives flat sizes from explicit shapes", "[layer][shape]")
+TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape]")
 {
-    DenseLayerConfig config;
-    config.name = "shape configured dense layer";
+    DenseLayerRecipe config;
+    config.name = "shape recipe dense layer";
     config.type = "DenseLayer";
     config.info = "shape-only test layer";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
@@ -181,13 +187,12 @@ TEST_CASE("layer config derives flat sizes from explicit shapes", "[layer][shape
     REQUIRE(layer->getWeights().hasShape({1, 2}));
 }
 
-TEST_CASE("layer config rejects inconsistent flat size and shape", "[layer][shape][errors]")
+TEST_CASE("layer recipe rejects inconsistent flat size and shape", "[layer][shape][errors]")
 {
-    DenseLayerConfig config;
-    config.name = "invalid shape configured dense layer";
+    DenseLayerRecipe config;
+    config.name = "invalid shape recipe dense layer";
     config.type = "DenseLayer";
     config.info = "shape mismatch test layer";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.inputSize = 3;
     config.outputSize = 1;
@@ -208,7 +213,6 @@ TEST_CASE("flatten layer reshapes explicit input shape to a vector", "[layer][fl
 
     const Pattern output = layer->infer(input);
 
-    REQUIRE_FALSE(layer->isTrainable());
     REQUIRE(output.shape() == std::vector<size_t>{4});
     REQUIRE(output == Pattern{1.0F, 2.0F, 3.0F, 4.0F});
 }
@@ -220,20 +224,22 @@ TEST_CASE("flatten layer restores previous activation shape during backward pass
     const Pattern delta = {1.0F, 2.0F, 3.0F, 4.0F};
     const auto previousActivation = Pattern::withShape({2, 2});
 
-    const Pattern previousDelta = layer->backwardPass(delta, previousActivation);
+    const BackpropagationGradientEngine gradientEngine;
+    const Pattern previousDelta = gradientEngine.backwardThroughLayer(*layer,
+                                                                      delta,
+                                                                      previousActivation);
 
     REQUIRE(previousDelta.shape() == std::vector<size_t>{2, 2});
     REQUIRE(previousDelta.at({0, 0}) == 1.0F);
     REQUIRE(previousDelta.at({1, 1}) == 4.0F);
 }
 
-TEST_CASE("layer initializes weights using configured scale", "[layer][dense]")
+TEST_CASE("layer initializes weights using recipe scale", "[layer][dense]")
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "scaled init layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F);
     config.inputSize = 2;
@@ -247,15 +253,25 @@ TEST_CASE("layer initializes weights using configured scale", "[layer][dense]")
     }
 }
 
-TEST_CASE("layer update rejects mismatched activation and delta sizes", "[layer][errors]")
+TEST_CASE("optimizer step rejects mismatched activation and delta sizes",
+          "[optimizer][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
     layer->setWeights(Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}}));
     layer->setBiases({0.0F, 0.0F});
+    Model network;
+    network.addLayer(std::move(layer));
+    const auto optimizer = makeSgdOptimizer();
 
-    REQUIRE_THROWS_AS(layer->updateWeights({1.0F}, {1.0F, 1.0F}, 0.1F),
+    REQUIRE_THROWS_AS(optimizer.step(network,
+                                     {{1.0F}},
+                                     {{1.0F, 1.0F}},
+                                     0.1F),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(layer->updateWeights({1.0F, 1.0F}, {1.0F}, 0.1F),
+    REQUIRE_THROWS_AS(optimizer.step(network,
+                                     {{1.0F, 1.0F}},
+                                     {{1.0F}},
+                                     0.1F),
                       std::runtime_error);
 }
 TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors]")
@@ -282,21 +298,26 @@ TEST_CASE("factory initializes dense layer", "[layer][dense]")
 
 TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer][errors]")
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "uninitialized test layer";
     config.type = "TestLayer";
     config.info = "intentionally skips construction initialization";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 1;
-    auto layer = std::make_shared<UninitializedLayer>(config);
+    auto layer = std::make_unique<UninitializedLayer>(config);
 
     REQUIRE_FALSE(layer->isInitialized());
     REQUIRE_THROWS_AS(layer->requireInitialized(), std::runtime_error);
     REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
-    REQUIRE_THROWS_AS(layer->updateWeights({1.0F, 1.0F}, {1.0F}, 0.1F),
+    Model network;
+    network.addLayer(std::move(layer));
+    const auto optimizer = makeSgdOptimizer();
+    REQUIRE_THROWS_AS(optimizer.step(network,
+                                     {{1.0F, 1.0F}},
+                                     {{1.0F}},
+                                     0.1F),
                       std::runtime_error);
 }

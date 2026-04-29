@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LearningRule.h"
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
@@ -15,11 +14,10 @@ namespace
 {
 std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "test perceptron";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
     config.activation = std::make_shared<StepActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();

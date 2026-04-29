@@ -2,21 +2,100 @@
 
 #include "base/Layer.h"
 #include "base/Model.h"
-#include "layers/FlattenLayer.h"
+#include "layers/ConvolutionalLayer.h"
+#include "layers/DenseLayer.h"
+#include "layers/HopfieldLayer.h"
+#include "training/GradientEngine.h"
+#include "training/Optimizer.h"
 
-#include <iostream>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <stdexcept>
+#include <typeinfo>
 
 namespace {
-TrainableLayer &requireTrainable(Layer &layer)
+template<typename LayerType>
+std::optional<std::reference_wrapper<const LayerType>> layerAs(
+    const Layer &layer)
 {
-    auto *trainable = dynamic_cast<TrainableLayer *>(&layer);
-    if (trainable == nullptr) {
-        throw std::runtime_error(
-            "Feedforward training requires trainable layer operations.");
+    try {
+        return std::cref(dynamic_cast<const LayerType &>(layer));
+    } catch (const std::bad_cast &) {
+        return std::nullopt;
+    }
+}
+
+Pattern preActivationFor(const Layer &layer, const Pattern &input)
+{
+    if (auto dense = layerAs<const DenseLayer>(layer)) {
+        dense->get().requireInitialized();
+        if (input.empty()) {
+            throw std::runtime_error("Input is empty");
+        }
+
+        Pattern sums = input.matVec(dense->get().getWeights());
+        const auto &biases = dense->get().getBiases();
+        return biases.empty() ? sums : sums + biases;
+    }
+    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
+        convolutional->get().requireInitialized();
+        if (input.empty()) {
+            throw std::runtime_error("Input is empty");
+        }
+
+        const auto &recipe = convolutional->get().getConvolutionalRecipe();
+        Pattern result = input.conv1D(convolutional->get().getWeights(),
+                                      recipe.stride,
+                                      recipe.padding);
+        const auto &biases = convolutional->get().getBiases();
+        if (!biases.empty()) {
+            for (size_t outputChannel = 0;
+                 outputChannel < recipe.outputChannels;
+                 ++outputChannel) {
+                for (size_t outputIndex = 0;
+                     outputIndex < result.shape().at(1);
+                     ++outputIndex) {
+                    result.at({outputChannel, outputIndex}) += biases.at(
+                        outputChannel);
+                }
+            }
+        }
+
+        return result;
+    }
+    if (auto hopfield = layerAs<const HopfieldLayer>(layer)) {
+        hopfield->get().requireInitialized();
+        if (input.empty()) {
+            throw std::runtime_error("Input is empty");
+        }
+
+        Pattern sums = input.matVec(hopfield->get().getWeights());
+        const auto &biases = hopfield->get().getBiases();
+        return biases.empty() ? sums : sums + biases;
     }
 
-    return *trainable;
+    throw std::runtime_error(
+        "Feedforward training requires pre-activation support.");
+}
+
+Pattern activateFor(const Layer &layer, const Pattern &values)
+{
+    const auto &activation = layer.getActivation();
+    if (!activation) {
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
+    }
+
+    return values.map(
+        [&activation](Scalar value) { return (*activation)(value); });
+}
+
+bool supportsParameterizedTraining(const Layer &layer)
+{
+    return layerAs<const DenseLayer>(layer).has_value()
+           || layerAs<const ConvolutionalLayer>(layer).has_value()
+           || layerAs<const HopfieldLayer>(layer).has_value();
 }
 
 void validateTrainingData(const Model &network,
@@ -75,10 +154,9 @@ void forward(Model &network,
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
         const auto &layer = network.getLayer(layerIndex);
-        const auto *trainable = dynamic_cast<const TrainableLayer *>(&layer);
-        if (trainable != nullptr) {
-            preActivations.at(layerIndex) = trainable->preActivation(current);
-            current = trainable->activate(preActivations.at(layerIndex));
+        if (supportsParameterizedTraining(layer)) {
+            preActivations.at(layerIndex) = preActivationFor(layer, current);
+            current = activateFor(layer, preActivations.at(layerIndex));
         } else {
             current = layer.infer(current);
             preActivations.at(layerIndex) = current;
@@ -92,80 +170,20 @@ Pattern lossDerivative(const Pattern &output, const Pattern &target)
     return output - target;
 }
 
-Pattern backwardThroughLayer(const Layer &layer,
-                             const Pattern &layerDelta,
-                             const Pattern &layerInput)
-{
-    const auto *trainable = dynamic_cast<const TrainableLayer *>(&layer);
-    if (trainable != nullptr) {
-        return trainable->backwardPass(layerDelta, layerInput);
-    }
-
-    const auto *flatten = dynamic_cast<const FlattenLayer *>(&layer);
-    if (flatten != nullptr) {
-        return flatten->backwardPass(layerDelta, layerInput);
-    }
-
-    throw std::runtime_error(
-        "Layer does not support feedforward backpropagation.");
-}
-
-Pattern applyActivationDerivative(const Layer &layer,
-                                  const Pattern &outputGradient,
-                                  const Pattern &preActivation)
-{
-    const auto *trainable = dynamic_cast<const TrainableLayer *>(&layer);
-    if (trainable == nullptr) {
-        return outputGradient;
-    }
-
-    return outputGradient * trainable->activationDerivatives(preActivation);
-}
-
-void updateTrainableLayers(Model &network,
-                           const Batch &activations,
-                           const Batch &layerDeltas,
-                           Scalar learningRate)
-{
-    for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        auto *trainable = dynamic_cast<TrainableLayer *>(
-            &network.getLayer(layerIndex));
-        if (trainable != nullptr) {
-            trainable->updateWeights(activations.at(layerIndex),
-                                     layerDeltas.at(layerIndex),
-                                     learningRate);
-        }
-    }
-}
-
 void backpropagation(Model &network,
                      const Batch &activations,
                      const Batch &preActivations,
                      const Pattern &outputError,
+                     const GradientEngine &gradientEngine,
+                     const Optimizer &optimizer,
                      Scalar learningRate)
 {
-    Batch layerDeltas(network.numLayers());
+    const Batch layerDeltas = gradientEngine.computeLayerDeltas(network,
+                                                                activations,
+                                                                preActivations,
+                                                                outputError);
 
-    const auto &outputLayer = requireTrainable(
-        network.getLayer(network.numLayers() - 1));
-    layerDeltas.back() = outputError
-                         * outputLayer.activationDerivatives(
-                             preActivations.back());
-
-    for (size_t layerIndex = network.numLayers() - 1; layerIndex > 0;
-         --layerIndex) {
-        const Pattern previousLayerOutputGradient
-            = backwardThroughLayer(network.getLayer(layerIndex),
-                                   layerDeltas.at(layerIndex),
-                                   activations.at(layerIndex));
-
-        layerDeltas.at(layerIndex - 1)
-            = applyActivationDerivative(network.getLayer(layerIndex - 1),
-                                        previousLayerOutputGradient,
-                                        preActivations.at(layerIndex - 1));
-    }
-
-    updateTrainableLayers(network, activations, layerDeltas, learningRate);
+    optimizer.step(network, activations, layerDeltas, learningRate);
 }
 } // namespace
 
@@ -180,6 +198,9 @@ void FeedforwardTrainer::learn(Model &network,
     Batch activations;
     Batch preActivations;
     initializeTrainingBuffers(network, activations, preActivations);
+    const LearningRuleOptimizer optimizer{
+        std::make_shared<SGDRule<Scalar>>()};
+    const BackpropagationGradientEngine gradientEngine;
 
     std::cout << "Training feedforward Network..." << std::endl;
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
@@ -195,6 +216,8 @@ void FeedforwardTrainer::learn(Model &network,
                             activations,
                             preActivations,
                             outputError,
+                            gradientEngine,
+                            optimizer,
                             learningRate);
         }
     }

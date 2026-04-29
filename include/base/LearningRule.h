@@ -1,16 +1,8 @@
 #pragma once
 
-#include "base/Types.h"
-
-
-#include <cmath>
-#include <cstddef>
-#include <stdexcept> // for std::runtime_error
-
 template<typename T>
 class LearningRule
 {
-protected:
 public:
     LearningRule() = default;
     virtual ~LearningRule() = default;
@@ -27,9 +19,6 @@ public:
 
     inline T updateWeight(T weight, T gradient, T) const override
     {
-        // Hebbian learning doesn't use gradient or learning rate in the traditional sense.
-        // Instead, weights are updated based on the correlation of inputs.
-        //Gradient here represents the correlation term.
         return weight + gradient;
     }
 };
@@ -57,18 +46,5 @@ public:
     inline T updateWeight(T weight, T gradient, T learningRate) const override
     {
         return weight - learningRate * gradient;
-    }
-};
-
-template<typename T>
-class AdamRule : public LearningRule<T>
-{
-public:
-    AdamRule() = default;
-    ~AdamRule() override = default;
-
-    T updateWeight(T, T, T) const override
-    {
-        throw std::runtime_error("AdamRule not implemented yet.");
     }
 };

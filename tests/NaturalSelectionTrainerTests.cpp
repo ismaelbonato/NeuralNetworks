@@ -1,6 +1,5 @@
 #include "base/ActivationFunction.h"
 #include "base/LayerFactory.h"
-#include "base/LearningRule.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 #include "training/NaturalSelectionTrainer.h"
@@ -16,11 +15,10 @@ namespace
 {
 std::unique_ptr<DenseLayer> makePerceptronLayer()
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "natural selection test perceptron";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<PerceptronRule<Scalar>>();
     config.activation = std::make_shared<StepActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();
@@ -32,11 +30,10 @@ std::unique_ptr<DenseLayer> makePerceptronLayer()
 
 std::unique_ptr<DenseLayer> makeMultiOutputLayer()
 {
-    DenseLayerConfig config;
+    DenseLayerRecipe config;
     config.name = "natural selection multi-output layer";
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
-    config.learningRule = std::make_shared<SGDRule<Scalar>>();
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>();
     config.biasInitializer = std::make_shared<ZeroInitializer<Scalar>>();

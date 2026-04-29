@@ -4,18 +4,18 @@ This project implements classic neural network models in C++ for associative mem
 
 ## Features
 
-- **Modular OOP design:** Core abstractions for `Model`, `Layer`, and `LearningRule` allow easy extension and swapping of components.
-- **Feedforward (MLP) network:** Supports arbitrary depth, customizable layer sizes, and pluggable learning rules (SGD, etc.).
+- **Modular OOP design:** Core abstractions for `Model`, runtime `Layer`s, gradient engines, optimizers, and learning rules allow easy extension and swapping of components.
+- **Feedforward (MLP) network:** Supports arbitrary depth, customizable layer sizes, and trainer-selected optimization rules (SGD, etc.).
 - **Perceptron:** Classic single-layer perceptron for supervised learning.
 - **Hopfield network:** Associative memory with Hebbian learning for binary pattern storage and recall.
-- **Flexible learning rules:** Learning algorithms (SGD, Hebbian, etc.) are implemented as separate classes and can be assigned per layer.
+- **Flexible learning rules:** Learning algorithms (SGD, Hebbian, etc.) are implemented separately and applied by optimizers/trainers instead of runtime layers.
 
 ## Supported Networks
 
 - **Feedforward (MLP) Network:**  
   - Arbitrary number of layers and neurons per layer.
   - Pluggable activation functions (sigmoid, ReLU, etc.).
-  - Stochastic Gradient Descent (SGD) and other learning rules.
+  - Stochastic Gradient Descent (SGD) through the training optimizer.
 - **Perceptron Network:**  
   - Single-layer, supervised learning with step activation.
 - **Hopfield Network:**  
@@ -28,7 +28,7 @@ This project implements classic neural network models in C++ for associative mem
 
 2. **Learning:**  
    - **Feedforward/Perceptron:**  
-     Supervised learning using SGD or other rules.  
+     Supervised learning using gradient engines and optimizers.  
    - **Hopfield:**  
      Unsupervised Hebbian rule:  
 

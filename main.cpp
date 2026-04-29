@@ -1,6 +1,5 @@
 #include "Helper.h"
 #include <iostream>
-#include <math.h>
 
 
 

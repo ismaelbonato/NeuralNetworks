@@ -4,26 +4,28 @@
 
 namespace
 {
-Shape denseInputShape(const DenseLayerConfig &config)
+Shape denseInputShape(const DenseLayerRecipe &recipe)
 {
-    return config.expectedInputShape.isValid()
-               ? config.expectedInputShape
-               : Shape{config.inputSize};
+    return recipe.expectedInputShape.isValid()
+               ? recipe.expectedInputShape
+               : Shape{recipe.inputSize};
 }
 
-Shape denseOutputShape(const DenseLayerConfig &config)
+Shape denseOutputShape(const DenseLayerRecipe &recipe)
 {
-    return config.expectedOutputShape.isValid()
-               ? config.expectedOutputShape
-               : Shape{config.outputSize};
+    return recipe.expectedOutputShape.isValid()
+               ? recipe.expectedOutputShape
+               : Shape{recipe.outputSize};
 }
 }
 
-DenseLayer::DenseLayer(const DenseLayerConfig &newConfig)
-    : TrainableLayer(newConfig, denseInputShape(newConfig), denseOutputShape(newConfig))
+DenseLayer::DenseLayer(const DenseLayerRecipe &newRecipe)
+    : Layer(newRecipe, denseInputShape(newRecipe), denseOutputShape(newRecipe))
+    , weightInitializer(newRecipe.weightInitializer)
+    , biasInitializer(newRecipe.biasInitializer)
 {
-    if (!newConfig.isValid()) {
-        throw std::invalid_argument("Invalid dense layer configuration");
+    if (!newRecipe.isValid()) {
+        throw std::invalid_argument("Invalid dense layer recipe");
     }
 }
 
@@ -37,4 +39,146 @@ Shape DenseLayer::expectedWeightShape() const
 Shape DenseLayer::expectedBiasShape() const
 {
     return {getOutputSize()};
+}
+
+bool DenseLayer::hasBias() const
+{
+    return !expectedBiasShape().dimensions.empty();
+}
+
+bool DenseLayer::hasWeights() const
+{
+    return !expectedWeightShape().dimensions.empty();
+}
+
+Pattern DenseLayer::initializeParameter(
+    const Shape &shape,
+    const std::shared_ptr<Initializer<Scalar>> &initializer,
+    Scalar fallbackValue)
+{
+    Pattern parameter = Pattern::withShape(shape, fallbackValue);
+
+    if (initializer) {
+        initializer->fill(parameter);
+    }
+
+    return parameter;
+}
+
+void DenseLayer::initializeParameters(Scalar value)
+{
+    if (hasWeights() && weights.empty()) {
+        setWeights(initializeParameter(expectedWeightShape(),
+                                       weightInitializer,
+                                       value));
+    }
+
+    if (hasBias() && biases.empty()) {
+        setBiases(initializeParameter(expectedBiasShape(),
+                                      biasInitializer,
+                                      Scalar{}));
+    }
+}
+
+const Pattern &DenseLayer::getWeights() const
+{
+    return weights;
+}
+
+const Pattern &DenseLayer::getBiases() const
+{
+    return biases;
+}
+
+LayerParameters DenseLayer::getParameters() const
+{
+    return {
+        .weights = weights,
+        .biases = biases,
+    };
+}
+
+void DenseLayer::setParameters(const LayerParameters &parameters)
+{
+    setWeights(parameters.weights);
+    setBiases(parameters.biases);
+}
+
+void DenseLayer::setWeights(const Pattern &newWeights)
+{
+    if (!hasWeights()) {
+        if (!newWeights.empty()) {
+            throw std::runtime_error("Layer does not use weights.");
+        }
+
+        weights = newWeights;
+        return;
+    }
+
+    if (!newWeights.hasShape(expectedWeightShape())) {
+        throw std::runtime_error(
+            "Layer weights shape does not match layer recipe.");
+    }
+
+    weights = newWeights;
+}
+
+void DenseLayer::setBiases(const Pattern &newBiases)
+{
+    if (!hasBias()) {
+        if (!newBiases.empty()) {
+            throw std::runtime_error("Layer does not use bias.");
+        }
+
+        biases = newBiases;
+        return;
+    }
+
+    if (!newBiases.hasShape(expectedBiasShape())) {
+        throw std::runtime_error(
+            "Layer bias size does not match layer output size.");
+    }
+
+    biases = newBiases;
+}
+
+bool DenseLayer::isInitialized() const
+{
+    return (!hasWeights() || weights.hasShape(expectedWeightShape()))
+           && (!hasBias() || biases.hasShape(expectedBiasShape()));
+}
+
+void DenseLayer::requireInitialized() const
+{
+    if (!isInitialized()) {
+        throw std::runtime_error("Layer weights are not initialized.");
+    }
+}
+
+Pattern DenseLayer::forward(const Pattern &input) const
+{
+    Pattern sums = preActivation(input);
+    return activate(sums);
+}
+
+Pattern DenseLayer::preActivation(const Pattern &input) const
+{
+    requireInitialized();
+
+    if (input.empty()) {
+        throw std::runtime_error("Input is empty");
+    }
+    Pattern sums = input.matVec(weights);
+    return hasBias() ? sums + biases : sums;
+}
+
+Pattern DenseLayer::activate(const Pattern &values) const
+{
+    if (recipe.activation == nullptr) {
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
+    }
+
+    return values.map(
+        [this](Scalar value) { return (*recipe.activation)(value); });
 }
