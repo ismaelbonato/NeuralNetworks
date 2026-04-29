@@ -103,7 +103,9 @@ void initializeModelParameters(
     Model &network,
     const LayerParameterInitialization &initialization)
 {
-    for (const auto &layer : network.getLayers()) {
-        initializeLayerParameters(*layer, initialization);
+    for (size_t layerIndex = 0; layerIndex < network.numLayers();
+         ++layerIndex) {
+        initializeLayerParameters(network.getLayer(layerIndex),
+                                  initialization);
     }
 }

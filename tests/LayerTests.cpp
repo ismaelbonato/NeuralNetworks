@@ -303,6 +303,45 @@ TEST_CASE("initialized factory initializes dense layer", "[layer][dense]")
     REQUIRE_NOTHROW(layer->requireInitialized());
 }
 
+TEST_CASE("skill performs through its runtime layer", "[skill][runtime]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
+    layer->setBiases({0.0F});
+    Skill skill(std::move(layer));
+
+    const Pattern output = skill.perform({1.0F, 1.0F});
+
+    requireClose(output.at(0), 0.880797F);
+}
+
+TEST_CASE("model can infer through added skills", "[model][skill]")
+{
+    DenseLayerRecipe config;
+    config.name = "skill dense layer";
+    config.type = "DenseLayer";
+    config.info = "skill construction test";
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.inputSize = 1;
+    config.outputSize = 1;
+
+    auto trainableSkill = makeTrainableSkill<DenseLayer>(
+        config,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+    trainableSkill.layer().setWeights(Pattern::matrix({{2.0F}}));
+    trainableSkill.layer().setBiases({-1.0F});
+
+    Model network;
+    network.addSkill(trainableSkill.intoSkill());
+
+    const Pattern output = network.infer({1.0F});
+
+    REQUIRE(network.numLayers() == 1);
+    REQUIRE(&network.getSkill(0).layer() == &network.getLayer(0));
+    requireClose(output.at(0), 0.7310586F);
+}
+
 TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer][errors]")
 {
     DenseLayerRecipe config;

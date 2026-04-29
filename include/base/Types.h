@@ -1,14 +1,14 @@
 #pragma once
 #include <vector>
-#include <memory>
 
 template<typename T>
 class Tensor;
 
 class Layer; // Forward declaration
+class Skill; // Forward declaration
 
 using Scalar = float;
 using Pattern = Tensor<Scalar>;
 using Batch = Tensor<Pattern>;
 
-using Layers = std::vector<std::unique_ptr<Layer>>;
+using Skills = std::vector<Skill>;

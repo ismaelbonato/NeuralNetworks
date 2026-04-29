@@ -2,8 +2,10 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "training/Coach.h"
 #include "training/FeedforwardTrainer.h"
 #include "training/LayerParameterInitializer.h"
+#include "training/TrainingSession.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -134,6 +136,38 @@ TEST_CASE("feedforward trainer direct API updates weights and biases",
     FeedforwardTrainer trainer;
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+
+    requireClose(denseLayer(network, 0).getWeights().at({0, 0}), 0.125F);
+    requireClose(denseLayer(network, 0).getBiases().at(0), 0.125F);
+}
+
+TEST_CASE("training session initializes forward buffers from model skills",
+          "[training][session]")
+{
+    auto layer = makeDenseLayer(1, 1);
+    Model network;
+    network.addLayer(std::move(layer));
+
+    TrainingSession session(network);
+    session.initializeForwardBuffers();
+
+    REQUIRE(session.activations().size() == 2);
+    REQUIRE(session.weightedInputs().size() == 1);
+    REQUIRE(session.layerDeltas().size() == 1);
+    REQUIRE(session.activations().at(0).hasShape({1}));
+    REQUIRE(session.activations().at(1).hasShape({1}));
+    REQUIRE(session.weightedInputs().at(0).hasShape({1}));
+}
+
+TEST_CASE("generic coach preserves feedforward training behavior",
+          "[feedforward][coach]")
+{
+    auto layer = makeDenseLayer(1, 1);
+    Model network;
+    network.addLayer(std::move(layer));
+    Coach coach;
+
+    coach.practice(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     requireClose(denseLayer(network, 0).getWeights().at({0, 0}), 0.125F);
     requireClose(denseLayer(network, 0).getBiases().at(0), 0.125F);

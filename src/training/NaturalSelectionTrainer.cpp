@@ -102,8 +102,9 @@ void validateTrainingData(const Model &network,
         throw std::runtime_error("Inputs and labels must be non-empty and have the same size.");
     }
 
-    const Shape &expectedInputShape = network.getLayers().front()->getExpectedInputShape();
-    const Shape &expectedOutputShape = network.getLayers().back()->getExpectedOutputShape();
+    const Shape &expectedInputShape = network.getLayer(0).getExpectedInputShape();
+    const Shape &expectedOutputShape
+        = network.getLayer(network.numLayers() - 1).getExpectedOutputShape();
     for (size_t sampleIndex = 0; sampleIndex < inputs.size(); ++sampleIndex) {
         if (!inputs.at(sampleIndex).hasShape(expectedInputShape)) {
             throw std::runtime_error("Training input shape does not match model input shape.");
@@ -119,8 +120,9 @@ ModelParameters snapshotParameters(const Model &network)
     ModelParameters parameters;
     parameters.reserve(network.numLayers());
 
-    for (const auto &layer : network.getLayers()) {
-        if (auto params = layerParameters(*layer)) {
+    for (size_t layerIndex = 0; layerIndex < network.numLayers();
+         ++layerIndex) {
+        if (auto params = layerParameters(network.getLayer(layerIndex))) {
             parameters.push_back(*params);
         } else {
             parameters.push_back({});
