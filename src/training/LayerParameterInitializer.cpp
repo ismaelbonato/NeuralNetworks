@@ -2,6 +2,7 @@
 
 #include "base/Layer.h"
 #include "base/Model.h"
+#include "base/Skill.h"
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
@@ -99,13 +100,20 @@ void initializeLayerParameters(
     }
 }
 
+void initializeSkillParameters(
+    Skill &skill,
+    const LayerParameterInitialization &initialization)
+{
+    initializeLayerParameters(skill.layer(), initialization);
+}
+
 void initializeModelParameters(
     Model &network,
     const LayerParameterInitialization &initialization)
 {
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {
-        initializeLayerParameters(network.getLayer(layerIndex),
+        initializeSkillParameters(network.getSkill(layerIndex),
                                   initialization);
     }
 }

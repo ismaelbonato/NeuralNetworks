@@ -2,6 +2,7 @@
 
 #include "base/Layer.h"
 #include "base/Model.h"
+#include "base/Skill.h"
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "layers/FlattenLayer.h"
@@ -33,6 +34,7 @@ bool supportsParameterizedTraining(const Layer &layer)
 
 template<typename LayerType>
 Pattern parameterizedBackwardPass(const LayerType &layer,
+                                  const Pattern &weights,
                                   const Pattern &layerDelta,
                                   const Pattern &layerInput)
 {
@@ -46,10 +48,11 @@ Pattern parameterizedBackwardPass(const LayerType &layer,
             "Layer input shape does not match layer input shape.");
     }
 
-    return layer.getWeights().transposedMatVec(layerDelta);
+    return weights.transposedMatVec(layerDelta);
 }
 
 Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
+                                  const Pattern &weights,
                                   const Pattern &layerDelta,
                                   const Pattern &layerInput)
 {
@@ -65,7 +68,6 @@ Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
     }
 
     const auto &recipe = layer.getConvolutionalRecipe();
-    const auto &weights = layer.getWeights();
     Pattern inputDelta = Pattern::withShape(layer.getExpectedInputShape(),
                                             Scalar{0});
 
@@ -132,7 +134,7 @@ Batch BackpropagationGradientEngine::computeLayerDeltas(
     for (size_t layerIndex = network.numLayers() - 1; layerIndex > 0;
          --layerIndex) {
         const Pattern previousLayerOutputGradient
-            = backwardThroughLayer(network.getLayer(layerIndex),
+            = backwardThroughSkill(network.getSkill(layerIndex),
                                    layerDeltas.at(layerIndex),
                                    activations.at(layerIndex));
 
@@ -152,18 +154,21 @@ Pattern BackpropagationGradientEngine::backwardThroughLayer(
 {
     if (auto dense = layerAs<DenseLayer>(layer)) {
         return parameterizedBackwardPass(dense->get(),
+                                         dense->get().getWeights(),
                                          layerDelta,
                                          layerInput);
     }
 
     if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
         return convolutionalBackwardPass(convolutional->get(),
+                                         convolutional->get().getWeights(),
                                          layerDelta,
                                          layerInput);
     }
 
     if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
         return parameterizedBackwardPass(hopfield->get(),
+                                         hopfield->get().getWeights(),
                                          layerDelta,
                                          layerInput);
     }
@@ -174,6 +179,41 @@ Pattern BackpropagationGradientEngine::backwardThroughLayer(
 
     throw std::runtime_error(
         "Layer does not support feedforward backpropagation.");
+}
+
+Pattern BackpropagationGradientEngine::backwardThroughSkill(
+    const Skill &skill,
+    const Pattern &layerDelta,
+    const Pattern &layerInput) const
+{
+    const auto &layer = skill.layer();
+    if (auto dense = layerAs<DenseLayer>(layer)) {
+        return parameterizedBackwardPass(dense->get(),
+                                         skill.getParameters().weights,
+                                         layerDelta,
+                                         layerInput);
+    }
+
+    if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
+        return convolutionalBackwardPass(convolutional->get(),
+                                         skill.getParameters().weights,
+                                         layerDelta,
+                                         layerInput);
+    }
+
+    if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
+        return parameterizedBackwardPass(hopfield->get(),
+                                         skill.getParameters().weights,
+                                         layerDelta,
+                                         layerInput);
+    }
+
+    if (layerAs<FlattenLayer>(layer)) {
+        return flattenBackwardPass(layerDelta, layerInput);
+    }
+
+    throw std::runtime_error(
+        "Skill does not support feedforward backpropagation.");
 }
 
 Pattern BackpropagationGradientEngine::activationDerivatives(

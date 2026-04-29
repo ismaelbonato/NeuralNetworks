@@ -4,6 +4,7 @@
 
 class Layer;
 class Model;
+class Skill;
 
 class GradientEngine
 {
@@ -26,6 +27,9 @@ public:
                              const Pattern &outputError) const override;
 
     Pattern backwardThroughLayer(const Layer &layer,
+                                 const Pattern &layerDelta,
+                                 const Pattern &layerInput) const;
+    Pattern backwardThroughSkill(const Skill &skill,
                                  const Pattern &layerDelta,
                                  const Pattern &layerInput) const;
 

@@ -2,6 +2,7 @@
 
 #include "base/Layer.h"
 #include "base/Model.h"
+#include "base/Skill.h"
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
@@ -21,13 +22,14 @@ std::optional<std::reference_wrapper<LayerType>> layerAs(Layer &layer)
     }
 }
 
-void updateDenseLayer(DenseLayer &layer,
+void updateDenseLayer(Skill &skill,
+                      DenseLayer &layer,
                       const Pattern &prevActivations,
                       const Pattern &layerDelta,
                       const Optimizer &optimizer,
                       Scalar learningRate)
 {
-    layer.requireInitialized();
+    skill.requireInitialized();
 
     if (!prevActivations.hasShape(layer.getExpectedInputShape())) {
         throw std::runtime_error(
@@ -44,7 +46,7 @@ void updateDenseLayer(DenseLayer &layer,
         return optimizer.update(value, gradient, learningRate);
     };
 
-    LayerParameters parameters = layer.getParameters();
+    LayerParameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(weightGradients, updateValue);
 
     if (!parameters.biases.empty()) {
@@ -52,16 +54,17 @@ void updateDenseLayer(DenseLayer &layer,
                                                         updateValue);
     }
 
-    layer.setParameters(parameters);
+    skill.setParameters(parameters);
 }
 
-void updateConvolutionalLayer(ConvolutionalLayer &layer,
+void updateConvolutionalLayer(Skill &skill,
+                              ConvolutionalLayer &layer,
                               const Pattern &prevActivations,
                               const Pattern &layerDelta,
                               const Optimizer &optimizer,
                               Scalar learningRate)
 {
-    layer.requireInitialized();
+    skill.requireInitialized();
 
     if (!prevActivations.hasShape(layer.getExpectedInputShape())) {
         throw std::runtime_error("Previous activation shape does not match "
@@ -120,7 +123,7 @@ void updateConvolutionalLayer(ConvolutionalLayer &layer,
         return optimizer.update(value, gradient, learningRate);
     };
 
-    LayerParameters parameters = layer.getParameters();
+    LayerParameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(weightGradients, updateValue);
 
     if (!parameters.biases.empty()) {
@@ -128,15 +131,16 @@ void updateConvolutionalLayer(ConvolutionalLayer &layer,
                                                         updateValue);
     }
 
-    layer.setParameters(parameters);
+    skill.setParameters(parameters);
 }
 
-void updateHopfieldLayer(HopfieldLayer &layer,
+void updateHopfieldLayer(Skill &skill,
+                         HopfieldLayer &layer,
                          const Pattern &pattern,
                          const Optimizer &optimizer,
                          Scalar learningRate)
 {
-    layer.requireInitialized();
+    skill.requireInitialized();
 
     const size_t patternSize = pattern.size();
     if (patternSize != layer.getInputSize()
@@ -152,7 +156,7 @@ void updateHopfieldLayer(HopfieldLayer &layer,
     Pattern weightGradients = pattern.outer(pattern);
     weightGradients.setDiagonal(Scalar{});
 
-    LayerParameters parameters = layer.getParameters();
+    LayerParameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(
         weightGradients,
         [&optimizer, learningRate](Scalar weight, Scalar gradient) {
@@ -160,7 +164,7 @@ void updateHopfieldLayer(HopfieldLayer &layer,
         });
     parameters.weights.setDiagonal(Scalar{});
 
-    layer.setParameters(parameters);
+    skill.setParameters(parameters);
 }
 } // namespace
 
@@ -186,21 +190,25 @@ void LearningRuleOptimizer::step(Model &network,
                                  Scalar learningRate) const
 {
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        auto &layer = network.getLayer(layerIndex);
+        auto &skill = network.getSkill(layerIndex);
+        auto &layer = skill.layer();
         if (auto dense = layerAs<DenseLayer>(layer)) {
-            updateDenseLayer(dense->get(),
+            updateDenseLayer(skill,
+                             dense->get(),
                              activations.at(layerIndex),
                              layerDeltas.at(layerIndex),
                              *this,
                              learningRate);
         } else if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
-            updateConvolutionalLayer(convolutional->get(),
+            updateConvolutionalLayer(skill,
+                                     convolutional->get(),
                                      activations.at(layerIndex),
                                      layerDeltas.at(layerIndex),
                                      *this,
                                      learningRate);
         } else if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
-            updateHopfieldLayer(hopfield->get(),
+            updateHopfieldLayer(skill,
+                                hopfield->get(),
                                 activations.at(layerIndex),
                                 *this,
                                 learningRate);

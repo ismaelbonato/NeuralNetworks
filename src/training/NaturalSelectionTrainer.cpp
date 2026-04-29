@@ -1,69 +1,17 @@
 #include "training/NaturalSelectionTrainer.h"
 
 #include "base/Model.h"
-#include "layers/ConvolutionalLayer.h"
-#include "layers/DenseLayer.h"
-#include "layers/HopfieldLayer.h"
+#include "base/Skill.h"
 #include "training/LayerParameterInitializer.h"
 
-#include <functional>
 #include <limits>
-#include <optional>
 #include <random>
 #include <stdexcept>
-#include <typeinfo>
 #include <vector>
 
 namespace
 {
 using ModelParameters = std::vector<LayerParameters>;
-
-template<typename LayerType>
-std::optional<std::reference_wrapper<LayerType>> layerAs(Layer &layer)
-{
-    try {
-        return std::ref(dynamic_cast<LayerType &>(layer));
-    } catch (const std::bad_cast &) {
-        return std::nullopt;
-    }
-}
-
-template<typename LayerType>
-std::optional<std::reference_wrapper<const LayerType>> layerAs(
-    const Layer &layer)
-{
-    try {
-        return std::cref(dynamic_cast<const LayerType &>(layer));
-    } catch (const std::bad_cast &) {
-        return std::nullopt;
-    }
-}
-
-std::optional<LayerParameters> layerParameters(const Layer &layer)
-{
-    if (auto dense = layerAs<const DenseLayer>(layer)) {
-        return dense->get().getParameters();
-    }
-    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
-        return convolutional->get().getParameters();
-    }
-    if (auto hopfield = layerAs<const HopfieldLayer>(layer)) {
-        return hopfield->get().getParameters();
-    }
-
-    return std::nullopt;
-}
-
-void setLayerParameters(Layer &layer, const LayerParameters &parameters)
-{
-    if (auto dense = layerAs<DenseLayer>(layer)) {
-        dense->get().setParameters(parameters);
-    } else if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
-        convolutional->get().setParameters(parameters);
-    } else if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
-        hopfield->get().setParameters(parameters);
-    }
-}
 
 LayerParameters mutatedLayerParameters(const LayerParameters &parameters,
                                        Scalar mutationStrength)
@@ -122,7 +70,7 @@ ModelParameters snapshotParameters(const Model &network)
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {
-        if (auto params = layerParameters(network.getLayer(layerIndex))) {
+        if (auto params = network.getSkill(layerIndex).parameters()) {
             parameters.push_back(*params);
         } else {
             parameters.push_back({});
@@ -139,8 +87,10 @@ void applyParameters(Model &network, const ModelParameters &parameters)
     }
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
-        setLayerParameters(network.getLayer(layerIndex),
-                           parameters.at(layerIndex));
+        if (network.getSkill(layerIndex).hasParameters()) {
+            network.getSkill(layerIndex).setParameters(
+                parameters.at(layerIndex));
+        }
     }
 }
 

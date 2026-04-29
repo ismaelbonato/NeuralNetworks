@@ -4,6 +4,7 @@
 #include "base/Types.h"
 
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
 class Skill
@@ -37,6 +38,12 @@ public:
     {
         return runtimeLayer->infer(input);
     }
+
+    bool hasParameters() const;
+    std::optional<LayerParameters> parameters() const;
+    LayerParameters getParameters() const;
+    void setParameters(const LayerParameters &parameters);
+    void requireInitialized() const;
 
     std::unique_ptr<Layer> intoLayer()
     {

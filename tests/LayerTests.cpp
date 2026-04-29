@@ -315,6 +315,38 @@ TEST_CASE("skill performs through its runtime layer", "[skill][runtime]")
     requireClose(output.at(0), 0.880797F);
 }
 
+TEST_CASE("skill exposes parameter snapshots for parameterized layers",
+          "[skill][parameters]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    Skill skill(std::move(layer));
+    const LayerParameters parameters{
+        .weights = Pattern::matrix({{1.0F, -1.0F}}),
+        .biases = {0.5F},
+    };
+
+    skill.setParameters(parameters);
+
+    REQUIRE(skill.hasParameters());
+    REQUIRE(skill.parameters().has_value());
+    REQUIRE(skill.getParameters().weights == parameters.weights);
+    REQUIRE(skill.getParameters().biases == parameters.biases);
+    REQUIRE_NOTHROW(skill.requireInitialized());
+}
+
+TEST_CASE("runtime-only skills do not expose parameters",
+          "[skill][parameters]")
+{
+    auto layer = makeFlattenLayer({1, 2});
+    Skill skill(std::move(layer));
+
+    REQUIRE_FALSE(skill.hasParameters());
+    REQUIRE_FALSE(skill.parameters().has_value());
+    REQUIRE_NOTHROW(skill.requireInitialized());
+    REQUIRE_THROWS_AS(skill.getParameters(), std::runtime_error);
+    REQUIRE_THROWS_AS(skill.setParameters({}), std::runtime_error);
+}
+
 TEST_CASE("model can infer through added skills", "[model][skill]")
 {
     DenseLayerRecipe config;

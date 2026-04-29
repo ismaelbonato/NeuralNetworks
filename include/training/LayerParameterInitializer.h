@@ -12,6 +12,7 @@
 
 class Layer;
 class Model;
+class Skill;
 
 struct LayerParameterInitialization
 {
@@ -24,6 +25,9 @@ struct LayerParameterInitialization
 
 void initializeLayerParameters(
     Layer &layer,
+    const LayerParameterInitialization &initialization = {});
+void initializeSkillParameters(
+    Skill &skill,
     const LayerParameterInitialization &initialization = {});
 void initializeModelParameters(
     Model &network,

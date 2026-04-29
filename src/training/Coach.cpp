@@ -2,6 +2,7 @@
 
 #include "base/Layer.h"
 #include "base/Model.h"
+#include "base/Skill.h"
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
@@ -30,38 +31,39 @@ std::optional<std::reference_wrapper<const LayerType>> layerAs(
     }
 }
 
-Pattern weightedInputFor(const Layer &layer, const Pattern &input)
+Pattern weightedInputFor(const Skill &skill, const Pattern &input)
 {
+    const auto &layer = skill.layer();
     if (auto dense = layerAs<const DenseLayer>(layer)) {
-        dense->get().requireInitialized();
+        skill.requireInitialized();
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
         }
 
-        Pattern sums = input.matVec(dense->get().getWeights());
-        const auto &biases = dense->get().getBiases();
-        return biases.empty() ? sums : sums + biases;
+        const LayerParameters parameters = skill.getParameters();
+        Pattern sums = input.matVec(parameters.weights);
+        return parameters.biases.empty() ? sums : sums + parameters.biases;
     }
     if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
-        convolutional->get().requireInitialized();
+        skill.requireInitialized();
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
         }
 
         const auto &recipe = convolutional->get().getConvolutionalRecipe();
-        Pattern result = input.conv1D(convolutional->get().getWeights(),
+        const LayerParameters parameters = skill.getParameters();
+        Pattern result = input.conv1D(parameters.weights,
                                       recipe.stride,
                                       recipe.padding);
-        const auto &biases = convolutional->get().getBiases();
-        if (!biases.empty()) {
+        if (!parameters.biases.empty()) {
             for (size_t outputChannel = 0;
                  outputChannel < recipe.outputChannels;
                  ++outputChannel) {
                 for (size_t outputIndex = 0;
                      outputIndex < result.shape().at(1);
                      ++outputIndex) {
-                    result.at({outputChannel, outputIndex}) += biases.at(
-                        outputChannel);
+                    result.at({outputChannel, outputIndex})
+                        += parameters.biases.at(outputChannel);
                 }
             }
         }
@@ -69,14 +71,14 @@ Pattern weightedInputFor(const Layer &layer, const Pattern &input)
         return result;
     }
     if (auto hopfield = layerAs<const HopfieldLayer>(layer)) {
-        hopfield->get().requireInitialized();
+        skill.requireInitialized();
         if (input.empty()) {
             throw std::runtime_error("Input is empty");
         }
 
-        Pattern sums = input.matVec(hopfield->get().getWeights());
-        const auto &biases = hopfield->get().getBiases();
-        return biases.empty() ? sums : sums + biases;
+        const LayerParameters parameters = skill.getParameters();
+        Pattern sums = input.matVec(parameters.weights);
+        return parameters.biases.empty() ? sums : sums + parameters.biases;
     }
 
     throw std::runtime_error(
@@ -139,9 +141,10 @@ void forward(TrainingSession &session, const Pattern &input)
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {
-        const auto &layer = network.getLayer(layerIndex);
+        const auto &skill = network.getSkill(layerIndex);
+        const auto &layer = skill.layer();
         if (supportsParameterizedTraining(layer)) {
-            weightedInputs.at(layerIndex) = weightedInputFor(layer, current);
+            weightedInputs.at(layerIndex) = weightedInputFor(skill, current);
             current = activateFor(layer, weightedInputs.at(layerIndex));
         } else {
             current = layer.infer(current);
