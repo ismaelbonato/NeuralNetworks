@@ -43,7 +43,9 @@ Skill::Skill(std::unique_ptr<Layer> newLayer)
 
 Pattern Skill::perform(const Pattern &input) const
 {
-    syncParametersToLayer();
+    if (ownedParameters) {
+        return runtimeLayer->infer(input, *ownedParameters);
+    }
     return runtimeLayer->infer(input);
 }
 

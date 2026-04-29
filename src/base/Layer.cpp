@@ -106,3 +106,17 @@ Pattern Layer::infer(const Pattern &input) const
     requireInputShape(input);
     return forward(input);
 }
+
+Pattern Layer::infer(const Pattern &input,
+                     const LayerParameters &parameters) const
+{
+    requireInputShape(input);
+    return forward(input, parameters);
+}
+
+Pattern Layer::forward(const Pattern &input,
+                       const LayerParameters &parameters) const
+{
+    (void)parameters;
+    return forward(input);
+}

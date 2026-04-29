@@ -122,13 +122,25 @@ void ConvolutionalLayer::setBiases(const Pattern &newBiases)
 
 bool ConvolutionalLayer::isInitialized() const
 {
-    return (!hasWeights() || weights.hasShape(expectedWeightShape()))
-           && (!hasBias() || biases.hasShape(expectedBiasShape()));
+    return isInitialized(getParameters());
+}
+
+bool ConvolutionalLayer::isInitialized(
+    const LayerParameters &parameters) const
+{
+    return (!hasWeights() || parameters.weights.hasShape(expectedWeightShape()))
+           && (!hasBias() || parameters.biases.hasShape(expectedBiasShape()));
 }
 
 void ConvolutionalLayer::requireInitialized() const
 {
-    if (!isInitialized()) {
+    requireInitialized(getParameters());
+}
+
+void ConvolutionalLayer::requireInitialized(
+    const LayerParameters &parameters) const
+{
+    if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer weights are not initialized.");
     }
 }
@@ -139,15 +151,30 @@ Pattern ConvolutionalLayer::forward(const Pattern &input) const
     return activate(sums);
 }
 
+Pattern ConvolutionalLayer::forward(
+    const Pattern &input,
+    const LayerParameters &parameters) const
+{
+    Pattern sums = weightedInput(input, parameters);
+    return activate(sums);
+}
+
 Pattern ConvolutionalLayer::weightedInput(const Pattern &input) const
 {
-    requireInitialized();
+    return weightedInput(input, getParameters());
+}
+
+Pattern ConvolutionalLayer::weightedInput(
+    const Pattern &input,
+    const LayerParameters &parameters) const
+{
+    requireInitialized(parameters);
 
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
 
-    Pattern result = input.conv1D(weights,
+    Pattern result = input.conv1D(parameters.weights,
                                   convolutionalRecipe.stride,
                                   convolutionalRecipe.padding);
     if (hasBias()) {
@@ -156,8 +183,8 @@ Pattern ConvolutionalLayer::weightedInput(const Pattern &input) const
              ++outputChannel) {
             for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
                  ++outputIndex) {
-                result.at({outputChannel, outputIndex}) += biases.at(
-                    outputChannel);
+                result.at({outputChannel, outputIndex})
+                    += parameters.biases.at(outputChannel);
             }
         }
     }

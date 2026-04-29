@@ -72,6 +72,8 @@ protected:
 
     void requireInputShape(const Pattern &input) const;
     virtual Pattern forward(const Pattern &input) const = 0;
+    virtual Pattern forward(const Pattern &input,
+                            const LayerParameters &parameters) const;
 
 public:
     Layer() = delete;
@@ -89,4 +91,6 @@ public:
     const std::shared_ptr<ActivationFunction<Scalar>> &getActivation() const;
 
     Pattern infer(const Pattern &input) const;
+    Pattern infer(const Pattern &input,
+                  const LayerParameters &parameters) const;
 };

@@ -103,13 +103,23 @@ void HopfieldLayer::setBiases(const Pattern &newBiases)
 
 bool HopfieldLayer::isInitialized() const
 {
-    return (!hasWeights() || weights.hasShape(expectedWeightShape()))
-           && (!hasBias() || biases.hasShape(expectedBiasShape()));
+    return isInitialized(getParameters());
+}
+
+bool HopfieldLayer::isInitialized(const LayerParameters &parameters) const
+{
+    return (!hasWeights() || parameters.weights.hasShape(expectedWeightShape()))
+           && (!hasBias() || parameters.biases.hasShape(expectedBiasShape()));
 }
 
 void HopfieldLayer::requireInitialized() const
 {
-    if (!isInitialized()) {
+    requireInitialized(getParameters());
+}
+
+void HopfieldLayer::requireInitialized(const LayerParameters &parameters) const
+{
+    if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer weights are not initialized.");
     }
 }
@@ -119,15 +129,28 @@ Pattern HopfieldLayer::forward(const Pattern &input) const
     return recall(input);
 }
 
+Pattern HopfieldLayer::forward(const Pattern &input,
+                               const LayerParameters &parameters) const
+{
+    return recall(input, parameters);
+}
+
 Pattern HopfieldLayer::weightedInput(const Pattern &input) const
 {
-    requireInitialized();
+    return weightedInput(input, getParameters());
+}
+
+Pattern HopfieldLayer::weightedInput(
+    const Pattern &input,
+    const LayerParameters &parameters) const
+{
+    requireInitialized(parameters);
 
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
-    Pattern sums = input.matVec(weights);
-    return hasBias() ? sums + biases : sums;
+    Pattern sums = input.matVec(parameters.weights);
+    return hasBias() ? sums + parameters.biases : sums;
 }
 
 Pattern HopfieldLayer::activate(const Pattern &values) const
@@ -143,6 +166,12 @@ Pattern HopfieldLayer::activate(const Pattern &values) const
 
 Pattern HopfieldLayer::recall(const Pattern &input) const
 {
+    return recall(input, getParameters());
+}
+
+Pattern HopfieldLayer::recall(const Pattern &input,
+                              const LayerParameters &parameters) const
+{
     if (!input.hasShape(getExpectedInputShape())) {
         throw std::runtime_error("Input shape does not match Hopfield layer shape.");
     }
@@ -151,7 +180,7 @@ Pattern HopfieldLayer::recall(const Pattern &input) const
     Pattern prev_state;
     do {
         prev_state = state;
-        auto sum = weightedInput(state);
+        auto sum = weightedInput(state, parameters);
         state = activate(sum);
     } while (state != prev_state);
     return state;
