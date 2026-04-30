@@ -40,10 +40,11 @@ TEST_CASE("optimizer step applies layer deltas to model parameters",
     recipe.outputSize = 1;
 
     Model network;
-    network.addLayer(makeInitializedLayer<DenseLayer>(
+    network.addSkill(makeTrainableSkill<DenseLayer>(
         recipe,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()}));
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+                         .intoSkill());
 
     Batch activations(2);
     activations.at(0) = Pattern{3.0F};

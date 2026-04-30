@@ -14,7 +14,7 @@
 
 namespace
 {
-std::unique_ptr<DenseLayer> makePerceptronLayer()
+Skill makePerceptronSkill()
 {
     DenseLayerRecipe config;
     config.name = "natural selection test perceptron";
@@ -24,13 +24,14 @@ std::unique_ptr<DenseLayer> makePerceptronLayer()
     config.inputSize = 2;
     config.outputSize = 1;
 
-    return makeInitializedLayer<DenseLayer>(
+    return makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+        .intoSkill();
 }
 
-std::unique_ptr<DenseLayer> makeMultiOutputLayer()
+Skill makeMultiOutputSkill()
 {
     DenseLayerRecipe config;
     config.name = "natural selection multi-output layer";
@@ -40,10 +41,11 @@ std::unique_ptr<DenseLayer> makeMultiOutputLayer()
     config.inputSize = 2;
     config.outputSize = 2;
 
-    return makeInitializedLayer<DenseLayer>(
+    return makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+        .intoSkill();
 }
 }
 
@@ -84,9 +86,8 @@ TEST_CASE("natural selection trainer rejects invalid training data",
     REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 
-    auto layer = makePerceptronLayer();
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makePerceptronSkill());
 
     REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
@@ -100,9 +101,8 @@ TEST_CASE("natural selection trainer rejects invalid training data",
 TEST_CASE("natural selection trainer rejects invalid configuration",
           "[trainer][natural-selection][errors]")
 {
-    auto layer = makePerceptronLayer();
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makePerceptronSkill());
     NaturalSelectionTrainer trainer({.populationSize = 0});
 
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
@@ -112,9 +112,8 @@ TEST_CASE("natural selection trainer rejects invalid configuration",
 TEST_CASE("natural selection trainer supports multi-output models",
           "[trainer][natural-selection]")
 {
-    auto layer = makeMultiOutputLayer();
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makeMultiOutputSkill());
     NaturalSelectionTrainer trainer({.populationSize = 2});
 
     REQUIRE_NOTHROW(trainer.learn(network,

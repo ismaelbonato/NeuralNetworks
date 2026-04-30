@@ -13,7 +13,7 @@
 
 namespace
 {
-std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
+Skill makePerceptronSkill(const size_t outputSize = 1)
 {
     DenseLayerRecipe config;
     config.name = "test perceptron";
@@ -23,22 +23,22 @@ std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
     config.inputSize = 2;
     config.outputSize = outputSize;
 
-    auto layer = makeInitializedLayer<DenseLayer>(
+    return makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
-    return layer;
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+        .intoSkill();
 }
 }
 
 TEST_CASE("perceptron inference uses trainer-learned AND weights", "[perceptron]")
 {
-    auto layer = makePerceptronLayer();
-    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
-    layer->setBiases({0.0F});
+    auto skill = makePerceptronSkill();
+    skill.setParameters({.weights = Pattern::matrix({{0.0F, 0.0F}}),
+                         .biases = {0.0F}});
 
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(std::move(skill));
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
@@ -53,12 +53,12 @@ TEST_CASE("perceptron inference uses trainer-learned AND weights", "[perceptron]
 
 TEST_CASE("perceptron trainer learns AND gate", "[perceptron][trainer]")
 {
-    auto layer = makePerceptronLayer();
-    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}}));
-    layer->setBiases({0.0F});
+    auto skill = makePerceptronSkill();
+    skill.setParameters({.weights = Pattern::matrix({{0.0F, 0.0F}}),
+                         .biases = {0.0F}});
 
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(std::move(skill));
     PerceptronRuleTrainer trainer;
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
@@ -86,7 +86,7 @@ TEST_CASE("perceptron trainer initializes uninitialized layer",
     REQUIRE_FALSE(layer->isInitialized());
 
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(Skill(std::move(layer)));
     PerceptronRuleTrainer trainer;
 
     REQUIRE_NOTHROW(trainer.learn(network,
@@ -99,9 +99,8 @@ TEST_CASE("perceptron trainer initializes uninitialized layer",
 
 TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
 {
-    auto layer = makePerceptronLayer(2);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makePerceptronSkill(2));
 
     PerceptronRuleTrainer trainer;
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
@@ -110,9 +109,8 @@ TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
 
 TEST_CASE("perceptron trainer rejects invalid training data", "[perceptron][errors]")
 {
-    auto layer = makePerceptronLayer();
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makePerceptronSkill());
 
     PerceptronRuleTrainer trainer;
     REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
