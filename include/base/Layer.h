@@ -89,6 +89,11 @@ public:
     const Shape &getInputShape() const;
     const Shape &getOutputShape() const;
     const std::shared_ptr<ActivationFunction<Scalar>> &getActivation() const;
+    virtual bool usesParameters() const;
+    virtual Shape expectedWeightShape() const;
+    virtual Shape expectedBiasShape() const;
+    virtual bool isInitialized(const LayerParameters &parameters) const;
+    virtual void requireInitialized(const LayerParameters &parameters) const;
 
     Pattern infer(const Pattern &input) const;
     Pattern infer(const Pattern &input,

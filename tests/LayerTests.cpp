@@ -378,6 +378,32 @@ TEST_CASE("skill execution does not rewrite wrapped layer parameters",
     REQUIRE(wrappedLayer.getParameters().biases == Pattern{0.0F});
 }
 
+TEST_CASE("skill initialization uses layer parameter contract",
+          "[skill][parameters][initializer]")
+{
+    DenseLayerRecipe config;
+    config.name = "contract initialized skill";
+    config.type = "DenseLayer";
+    config.info = "skill-owned initialization test";
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.inputSize = 1;
+    config.outputSize = 1;
+
+    Skill skill(makeLayer<DenseLayer>(config));
+    initializeSkillParameters(
+        skill,
+        {.weightInitializer = std::make_shared<ConstantInitializer<Scalar>>(2.0F),
+         .biasInitializer = std::make_shared<ConstantInitializer<Scalar>>(-1.0F)});
+
+    const auto &wrappedLayer = dynamic_cast<const DenseLayer &>(skill.layer());
+    const Pattern output = skill.perform({1.0F});
+
+    REQUIRE_FALSE(wrappedLayer.isInitialized());
+    REQUIRE(skill.getParameters().weights == Pattern::matrix({{2.0F}}));
+    REQUIRE(skill.getParameters().biases == Pattern{-1.0F});
+    requireClose(output.at(0), 0.7310586F);
+}
+
 TEST_CASE("runtime-only skills do not expose parameters",
           "[skill][parameters]")
 {

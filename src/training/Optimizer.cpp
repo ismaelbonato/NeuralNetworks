@@ -76,11 +76,12 @@ void updateConvolutionalLayer(Skill &skill,
     }
 
     const auto &recipe = layer.getConvolutionalRecipe();
+    LayerParameters parameters = skill.getParameters();
     Pattern weightGradients = Pattern::withShape(
-        Shape(layer.getWeights().shape()),
+        Shape(parameters.weights.shape()),
         Scalar{0});
     Pattern biasGradients = Pattern::withShape(
-        Shape(layer.getBiases().shape()),
+        Shape(parameters.biases.shape()),
         Scalar{0});
 
     for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
@@ -123,7 +124,6 @@ void updateConvolutionalLayer(Skill &skill,
         return optimizer.update(value, gradient, learningRate);
     };
 
-    LayerParameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(weightGradients, updateValue);
 
     if (!parameters.biases.empty()) {

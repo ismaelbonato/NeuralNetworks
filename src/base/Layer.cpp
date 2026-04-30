@@ -93,6 +93,33 @@ const std::shared_ptr<ActivationFunction<Scalar>> &Layer::getActivation() const
     return recipe.activation;
 }
 
+bool Layer::usesParameters() const
+{
+    return false;
+}
+
+Shape Layer::expectedWeightShape() const
+{
+    return {};
+}
+
+Shape Layer::expectedBiasShape() const
+{
+    return {};
+}
+
+bool Layer::isInitialized(const LayerParameters &parameters) const
+{
+    return parameters.weights.empty() && parameters.biases.empty();
+}
+
+void Layer::requireInitialized(const LayerParameters &parameters) const
+{
+    if (!isInitialized(parameters)) {
+        throw std::runtime_error("Layer does not use parameters.");
+    }
+}
+
 void Layer::requireInputShape(const Pattern &input) const
 {
     if (!input.hasShape(expectedInput)) {

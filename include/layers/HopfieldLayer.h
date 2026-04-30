@@ -28,8 +28,9 @@ private:
     Pattern weights;
     Pattern biases;
 
-    Shape expectedWeightShape() const;
-    Shape expectedBiasShape() const;
+    bool usesParameters() const override;
+    Shape expectedWeightShape() const override;
+    Shape expectedBiasShape() const override;
     bool hasWeights() const;
     bool hasBias() const;
     Pattern weightedInput(const Pattern &input) const;
@@ -38,6 +39,6 @@ private:
     Pattern activate(const Pattern &values) const;
     Pattern recall(const Pattern &input,
                    const LayerParameters &parameters) const;
-    bool isInitialized(const LayerParameters &parameters) const;
-    void requireInitialized(const LayerParameters &parameters) const;
+    bool isInitialized(const LayerParameters &parameters) const override;
+    void requireInitialized(const LayerParameters &parameters) const override;
 };

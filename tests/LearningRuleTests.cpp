@@ -56,7 +56,7 @@ TEST_CASE("optimizer step applies layer deltas to model parameters",
         std::make_shared<SGDRule<Scalar>>()};
     optimizer.step(network, activations, layerDeltas, 0.5F);
 
-    const auto &layer = dynamic_cast<const DenseLayer &>(network.getLayer(0));
-    REQUIRE(layer.getWeights().at({0, 0}) == -3.0F);
-    REQUIRE(layer.getBiases().at(0) == -1.0F);
+    const LayerParameters parameters = network.getSkill(0).getParameters();
+    REQUIRE(parameters.weights.at({0, 0}) == -3.0F);
+    REQUIRE(parameters.biases.at(0) == -1.0F);
 }

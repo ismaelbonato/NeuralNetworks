@@ -36,6 +36,11 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe
 
 ConvolutionalLayer::~ConvolutionalLayer() = default;
 
+bool ConvolutionalLayer::usesParameters() const
+{
+    return true;
+}
+
 Shape ConvolutionalLayer::expectedWeightShape() const
 {
     return {convolutionalRecipe.outputChannels,

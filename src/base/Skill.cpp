@@ -51,9 +51,7 @@ Pattern Skill::perform(const Pattern &input) const
 
 bool Skill::hasParameters() const
 {
-    return layerAs<const DenseLayer>(layer()).has_value()
-           || layerAs<const ConvolutionalLayer>(layer()).has_value()
-           || layerAs<const HopfieldLayer>(layer()).has_value();
+    return runtimeLayer->usesParameters();
 }
 
 std::optional<LayerParameters> Skill::parameters() const
@@ -76,23 +74,12 @@ LayerParameters Skill::getParameters() const
 
 void Skill::setParameters(const LayerParameters &parameters)
 {
-    if (auto dense = layerAs<DenseLayer>(layer())) {
-        dense->get().setParameters(parameters);
-        ownedParameters = parameters;
-        return;
-    }
-    if (auto convolutional = layerAs<ConvolutionalLayer>(layer())) {
-        convolutional->get().setParameters(parameters);
-        ownedParameters = parameters;
-        return;
-    }
-    if (auto hopfield = layerAs<HopfieldLayer>(layer())) {
-        hopfield->get().setParameters(parameters);
-        ownedParameters = parameters;
-        return;
+    if (!hasParameters()) {
+        throw std::runtime_error("Skill does not accept parameters.");
     }
 
-    throw std::runtime_error("Skill does not accept parameters.");
+    runtimeLayer->requireInitialized(parameters);
+    ownedParameters = parameters;
 }
 
 void Skill::adoptLayerParameters()
@@ -115,18 +102,11 @@ void Skill::adoptLayerParameters()
 
 void Skill::requireInitialized() const
 {
-    syncParametersToLayer();
-    if (auto dense = layerAs<const DenseLayer>(layer())) {
-        dense->get().requireInitialized();
+    if (!hasParameters()) {
         return;
     }
-    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer())) {
-        convolutional->get().requireInitialized();
-        return;
-    }
-    if (auto hopfield = layerAs<const HopfieldLayer>(layer())) {
-        hopfield->get().requireInitialized();
-    }
+
+    runtimeLayer->requireInitialized(getParameters());
 }
 
 void Skill::syncParametersToLayer() const

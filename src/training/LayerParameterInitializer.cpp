@@ -38,6 +38,29 @@ Pattern initializedParameter(
     return parameter;
 }
 
+LayerParameters initializedParametersFor(
+    const Layer &layer,
+    const LayerParameters &currentParameters,
+    const LayerParameterInitialization &initialization)
+{
+    LayerParameters parameters = currentParameters;
+
+    const Shape weightShape = layer.expectedWeightShape();
+    if (parameters.weights.empty() && !weightShape.empty()) {
+        parameters.weights = initializedParameter(weightShape,
+                                                  initialization.weightInitializer);
+    }
+
+    const Shape biasShape = layer.expectedBiasShape();
+    if (parameters.biases.empty() && !biasShape.empty()) {
+        parameters.biases = initializedParameter(biasShape,
+                                                initialization.biasInitializer);
+    }
+
+    layer.requireInitialized(parameters);
+    return parameters;
+}
+
 void initializeDenseLayer(
     DenseLayer &layer,
     const LayerParameterInitialization &initialization)
@@ -104,8 +127,14 @@ void initializeSkillParameters(
     Skill &skill,
     const LayerParameterInitialization &initialization)
 {
-    initializeLayerParameters(skill.layer(), initialization);
-    skill.adoptLayerParameters();
+    if (!skill.hasParameters()) {
+        return;
+    }
+
+    skill.setParameters(initializedParametersFor(
+        skill.layer(),
+        skill.getParameters(),
+        initialization));
 }
 
 void initializeModelParameters(

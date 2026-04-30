@@ -94,7 +94,7 @@ TEST_CASE("perceptron trainer initializes uninitialized layer",
                                   {{0.0F}},
                                   0.1F,
                                   1));
-    REQUIRE(dynamic_cast<DenseLayer &>(network.getLayer(0)).isInitialized());
+    REQUIRE_NOTHROW(network.getSkill(0).requireInitialized());
 }
 
 TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")

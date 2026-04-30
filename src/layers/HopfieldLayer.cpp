@@ -19,6 +19,11 @@ HopfieldLayer::HopfieldLayer(const HopfieldLayerRecipe &newRecipe)
 
 HopfieldLayer::~HopfieldLayer() = default;
 
+bool HopfieldLayer::usesParameters() const
+{
+    return true;
+}
+
 Shape HopfieldLayer::expectedWeightShape() const
 {
     return {getOutputSize(), getInputSize()};

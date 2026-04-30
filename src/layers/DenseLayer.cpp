@@ -29,6 +29,11 @@ DenseLayer::DenseLayer(const DenseLayerRecipe &newRecipe)
 
 DenseLayer::~DenseLayer() = default;
 
+bool DenseLayer::usesParameters() const
+{
+    return true;
+}
+
 Shape DenseLayer::expectedWeightShape() const
 {
     return {getOutputSize(), getInputSize()};
