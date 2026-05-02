@@ -31,7 +31,7 @@ std::optional<std::reference_wrapper<const LayerType>> layerAs(
     }
 }
 
-Pattern weightedInputFor(const Skill &skill, const Pattern &input)
+Pattern preActivationFor(const Skill &skill, const Pattern &input)
 {
     const auto &layer = skill.layer();
     if (auto dense = layerAs<const DenseLayer>(layer)) {
@@ -82,7 +82,7 @@ Pattern weightedInputFor(const Skill &skill, const Pattern &input)
     }
 
     throw std::runtime_error(
-        "Feedforward training requires weighted-input support.");
+        "Feedforward training requires pre-activation support.");
 }
 
 Pattern activateFor(const Layer &layer, const Pattern &values)
@@ -131,11 +131,11 @@ void validateTrainingData(const Model &network,
     }
 }
 
-void forward(TrainingSession &session, const Pattern &input)
+void recordForwardPass(TrainingSession &session, const Pattern &input)
 {
     auto &network = session.model();
     auto &activations = session.activations();
-    auto &weightedInputs = session.weightedInputs();
+    auto &preActivations = session.preActivations();
     Pattern current = input;
     activations.at(0) = current;
 
@@ -144,11 +144,11 @@ void forward(TrainingSession &session, const Pattern &input)
         const auto &skill = network.getSkill(layerIndex);
         const auto &layer = skill.layer();
         if (supportsParameterizedTraining(layer)) {
-            weightedInputs.at(layerIndex) = weightedInputFor(skill, current);
-            current = activateFor(layer, weightedInputs.at(layerIndex));
+            preActivations.at(layerIndex) = preActivationFor(skill, current);
+            current = activateFor(layer, preActivations.at(layerIndex));
         } else {
-            current = layer.infer(current);
-            weightedInputs.at(layerIndex) = current;
+            current = skill.perform(current);
+            preActivations.at(layerIndex) = {};
         }
         activations.at(layerIndex + 1) = current;
     }
@@ -201,14 +201,14 @@ void BackpropagationPracticePlan::practice(Model &network,
     for (size_t epoch = 0; epoch < epochs; ++epoch) {
         for (size_t sampleIndex = 0; sampleIndex < inputs.size();
              ++sampleIndex) {
-            forward(session, inputs.at(sampleIndex));
+            recordForwardPass(session, inputs.at(sampleIndex));
             const Pattern outputError = lossDerivative(
                 session.activations().back(),
                 labels.at(sampleIndex));
             session.setLayerDeltas(gradientEngine->computeLayerDeltas(
                 network,
                 session.activations(),
-                session.weightedInputs(),
+                session.preActivations(),
                 outputError));
 
             optimizer->step(network,

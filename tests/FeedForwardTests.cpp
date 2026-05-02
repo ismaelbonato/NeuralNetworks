@@ -176,11 +176,11 @@ TEST_CASE("training session initializes forward buffers from model skills",
     session.initializeForwardBuffers();
 
     REQUIRE(session.activations().size() == 2);
-    REQUIRE(session.weightedInputs().size() == 1);
+    REQUIRE(session.preActivations().size() == 1);
     REQUIRE(session.layerDeltas().size() == 1);
     REQUIRE(session.activations().at(0).hasShape({1}));
     REQUIRE(session.activations().at(1).hasShape({1}));
-    REQUIRE(session.weightedInputs().at(0).hasShape({1}));
+    REQUIRE(session.preActivations().at(0).hasShape({1}));
 }
 
 TEST_CASE("generic coach preserves feedforward training behavior",

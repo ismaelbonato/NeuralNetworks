@@ -21,7 +21,7 @@ const Model &TrainingSession::model() const
 void TrainingSession::initializeForwardBuffers()
 {
     activationBuffer = Batch(network.numLayers() + 1);
-    weightedInputBuffer = Batch(network.numLayers());
+    preActivationBuffer = Batch(network.numLayers());
     layerDeltaBuffer = Batch(network.numLayers());
 
     activationBuffer.at(0) = Pattern::withShape(
@@ -33,7 +33,7 @@ void TrainingSession::initializeForwardBuffers()
         const auto &layer = network.getLayer(layerIndex);
         activationBuffer.at(layerIndex + 1)
             = Pattern::withShape(layer.getOutputShape(), Scalar{0});
-        weightedInputBuffer.at(layerIndex)
+        preActivationBuffer.at(layerIndex)
             = Pattern::withShape(layer.getOutputShape(), Scalar{0});
     }
 }
@@ -53,14 +53,14 @@ const Batch &TrainingSession::activations() const
     return activationBuffer;
 }
 
-Batch &TrainingSession::weightedInputs()
+Batch &TrainingSession::preActivations()
 {
-    return weightedInputBuffer;
+    return preActivationBuffer;
 }
 
-const Batch &TrainingSession::weightedInputs() const
+const Batch &TrainingSession::preActivations() const
 {
-    return weightedInputBuffer;
+    return preActivationBuffer;
 }
 
 Batch &TrainingSession::layerDeltas()

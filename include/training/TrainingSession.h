@@ -18,14 +18,14 @@ public:
 
     Batch &activations();
     const Batch &activations() const;
-    Batch &weightedInputs();
-    const Batch &weightedInputs() const;
+    Batch &preActivations();
+    const Batch &preActivations() const;
     Batch &layerDeltas();
     const Batch &layerDeltas() const;
 
 private:
     Model &network;
     Batch activationBuffer;
-    Batch weightedInputBuffer;
+    Batch preActivationBuffer;
     Batch layerDeltaBuffer;
 };
