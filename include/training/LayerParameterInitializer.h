@@ -91,6 +91,7 @@ TrainableSkill<LayerType> makeTrainableSkill(
 }
 
 template<typename LayerType, typename RecipeType>
+[[deprecated("Use makeTrainableSkill(...).intoSkill() instead.")]]
 std::unique_ptr<LayerType> makeInitializedLayer(
     const RecipeType &recipe,
     const LayerParameterInitialization &initialization = {})
