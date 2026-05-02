@@ -31,12 +31,12 @@ public:
     Pattern perform(const Pattern &input) const;
 
     bool hasParameters() const;
-    std::optional<LayerParameters> parameters() const;
-    LayerParameters getParameters() const;
-    void setParameters(const LayerParameters &parameters);
+    std::optional<Parameters> parameters() const;
+    Parameters getParameters() const;
+    void setParameters(const Parameters &parameters);
     void requireInitialized() const;
 
 private:
     std::unique_ptr<Layer> runtimeLayer;
-    std::optional<LayerParameters> ownedParameters;
+    std::optional<Parameters> ownedParameters;
 };

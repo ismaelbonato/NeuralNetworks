@@ -118,7 +118,7 @@ TEST_CASE("gradient engine rejects unsupported layer backpropagation",
 TEST_CASE("dense layer adds recipe bias to pre-activation", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
-    const LayerParameters parameters{
+    const Parameters parameters{
         .weights = Pattern::matrix({{1.0F, 1.0F}}),
         .biases = {10.0F},
     };
@@ -355,7 +355,7 @@ TEST_CASE("skill exposes parameter snapshots for parameterized layers",
 {
     auto layer = makeDenseLayer(2, 1);
     Skill skill(std::move(layer));
-    const LayerParameters parameters{
+    const Parameters parameters{
         .weights = Pattern::matrix({{1.0F, -1.0F}}),
         .biases = {0.5F},
     };

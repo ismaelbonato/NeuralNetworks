@@ -12,7 +12,7 @@ public:
 protected:
     Pattern forward(const Pattern &input) const override;
     Pattern forward(const Pattern &input,
-                    const LayerParameters &parameters) const override;
+                    const Parameters &parameters) const override;
 
 private:
     bool usesParameters() const override;
@@ -21,8 +21,8 @@ private:
     bool hasWeights() const;
     bool hasBias() const;
     Pattern weightedInput(const Pattern &input,
-                          const LayerParameters &parameters) const;
+                          const Parameters &parameters) const;
     Pattern activate(const Pattern &values) const;
-    bool isInitialized(const LayerParameters &parameters) const override;
-    void requireInitialized(const LayerParameters &parameters) const override;
+    bool isInitialized(const Parameters &parameters) const override;
+    void requireInitialized(const Parameters &parameters) const override;
 };

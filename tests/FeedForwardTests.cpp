@@ -62,7 +62,7 @@ Skill makeDenseSkill(const size_t inputSize,
 
 Skill makeDenseSkill(const size_t inputSize,
                      const size_t outputSize,
-                     const LayerParameters &parameters)
+                     const Parameters &parameters)
 {
     Skill skill = makeDenseSkill(inputSize, outputSize);
     skill.setParameters(parameters);
@@ -74,7 +74,7 @@ void requireClose(const Scalar actual, const Scalar expected)
     REQUIRE(std::fabs(actual - expected) < tolerance);
 }
 
-LayerParameters denseParameters(Model &network, const size_t index)
+Parameters denseParameters(Model &network, const size_t index)
 {
     return network.getSkill(index).getParameters();
 }
@@ -84,7 +84,7 @@ TEST_CASE("dense layer computes deterministic pre-activations and activations",
           "[feedforward][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
-    const LayerParameters parameters{
+    const Parameters parameters{
         .weights = Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}}),
         .biases = {0.0F, -0.5F},
     };
@@ -121,7 +121,7 @@ TEST_CASE("feedforward trainer updates single layer through SGD",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    const LayerParameters parameters = denseParameters(network, 0);
+    const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
     requireClose(parameters.biases.at(0), 0.125F);
 }
@@ -161,7 +161,7 @@ TEST_CASE("feedforward trainer direct API updates weights and biases",
 
     trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    const LayerParameters parameters = denseParameters(network, 0);
+    const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
     requireClose(parameters.biases.at(0), 0.125F);
 }
@@ -192,7 +192,7 @@ TEST_CASE("generic coach preserves feedforward training behavior",
 
     coach.practice(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
-    const LayerParameters parameters = denseParameters(network, 0);
+    const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
     requireClose(parameters.biases.at(0), 0.125F);
 }

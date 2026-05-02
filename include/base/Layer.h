@@ -54,7 +54,7 @@ struct FlattenLayerRecipe : LayerRecipe
     Shape expectedOutputShape() const;
 };
 
-struct LayerParameters
+struct Parameters
 {
     Pattern weights;
     Pattern biases;
@@ -73,7 +73,7 @@ protected:
     void requireInputShape(const Pattern &input) const;
     virtual Pattern forward(const Pattern &input) const = 0;
     virtual Pattern forward(const Pattern &input,
-                            const LayerParameters &parameters) const;
+                            const Parameters &parameters) const;
 
 public:
     Layer() = delete;
@@ -92,10 +92,10 @@ public:
     virtual bool usesParameters() const;
     virtual Shape expectedWeightShape() const;
     virtual Shape expectedBiasShape() const;
-    virtual bool isInitialized(const LayerParameters &parameters) const;
-    virtual void requireInitialized(const LayerParameters &parameters) const;
+    virtual bool isInitialized(const Parameters &parameters) const;
+    virtual void requireInitialized(const Parameters &parameters) const;
 
     Pattern infer(const Pattern &input) const;
     Pattern infer(const Pattern &input,
-                  const LayerParameters &parameters) const;
+                  const Parameters &parameters) const;
 };

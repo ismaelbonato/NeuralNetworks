@@ -54,7 +54,7 @@ bool DenseLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool DenseLayer::isInitialized(const LayerParameters &parameters) const
+bool DenseLayer::isInitialized(const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
@@ -62,7 +62,7 @@ bool DenseLayer::isInitialized(const LayerParameters &parameters) const
                          : parameters.biases.empty());
 }
 
-void DenseLayer::requireInitialized(const LayerParameters &parameters) const
+void DenseLayer::requireInitialized(const Parameters &parameters) const
 {
     if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer weights are not initialized.");
@@ -76,14 +76,14 @@ Pattern DenseLayer::forward(const Pattern &input) const
 }
 
 Pattern DenseLayer::forward(const Pattern &input,
-                            const LayerParameters &parameters) const
+                            const Parameters &parameters) const
 {
     Pattern sums = weightedInput(input, parameters);
     return activate(sums);
 }
 
 Pattern DenseLayer::weightedInput(const Pattern &input,
-                                  const LayerParameters &parameters) const
+                                  const Parameters &parameters) const
 {
     requireInitialized(parameters);
 

@@ -18,12 +18,12 @@ Pattern initializedParameter(
     return parameter;
 }
 
-LayerParameters initializedParametersFor(
+Parameters initializedParametersFor(
     const Layer &layer,
-    const LayerParameters &currentParameters,
+    const Parameters &currentParameters,
     const LayerParameterInitialization &initialization)
 {
-    LayerParameters parameters = currentParameters;
+    Parameters parameters = currentParameters;
 
     const Shape weightShape = layer.expectedWeightShape();
     if (parameters.weights.empty() && !weightShape.empty()) {
@@ -51,7 +51,7 @@ void initializeSkillParameters(
 
     skill.setParameters(initializedParametersFor(
         skill.layer(),
-        skill.parameters().value_or(LayerParameters{}),
+        skill.parameters().value_or(Parameters{}),
         initialization));
 }
 

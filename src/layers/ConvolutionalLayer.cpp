@@ -64,7 +64,7 @@ bool ConvolutionalLayer::hasWeights() const
 }
 
 bool ConvolutionalLayer::isInitialized(
-    const LayerParameters &parameters) const
+    const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
@@ -73,7 +73,7 @@ bool ConvolutionalLayer::isInitialized(
 }
 
 void ConvolutionalLayer::requireInitialized(
-    const LayerParameters &parameters) const
+    const Parameters &parameters) const
 {
     if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer weights are not initialized.");
@@ -88,7 +88,7 @@ Pattern ConvolutionalLayer::forward(const Pattern &input) const
 
 Pattern ConvolutionalLayer::forward(
     const Pattern &input,
-    const LayerParameters &parameters) const
+    const Parameters &parameters) const
 {
     Pattern sums = weightedInput(input, parameters);
     return activate(sums);
@@ -96,7 +96,7 @@ Pattern ConvolutionalLayer::forward(
 
 Pattern ConvolutionalLayer::weightedInput(
     const Pattern &input,
-    const LayerParameters &parameters) const
+    const Parameters &parameters) const
 {
     requireInitialized(parameters);
 

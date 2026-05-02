@@ -46,7 +46,7 @@ void updateDenseLayer(Skill &skill,
         return optimizer.update(value, gradient, learningRate);
     };
 
-    LayerParameters parameters = skill.getParameters();
+    Parameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(weightGradients, updateValue);
 
     if (!parameters.biases.empty()) {
@@ -76,7 +76,7 @@ void updateConvolutionalLayer(Skill &skill,
     }
 
     const auto &recipe = layer.getConvolutionalRecipe();
-    LayerParameters parameters = skill.getParameters();
+    Parameters parameters = skill.getParameters();
     Pattern weightGradients = Pattern::withShape(
         Shape(parameters.weights.shape()),
         Scalar{0});
@@ -156,7 +156,7 @@ void updateHopfieldLayer(Skill &skill,
     Pattern weightGradients = pattern.outer(pattern);
     weightGradients.setDiagonal(Scalar{});
 
-    LayerParameters parameters = skill.getParameters();
+    Parameters parameters = skill.getParameters();
     parameters.weights = parameters.weights.zip(
         weightGradients,
         [&optimizer, learningRate](Scalar weight, Scalar gradient) {

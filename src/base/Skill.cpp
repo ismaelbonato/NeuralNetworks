@@ -9,7 +9,7 @@ Skill::Skill(std::unique_ptr<Layer> newLayer)
         throw std::invalid_argument("Cannot create a skill without a layer.");
     }
     if (runtimeLayer->usesParameters()) {
-        ownedParameters = LayerParameters{};
+        ownedParameters = Parameters{};
     }
 }
 
@@ -26,16 +26,16 @@ bool Skill::hasParameters() const
     return runtimeLayer->usesParameters();
 }
 
-std::optional<LayerParameters> Skill::parameters() const
+std::optional<Parameters> Skill::parameters() const
 {
     if (!hasParameters()) {
         return std::nullopt;
     }
 
-    return ownedParameters.value_or(LayerParameters{});
+    return ownedParameters.value_or(Parameters{});
 }
 
-LayerParameters Skill::getParameters() const
+Parameters Skill::getParameters() const
 {
     if (auto params = parameters()) {
         return *params;
@@ -44,7 +44,7 @@ LayerParameters Skill::getParameters() const
     throw std::runtime_error("Skill does not expose parameters.");
 }
 
-void Skill::setParameters(const LayerParameters &parameters)
+void Skill::setParameters(const Parameters &parameters)
 {
     if (!hasParameters()) {
         throw std::runtime_error("Skill does not accept parameters.");

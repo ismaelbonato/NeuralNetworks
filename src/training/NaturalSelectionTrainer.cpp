@@ -11,17 +11,17 @@
 
 namespace
 {
-using ModelParameters = std::vector<LayerParameters>;
+using ModelParameters = std::vector<Parameters>;
 
-LayerParameters mutatedLayerParameters(const LayerParameters &parameters,
-                                       Scalar mutationStrength)
+Parameters mutatedParametersFor(const Parameters &parameters,
+                                Scalar mutationStrength)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<Scalar> dis(-mutationStrength,
                                                mutationStrength);
 
-    LayerParameters updated{
+    Parameters updated{
         .weights = parameters.weights,
         .biases = parameters.biases,
     };
@@ -106,7 +106,7 @@ ModelParameters mutateParameters(const Model &network,
     mutatedParameters.reserve(parameters.size());
 
     for (size_t layerIndex = 0; layerIndex < parameters.size(); ++layerIndex) {
-        mutatedParameters.push_back(mutatedLayerParameters(
+        mutatedParameters.push_back(mutatedParametersFor(
             parameters.at(layerIndex),
             mutationStrength));
     }

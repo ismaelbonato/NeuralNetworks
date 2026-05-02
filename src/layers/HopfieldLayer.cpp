@@ -44,7 +44,7 @@ bool HopfieldLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool HopfieldLayer::isInitialized(const LayerParameters &parameters) const
+bool HopfieldLayer::isInitialized(const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
@@ -52,7 +52,7 @@ bool HopfieldLayer::isInitialized(const LayerParameters &parameters) const
                          : parameters.biases.empty());
 }
 
-void HopfieldLayer::requireInitialized(const LayerParameters &parameters) const
+void HopfieldLayer::requireInitialized(const Parameters &parameters) const
 {
     if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer weights are not initialized.");
@@ -66,14 +66,14 @@ Pattern HopfieldLayer::forward(const Pattern &input) const
 }
 
 Pattern HopfieldLayer::forward(const Pattern &input,
-                               const LayerParameters &parameters) const
+                               const Parameters &parameters) const
 {
     return recall(input, parameters);
 }
 
 Pattern HopfieldLayer::weightedInput(
     const Pattern &input,
-    const LayerParameters &parameters) const
+    const Parameters &parameters) const
 {
     requireInitialized(parameters);
 
@@ -96,7 +96,7 @@ Pattern HopfieldLayer::activate(const Pattern &values) const
 }
 
 Pattern HopfieldLayer::recall(const Pattern &input,
-                              const LayerParameters &parameters) const
+                              const Parameters &parameters) const
 {
     if (!input.hasShape(getExpectedInputShape())) {
         throw std::runtime_error("Input shape does not match Hopfield layer shape.");

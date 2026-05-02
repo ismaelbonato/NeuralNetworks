@@ -108,12 +108,12 @@ Shape Layer::expectedBiasShape() const
     return {};
 }
 
-bool Layer::isInitialized(const LayerParameters &parameters) const
+bool Layer::isInitialized(const Parameters &parameters) const
 {
     return parameters.weights.empty() && parameters.biases.empty();
 }
 
-void Layer::requireInitialized(const LayerParameters &parameters) const
+void Layer::requireInitialized(const Parameters &parameters) const
 {
     if (!isInitialized(parameters)) {
         throw std::runtime_error("Layer does not use parameters.");
@@ -135,14 +135,14 @@ Pattern Layer::infer(const Pattern &input) const
 }
 
 Pattern Layer::infer(const Pattern &input,
-                     const LayerParameters &parameters) const
+                     const Parameters &parameters) const
 {
     requireInputShape(input);
     return forward(input, parameters);
 }
 
 Pattern Layer::forward(const Pattern &input,
-                       const LayerParameters &parameters) const
+                       const Parameters &parameters) const
 {
     (void)parameters;
     return forward(input);
