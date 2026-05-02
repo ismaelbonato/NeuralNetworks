@@ -4,7 +4,7 @@
 #include "layers/DenseLayer.h"
 #include "layers/FlattenLayer.h"
 #include "training/GradientEngine.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/LearningRule.h"
 #include "training/Optimizer.h"
 

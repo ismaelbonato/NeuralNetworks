@@ -4,7 +4,7 @@
 #include "layers/ConvolutionalLayer.h"
 #include "training/FeedforwardTrainer.h"
 #include "training/GradientEngine.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

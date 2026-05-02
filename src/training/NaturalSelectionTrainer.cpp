@@ -2,7 +2,7 @@
 
 #include "base/Model.h"
 #include "base/Skill.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 
 #include <limits>
 #include <random>

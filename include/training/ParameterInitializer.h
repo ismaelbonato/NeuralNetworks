@@ -14,7 +14,7 @@ class Layer;
 class Model;
 class Skill;
 
-struct LayerParameterInitialization
+struct ParameterInitialization
 {
     std::shared_ptr<Initializer<Scalar>> weightInitializer
         = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
@@ -25,10 +25,10 @@ struct LayerParameterInitialization
 
 void initializeSkillParameters(
     Skill &skill,
-    const LayerParameterInitialization &initialization = {});
+    const ParameterInitialization &initialization = {});
 void initializeModelParameters(
     Model &network,
-    const LayerParameterInitialization &initialization = {});
+    const ParameterInitialization &initialization = {});
 
 template<typename LayerType>
 class TrainableSkill
@@ -66,7 +66,7 @@ private:
 template<typename LayerType, typename RecipeType>
 TrainableSkill<LayerType> makeTrainableSkill(
     const RecipeType &recipe,
-    const LayerParameterInitialization &initialization = {})
+    const ParameterInitialization &initialization = {})
 {
     Skill skill(makeLayer<LayerType>(recipe));
     initializeSkillParameters(skill, initialization);

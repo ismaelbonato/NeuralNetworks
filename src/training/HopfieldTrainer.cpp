@@ -2,7 +2,7 @@
 
 #include "base/Model.h"
 #include "layers/HopfieldLayer.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/Optimizer.h"
 
 #include <memory>

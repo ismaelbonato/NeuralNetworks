@@ -2,7 +2,7 @@
 #include "base/Model.h"
 #include "base/Types.h"
 #include "layers/DenseLayer.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/LearningRule.h"
 #include "training/Optimizer.h"
 

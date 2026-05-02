@@ -7,7 +7,7 @@
 #include "layers/DenseLayer.h"
 #include "layers/HopfieldLayer.h"
 #include "training/GradientEngine.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/Optimizer.h"
 #include "training/TrainingSession.h"
 

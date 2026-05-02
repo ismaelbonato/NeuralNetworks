@@ -2,7 +2,7 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/NaturalSelectionTrainer.h"
 
 #include <catch2/catch_test_macros.hpp>

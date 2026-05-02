@@ -4,7 +4,7 @@
 #include "base/Model.h"
 #include "training/Coach.h"
 #include "training/FeedforwardTrainer.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/TrainingSession.h"
 
 #include <catch2/catch_test_macros.hpp>

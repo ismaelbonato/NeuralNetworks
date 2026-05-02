@@ -3,7 +3,7 @@
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
 #include "training/HopfieldTrainer.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 

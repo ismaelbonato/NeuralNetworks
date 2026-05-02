@@ -1,4 +1,4 @@
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 
 #include "base/Layer.h"
 #include "base/Model.h"
@@ -21,7 +21,7 @@ Pattern initializedParameter(
 Parameters initializedParametersFor(
     const Layer &layer,
     const Parameters &currentParameters,
-    const LayerParameterInitialization &initialization)
+    const ParameterInitialization &initialization)
 {
     Parameters parameters = currentParameters;
 
@@ -43,7 +43,7 @@ Parameters initializedParametersFor(
 
 void initializeSkillParameters(
     Skill &skill,
-    const LayerParameterInitialization &initialization)
+    const ParameterInitialization &initialization)
 {
     if (!skill.hasParameters()) {
         return;
@@ -57,7 +57,7 @@ void initializeSkillParameters(
 
 void initializeModelParameters(
     Model &network,
-    const LayerParameterInitialization &initialization)
+    const ParameterInitialization &initialization)
 {
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {

@@ -2,6 +2,7 @@
 
 #include "Tensor.h"
 #include "base/ActivationFunction.h"
+#include "base/Parameters.h"
 #include "base/Types.h"
 
 #include <cstddef>
@@ -52,12 +53,6 @@ struct FlattenLayerRecipe : LayerRecipe
 
     bool isValid() const;
     Shape expectedOutputShape() const;
-};
-
-struct Parameters
-{
-    Pattern weights;
-    Pattern biases;
 };
 
 template<typename LayerType, typename RecipeType>

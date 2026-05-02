@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "training/FeedforwardTrainer.h"
-#include "training/LayerParameterInitializer.h"
+#include "training/ParameterInitializer.h"
 #include "training/NaturalSelectionTrainer.h"
 #include "training/PerceptronRuleTrainer.h"
 
@@ -187,7 +187,7 @@ inline void feedforwardExperiment()
     config4.expectedInputShape = {8};
     config4.expectedOutputShape = {labels.size()};
 
-    LayerParameterInitialization initialization{
+    ParameterInitialization initialization{
         .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
             Scalar{-1.0},
             Scalar{1.0}),
