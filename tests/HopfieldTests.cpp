@@ -13,7 +13,7 @@
 
 namespace
 {
-std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
+HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)
 {
     HopfieldLayerRecipe config;
     config.name = "test hopfield";
@@ -22,30 +22,34 @@ std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
     config.activation = std::make_shared<StepPolarActivation<Scalar>>();
     config.size = size;
 
-    return makeInitializedLayer<HopfieldLayer>(
-        config,
-        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+    return config;
 }
 
-HopfieldLayer &hopfieldLayer(Model &network)
+Skill makeHopfieldSkill(const size_t size)
 {
-    return dynamic_cast<HopfieldLayer &>(network.getLayer(0));
+    return makeTrainableSkill<HopfieldLayer>(
+        makeHopfieldRecipe(size),
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+        .intoSkill();
 }
 }
 
 TEST_CASE("hopfield recall updates from current state until convergence", "[hopfield]")
 {
-    auto layer = makeHopfieldLayer(3);
+    auto skill = makeHopfieldSkill(3);
 
-    REQUIRE(layer->getBiases().empty());
-    REQUIRE_THROWS_AS(layer->setBiases({0.0F, 0.0F, 0.0F}), std::runtime_error);
-    layer->setWeights(Pattern::matrix({{-2.0F, -2.0F, -2.0F},
-                                      {-2.0F, -2.0F, 1.0F},
-                                      {-2.0F, -2.0F, 0.0F}}));
+    REQUIRE(skill.getParameters().biases.empty());
+    REQUIRE_THROWS_AS(skill.setParameters({.weights = Pattern::matrix(3, 3, 0.0F),
+                                           .biases = {0.0F, 0.0F, 0.0F}}),
+                      std::runtime_error);
+    skill.setParameters({.weights = Pattern::matrix({{-2.0F, -2.0F, -2.0F},
+                                                     {-2.0F, -2.0F, 1.0F},
+                                                     {-2.0F, -2.0F, 0.0F}}),
+                         .biases = {}});
 
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(std::move(skill));
 
     REQUIRE(network.infer({-1.0F, 1.0F, -1.0F})
             == Pattern{-1.0F, 1.0F, 1.0F});
@@ -53,9 +57,8 @@ TEST_CASE("hopfield recall updates from current state until convergence", "[hopf
 
 TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 {
-    auto layer = makeHopfieldLayer(4);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makeHopfieldSkill(4));
     HopfieldTrainer trainer;
 
     REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, -1.0F, 1.0F}}), std::runtime_error);
@@ -64,14 +67,13 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 
 TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfield]")
 {
-    auto layer = makeHopfieldLayer(3);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makeHopfieldSkill(3));
     HopfieldTrainer trainer;
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    const Pattern &weights = hopfieldLayer(network).getWeights();
+    const Pattern weights = network.getSkill(0).getParameters().weights;
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
         REQUIRE(weights.at({i, i}) == 0.0F);
         for (size_t j = 0; j < weights.shape().at(1); ++j) {
@@ -82,14 +84,13 @@ TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfie
 
 TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
 {
-    auto layer = makeHopfieldLayer(3);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makeHopfieldSkill(3));
     HopfieldTrainer trainer;
 
     trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
 
-    const Pattern &weights = hopfieldLayer(network).getWeights();
+    const Pattern weights = network.getSkill(0).getParameters().weights;
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
         REQUIRE(weights.at({i, i}) == 0.0F);
         for (size_t j = 0; j < weights.shape().at(1); ++j) {
@@ -100,9 +101,8 @@ TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
 
 TEST_CASE("hopfield trainer stores a recalled pattern", "[hopfield]")
 {
-    auto layer = makeHopfieldLayer(4);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(makeHopfieldSkill(4));
     HopfieldTrainer trainer;
 
     const Pattern pattern = {1.0F, -1.0F, 1.0F, -1.0F};

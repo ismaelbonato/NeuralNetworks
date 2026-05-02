@@ -60,15 +60,16 @@ inline void perceptronNetwork()
     config.expectedInputShape = {inputs.at(0).size()};
     config.expectedOutputShape = {labels.at(0).size()};
 
-    auto l = makeInitializedLayer<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
              Scalar{-1.0},
              Scalar{1.0}),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+                     .intoSkill();
 
     Model net;
-    net.addLayer(std::move(l));
+    net.addSkill(std::move(skill));
     PerceptronRuleTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 1000);
@@ -104,13 +105,14 @@ inline void perceptronNaturalSelection()
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto l = makeInitializedLayer<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+                     .intoSkill();
 
     Model net;
-    net.addLayer(std::move(l));
+    net.addSkill(std::move(skill));
     NaturalSelectionTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 10000);
@@ -190,17 +192,17 @@ inline void feedforwardExperiment()
             Scalar{-1.0},
             Scalar{1.0}),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()};
-    auto l1 = makeInitializedLayer<DenseLayer>(config1, initialization);
-    auto l2 = makeInitializedLayer<DenseLayer>(config2, initialization);
-    auto l3 = makeInitializedLayer<DenseLayer>(config3, initialization);
-    auto l4 = makeInitializedLayer<DenseLayer>(config4, initialization);
+    auto skill1 = makeTrainableSkill<DenseLayer>(config1, initialization).intoSkill();
+    auto skill2 = makeTrainableSkill<DenseLayer>(config2, initialization).intoSkill();
+    auto skill3 = makeTrainableSkill<DenseLayer>(config3, initialization).intoSkill();
+    auto skill4 = makeTrainableSkill<DenseLayer>(config4, initialization).intoSkill();
     
 
     Model net;
-    net.addLayer(std::move(l1));
-    net.addLayer(std::move(l2));
-    net.addLayer(std::move(l3));
-    net.addLayer(std::move(l4));
+    net.addSkill(std::move(skill1));
+    net.addSkill(std::move(skill2));
+    net.addSkill(std::move(skill3));
+    net.addSkill(std::move(skill4));
     FeedforwardTrainer trainer;
 
     trainer.learn(net, inputs, labels, Scalar{0.1f}, 100000);

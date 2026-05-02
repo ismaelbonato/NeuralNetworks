@@ -113,8 +113,10 @@ bool HopfieldLayer::isInitialized() const
 
 bool HopfieldLayer::isInitialized(const LayerParameters &parameters) const
 {
-    return (!hasWeights() || parameters.weights.hasShape(expectedWeightShape()))
-           && (!hasBias() || parameters.biases.hasShape(expectedBiasShape()));
+    return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
+                         : parameters.weights.empty())
+           && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
+                         : parameters.biases.empty());
 }
 
 void HopfieldLayer::requireInitialized() const

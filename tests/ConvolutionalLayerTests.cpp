@@ -4,6 +4,7 @@
 #include "layers/ConvolutionalLayer.h"
 #include "training/FeedforwardTrainer.h"
 #include "training/GradientEngine.h"
+#include "training/LayerParameterInitializer.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -39,11 +40,9 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     weights.at({0, 0, 1}) = 0.0F;
     weights.at({0, 0, 2}) = 1.0F;
 
-    auto layer = makeLayer<ConvolutionalLayer>(config);
-
-    layer->setWeights(weights);
-    layer->setBiases({0.0F});
-    net.addLayer(std::move(layer));
+    auto skill = makeTrainableSkill<ConvolutionalLayer>(config).intoSkill();
+    skill.setParameters({.weights = weights, .biases = {0.0F}});
+    net.addSkill(std::move(skill));
     Pattern output = net.infer(signal);
 
     Pattern expected = {0.880797F,
@@ -131,8 +130,7 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
     weights.at({0, 0, 1}) = 0.0F;
     weights.at({0, 0, 2}) = 1.0F;
 
-    auto layer = makeLayer<ConvolutionalLayer>(config);
-    net.addLayer(std::move(layer));
+    net.addSkill(makeTrainableSkill<ConvolutionalLayer>(config).intoSkill());
 
     FeedforwardTrainer trainer;
 

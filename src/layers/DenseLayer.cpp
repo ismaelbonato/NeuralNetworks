@@ -123,8 +123,10 @@ bool DenseLayer::isInitialized() const
 
 bool DenseLayer::isInitialized(const LayerParameters &parameters) const
 {
-    return (!hasWeights() || parameters.weights.hasShape(expectedWeightShape()))
-           && (!hasBias() || parameters.biases.hasShape(expectedBiasShape()));
+    return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
+                         : parameters.weights.empty())
+           && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
+                         : parameters.biases.empty());
 }
 
 void DenseLayer::requireInitialized() const
