@@ -5,6 +5,7 @@
 #include "base/Skill.h"
 #include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
+#include "layers/FlattenLayer.h"
 #include "layers/HopfieldLayer.h"
 #include "training/GradientEngine.h"
 #include "training/ParameterInitializer.h"
@@ -97,11 +98,9 @@ Pattern activateFor(const Layer &layer, const Pattern &values)
         [&activation](Scalar value) { return (*activation)(value); });
 }
 
-bool supportsParameterizedTraining(const Layer &layer)
+bool isFlattenLayer(const Layer &layer)
 {
-    return layerAs<const DenseLayer>(layer).has_value()
-           || layerAs<const ConvolutionalLayer>(layer).has_value()
-           || layerAs<const HopfieldLayer>(layer).has_value();
+    return layerAs<const FlattenLayer>(layer).has_value();
 }
 
 void validateTrainingData(const Model &network,
@@ -143,12 +142,12 @@ void recordForwardPass(TrainingSession &session, const Pattern &input)
          ++layerIndex) {
         const auto &skill = network.getSkill(layerIndex);
         const auto &layer = skill.layer();
-        if (supportsParameterizedTraining(layer)) {
-            preActivations.at(layerIndex) = preActivationFor(skill, current);
-            current = activateFor(layer, preActivations.at(layerIndex));
-        } else {
+        if (isFlattenLayer(layer)) {
             current = skill.perform(current);
             preActivations.at(layerIndex) = {};
+        } else {
+            preActivations.at(layerIndex) = preActivationFor(skill, current);
+            current = activateFor(layer, preActivations.at(layerIndex));
         }
         activations.at(layerIndex + 1) = current;
     }
