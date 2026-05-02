@@ -3,7 +3,7 @@
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 #include "training/Coach.h"
-#include "training/FeedforwardTrainer.h"
+#include "training/FeedforwardCoach.h"
 #include "training/ParameterInitializer.h"
 #include "training/TrainingSession.h"
 
@@ -112,14 +112,14 @@ TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
     requireClose(prediction.at(0), 0.6816998F);
 }
 
-TEST_CASE("feedforward trainer updates single layer through SGD",
+TEST_CASE("feedforward coach updates single layer through SGD",
           "[feedforward][learning]")
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardTrainer trainer;
+    FeedforwardCoach coach;
 
-    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
@@ -139,27 +139,27 @@ TEST_CASE("feedforward inference rejects missing layers and invalid input sizes"
     REQUIRE_THROWS_AS(network.infer({1.0F}), std::runtime_error);
 }
 
-TEST_CASE("feedforward trainer can train the same model more than once",
+TEST_CASE("feedforward coach can train the same model more than once",
           "[feedforward][learning]")
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardTrainer trainer;
+    FeedforwardCoach coach;
 
-    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
-    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     REQUIRE(denseParameters(network, 0).weights.at({0, 0}) != 0.0F);
 }
 
-TEST_CASE("feedforward trainer direct API updates weights and biases",
-          "[feedforward][trainer]")
+TEST_CASE("feedforward coach direct API updates weights and biases",
+          "[feedforward][coach]")
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardTrainer trainer;
+    FeedforwardCoach coach;
 
-    trainer.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
@@ -197,7 +197,7 @@ TEST_CASE("generic coach preserves feedforward training behavior",
     requireClose(parameters.biases.at(0), 0.125F);
 }
 
-TEST_CASE("feedforward trainer updates hidden and output layers",
+TEST_CASE("feedforward coach updates hidden and output layers",
           "[feedforward][learning]")
 {
     auto hidden = makeDenseSkill(
@@ -217,50 +217,50 @@ TEST_CASE("feedforward trainer updates hidden and output layers",
     Model network;
     network.addSkill(std::move(hidden));
     network.addSkill(std::move(output));
-    FeedforwardTrainer trainer;
-    trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
+    FeedforwardCoach coach;
+    coach.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
     REQUIRE(denseParameters(network, 0).weights.at({0, 0}) != hiddenWeightBefore);
     REQUIRE(denseParameters(network, 1).weights.at({0, 0}) != outputWeightBefore);
 }
 
-TEST_CASE("feedforward trainer rejects invalid training data", "[feedforward][errors]")
+TEST_CASE("feedforward coach rejects invalid training data", "[feedforward][errors]")
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardTrainer trainer;
+    FeedforwardCoach coach;
 
-    REQUIRE_THROWS_AS(trainer.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(coach.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
 
     Model emptyNetwork;
-    REQUIRE_THROWS_AS(trainer.learn(emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(coach.learn(emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
-TEST_CASE("feedforward trainer rejects wrong input and label shapes", "[feedforward][errors]")
+TEST_CASE("feedforward coach rejects wrong input and label shapes", "[feedforward][errors]")
 {
     Model network;
     network.addSkill(makeDenseSkill(2, 2));
-    FeedforwardTrainer trainer;
+    FeedforwardCoach coach;
 
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}, {1.0F}},
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}, {1.0F}},
                                     {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     0.1F,
                                     1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, 0.0F}, {0.0F, 1.0F}},
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     {{1.0F, 0.0F}, {1.0F}},
                                     0.1F,
                                     1),
                       std::runtime_error);
 }
 
-TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
+TEST_CASE("feedforward coach learns OR gate", "[feedforward][learning]")
 {
     Model network;
     network.addSkill(makeDenseSkill(
@@ -274,8 +274,8 @@ TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
 
-    FeedforwardTrainer trainer;
-    trainer.learn(network, inputs, labels, 0.5F, 5000);
+    FeedforwardCoach coach;
+    coach.learn(network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) > 0.5F);
@@ -283,7 +283,7 @@ TEST_CASE("feedforward trainer learns OR gate", "[feedforward][learning]")
     REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.5F);
 }
 
-TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
+TEST_CASE("feedforward coach learns AND gate", "[feedforward][learning]")
 {
     Model network;
     network.addSkill(makeDenseSkill(
@@ -297,8 +297,8 @@ TEST_CASE("feedforward trainer learns AND gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    FeedforwardTrainer trainer;
-    trainer.learn(network, inputs, labels, 0.5F, 5000);
+    FeedforwardCoach coach;
+    coach.learn(network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) < 0.5F);

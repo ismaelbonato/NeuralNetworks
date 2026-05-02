@@ -1,6 +1,6 @@
 #pragma once
 
-#include "training/SupervisedTrainer.h"
+#include "training/SupervisedCoach.h"
 
 #include <vector>
 
@@ -9,11 +9,11 @@ struct NaturalSelectionConfig
     size_t populationSize = 4;
 };
 
-class NaturalSelectionTrainer : public SupervisedTrainer
+class NaturalSelectionCoach : public SupervisedCoach
 {
 public:
-    NaturalSelectionTrainer();
-    explicit NaturalSelectionTrainer(NaturalSelectionConfig newConfig);
+    NaturalSelectionCoach();
+    explicit NaturalSelectionCoach(NaturalSelectionConfig newConfig);
 
     void learn(Model &network,
                const Batch &inputs,

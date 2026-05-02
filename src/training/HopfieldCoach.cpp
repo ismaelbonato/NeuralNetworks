@@ -1,4 +1,4 @@
-#include "training/HopfieldTrainer.h"
+#include "training/HopfieldCoach.h"
 
 #include "base/Model.h"
 #include "layers/HopfieldLayer.h"
@@ -21,7 +21,7 @@ HopfieldLayer &requireHopfieldLayer(Layer &layer)
 }
 }
 
-void HopfieldTrainer::learn(Model &network,
+void HopfieldCoach::learn(Model &network,
                             const Batch &inputs,
                             Scalar learningRate,
                             size_t epochs)

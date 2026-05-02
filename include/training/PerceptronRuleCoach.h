@@ -1,8 +1,8 @@
 #pragma once
 
-#include "training/SupervisedTrainer.h"
+#include "training/SupervisedCoach.h"
 
-class PerceptronRuleTrainer : public SupervisedTrainer
+class PerceptronRuleCoach : public SupervisedCoach
 {
 public:
     void learn(Model &network,

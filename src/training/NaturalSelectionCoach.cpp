@@ -1,4 +1,4 @@
-#include "training/NaturalSelectionTrainer.h"
+#include "training/NaturalSelectionCoach.h"
 
 #include "base/Model.h"
 #include "base/Skill.h"
@@ -115,13 +115,13 @@ ModelParameters mutateParameters(const Model &network,
 }
 }
 
-NaturalSelectionTrainer::NaturalSelectionTrainer() = default;
+NaturalSelectionCoach::NaturalSelectionCoach() = default;
 
-NaturalSelectionTrainer::NaturalSelectionTrainer(NaturalSelectionConfig newConfig)
+NaturalSelectionCoach::NaturalSelectionCoach(NaturalSelectionConfig newConfig)
     : config(newConfig)
 {}
 
-void NaturalSelectionTrainer::learn(Model &network,
+void NaturalSelectionCoach::learn(Model &network,
                                     const Batch &inputs,
                                     const Batch &labels,
                                     Scalar learningRate,
@@ -170,7 +170,7 @@ void NaturalSelectionTrainer::learn(Model &network,
     applyParameters(network, bestParameters);
 }
 
-size_t NaturalSelectionTrainer::findBestCandidate(
+size_t NaturalSelectionCoach::findBestCandidate(
     const std::vector<Batch> &candidatePredictions,
     const Batch &labels) const
 {

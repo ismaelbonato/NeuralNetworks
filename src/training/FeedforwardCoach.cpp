@@ -1,9 +1,9 @@
-#include "training/FeedforwardTrainer.h"
+#include "training/FeedforwardCoach.h"
 
 #include "base/Model.h"
 #include "training/Coach.h"
 
-void FeedforwardTrainer::learn(Model &network,
+void FeedforwardCoach::learn(Model &network,
                                const Batch &inputs,
                                const Batch &labels,
                                Scalar learningRate,

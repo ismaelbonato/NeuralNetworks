@@ -1,4 +1,4 @@
-#include "training/PerceptronRuleTrainer.h"
+#include "training/PerceptronRuleCoach.h"
 
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
@@ -26,7 +26,7 @@ DenseLayer &requireDenseLayer(Layer &layer)
 }
 }
 
-void PerceptronRuleTrainer::learn(Model &network,
+void PerceptronRuleCoach::learn(Model &network,
                                   const Batch &inputs,
                                   const Batch &labels,
                                   Scalar learningRate,

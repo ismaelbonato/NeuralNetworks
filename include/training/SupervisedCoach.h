@@ -6,10 +6,10 @@
 
 class Model;
 
-class SupervisedTrainer
+class SupervisedCoach
 {
 public:
-    virtual ~SupervisedTrainer() = default;
+    virtual ~SupervisedCoach() = default;
 
     virtual void learn(Model &network,
                        const Batch &inputs,

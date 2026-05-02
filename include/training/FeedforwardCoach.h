@@ -6,11 +6,12 @@
 
 class Model;
 
-class HopfieldTrainer
+class FeedforwardCoach
 {
 public:
     void learn(Model &network,
                const Batch &inputs,
-               Scalar learningRate = Scalar{1.0f},
-               size_t epochs = 10000);
+               const Batch &labels,
+               Scalar learningRate,
+               size_t epochs);
 };

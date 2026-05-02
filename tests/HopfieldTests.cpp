@@ -2,7 +2,7 @@
 #include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
-#include "training/HopfieldTrainer.h"
+#include "training/HopfieldCoach.h"
 #include "training/ParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -59,19 +59,19 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 {
     Model network;
     network.addSkill(makeHopfieldSkill(4));
-    HopfieldTrainer trainer;
+    HopfieldCoach coach;
 
-    REQUIRE_THROWS_AS(trainer.learn(network, {{1.0F, -1.0F, 1.0F}}), std::runtime_error);
+    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, -1.0F, 1.0F}}), std::runtime_error);
     REQUIRE_THROWS_AS(network.infer({1.0F, -1.0F, 1.0F}), std::runtime_error);
 }
 
-TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfield]")
+TEST_CASE("hopfield coach keeps diagonal zero and weights symmetric", "[hopfield]")
 {
     Model network;
     network.addSkill(makeHopfieldSkill(3));
-    HopfieldTrainer trainer;
+    HopfieldCoach coach;
 
-    trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
+    coach.learn(network, {{1.0F, -1.0F, 1.0F}});
 
     const Pattern weights = network.getSkill(0).getParameters().weights;
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
@@ -82,13 +82,13 @@ TEST_CASE("hopfield trainer keeps diagonal zero and weights symmetric", "[hopfie
     }
 }
 
-TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
+TEST_CASE("hopfield coach stores patterns", "[hopfield][coach]")
 {
     Model network;
     network.addSkill(makeHopfieldSkill(3));
-    HopfieldTrainer trainer;
+    HopfieldCoach coach;
 
-    trainer.learn(network, {{1.0F, -1.0F, 1.0F}});
+    coach.learn(network, {{1.0F, -1.0F, 1.0F}});
 
     const Pattern weights = network.getSkill(0).getParameters().weights;
     for (size_t i = 0; i < weights.shape().at(0); ++i) {
@@ -99,15 +99,15 @@ TEST_CASE("hopfield trainer stores patterns", "[hopfield][trainer]")
     }
 }
 
-TEST_CASE("hopfield trainer stores a recalled pattern", "[hopfield]")
+TEST_CASE("hopfield coach stores a recalled pattern", "[hopfield]")
 {
     Model network;
     network.addSkill(makeHopfieldSkill(4));
-    HopfieldTrainer trainer;
+    HopfieldCoach coach;
 
     const Pattern pattern = {1.0F, -1.0F, 1.0F, -1.0F};
 
-    trainer.learn(network, {pattern});
+    coach.learn(network, {pattern});
 
     REQUIRE(network.infer(pattern) == pattern);
 }
