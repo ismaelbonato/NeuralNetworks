@@ -23,9 +23,6 @@ struct LayerParameterInitialization
         = std::make_shared<ConstantInitializer<Scalar>>(Scalar{0.0});
 };
 
-void initializeLayerParameters(
-    Layer &layer,
-    const LayerParameterInitialization &initialization = {});
 void initializeSkillParameters(
     Skill &skill,
     const LayerParameterInitialization &initialization = {});
@@ -37,14 +34,9 @@ template<typename LayerType>
 class TrainableSkill
 {
 public:
-    explicit TrainableSkill(std::unique_ptr<LayerType> newLayer)
-        : runtimeLayer(std::move(newLayer))
-    {
-        if (!runtimeLayer) {
-            throw std::invalid_argument(
-                "Cannot create a trainable skill without a layer.");
-        }
-    }
+    explicit TrainableSkill(Skill newSkill)
+        : runtimeSkill(std::move(newSkill))
+    {}
 
     TrainableSkill(const TrainableSkill &) = delete;
     TrainableSkill &operator=(const TrainableSkill &) = delete;
@@ -54,30 +46,21 @@ public:
 
     LayerType &layer()
     {
-        return *runtimeLayer;
+        return dynamic_cast<LayerType &>(runtimeSkill.layer());
     }
 
     const LayerType &layer() const
     {
-        return *runtimeLayer;
-    }
-
-    std::unique_ptr<LayerType> intoLayer()
-    {
-        if (!runtimeLayer) {
-            throw std::runtime_error(
-                "Cannot move a layer out of an empty trainable skill.");
-        }
-        return std::move(runtimeLayer);
+        return dynamic_cast<const LayerType &>(runtimeSkill.layer());
     }
 
     Skill intoSkill()
     {
-        return Skill(intoLayer());
+        return std::move(runtimeSkill);
     }
 
 private:
-    std::unique_ptr<LayerType> runtimeLayer;
+    Skill runtimeSkill;
 };
 
 template<typename LayerType, typename RecipeType>
@@ -85,7 +68,7 @@ TrainableSkill<LayerType> makeTrainableSkill(
     const RecipeType &recipe,
     const LayerParameterInitialization &initialization = {})
 {
-    auto layer = makeLayer<LayerType>(recipe);
-    initializeLayerParameters(*layer, initialization);
-    return TrainableSkill<LayerType>(std::move(layer));
+    Skill skill(makeLayer<LayerType>(recipe));
+    initializeSkillParameters(skill, initialization);
+    return TrainableSkill<LayerType>(std::move(skill));
 }

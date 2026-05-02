@@ -54,84 +54,12 @@ bool DenseLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-const Pattern &DenseLayer::getWeights() const
-{
-    return weights;
-}
-
-const Pattern &DenseLayer::getBiases() const
-{
-    return biases;
-}
-
-LayerParameters DenseLayer::getParameters() const
-{
-    return {
-        .weights = weights,
-        .biases = biases,
-    };
-}
-
-void DenseLayer::setParameters(const LayerParameters &parameters)
-{
-    setWeights(parameters.weights);
-    setBiases(parameters.biases);
-}
-
-void DenseLayer::setWeights(const Pattern &newWeights)
-{
-    if (!hasWeights()) {
-        if (!newWeights.empty()) {
-            throw std::runtime_error("Layer does not use weights.");
-        }
-
-        weights = newWeights;
-        return;
-    }
-
-    if (!newWeights.hasShape(expectedWeightShape())) {
-        throw std::runtime_error(
-            "Layer weights shape does not match layer recipe.");
-    }
-
-    weights = newWeights;
-}
-
-void DenseLayer::setBiases(const Pattern &newBiases)
-{
-    if (!hasBias()) {
-        if (!newBiases.empty()) {
-            throw std::runtime_error("Layer does not use bias.");
-        }
-
-        biases = newBiases;
-        return;
-    }
-
-    if (!newBiases.hasShape(expectedBiasShape())) {
-        throw std::runtime_error(
-            "Layer bias size does not match layer output size.");
-    }
-
-    biases = newBiases;
-}
-
-bool DenseLayer::isInitialized() const
-{
-    return isInitialized(getParameters());
-}
-
 bool DenseLayer::isInitialized(const LayerParameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
            && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
                          : parameters.biases.empty());
-}
-
-void DenseLayer::requireInitialized() const
-{
-    requireInitialized(getParameters());
 }
 
 void DenseLayer::requireInitialized(const LayerParameters &parameters) const
@@ -143,8 +71,8 @@ void DenseLayer::requireInitialized(const LayerParameters &parameters) const
 
 Pattern DenseLayer::forward(const Pattern &input) const
 {
-    Pattern sums = weightedInput(input);
-    return activate(sums);
+    (void)input;
+    throw std::runtime_error("Dense layer requires parameters.");
 }
 
 Pattern DenseLayer::forward(const Pattern &input,
@@ -152,11 +80,6 @@ Pattern DenseLayer::forward(const Pattern &input,
 {
     Pattern sums = weightedInput(input, parameters);
     return activate(sums);
-}
-
-Pattern DenseLayer::weightedInput(const Pattern &input) const
-{
-    return weightedInput(input, getParameters());
 }
 
 Pattern DenseLayer::weightedInput(const Pattern &input,

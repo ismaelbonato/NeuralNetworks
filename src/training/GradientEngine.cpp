@@ -38,7 +38,11 @@ Pattern parameterizedBackwardPass(const LayerType &layer,
                                   const Pattern &layerDelta,
                                   const Pattern &layerInput)
 {
-    layer.requireInitialized();
+    if (!weights.hasShape(
+            static_cast<const Layer &>(layer).expectedWeightShape())) {
+        throw std::runtime_error(
+            "Layer weights shape does not match layer recipe.");
+    }
     if (!layerDelta.hasShape(layer.getExpectedOutputShape())) {
         throw std::runtime_error(
             "Layer delta shape does not match layer output shape.");
@@ -56,7 +60,11 @@ Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
                                   const Pattern &layerDelta,
                                   const Pattern &layerInput)
 {
-    layer.requireInitialized();
+    if (!weights.hasShape(
+            static_cast<const Layer &>(layer).expectedWeightShape())) {
+        throw std::runtime_error(
+            "Layer weights shape does not match layer recipe.");
+    }
 
     if (!layerDelta.hasShape(layer.getExpectedOutputShape())) {
         throw std::runtime_error("Layer delta shape does not match "
@@ -153,24 +161,21 @@ Pattern BackpropagationGradientEngine::backwardThroughLayer(
     const Pattern &layerInput) const
 {
     if (auto dense = layerAs<DenseLayer>(layer)) {
-        return parameterizedBackwardPass(dense->get(),
-                                         dense->get().getWeights(),
-                                         layerDelta,
-                                         layerInput);
+        (void)dense;
+        throw std::runtime_error(
+            "Layer backpropagation requires skill parameters.");
     }
 
     if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
-        return convolutionalBackwardPass(convolutional->get(),
-                                         convolutional->get().getWeights(),
-                                         layerDelta,
-                                         layerInput);
+        (void)convolutional;
+        throw std::runtime_error(
+            "Layer backpropagation requires skill parameters.");
     }
 
     if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
-        return parameterizedBackwardPass(hopfield->get(),
-                                         hopfield->get().getWeights(),
-                                         layerDelta,
-                                         layerInput);
+        (void)hopfield;
+        throw std::runtime_error(
+            "Layer backpropagation requires skill parameters.");
     }
 
     if (layerAs<FlattenLayer>(layer)) {

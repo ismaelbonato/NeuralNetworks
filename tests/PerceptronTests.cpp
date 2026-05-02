@@ -82,11 +82,8 @@ TEST_CASE("perceptron trainer initializes uninitialized layer",
     config.inputSize = 2;
     config.outputSize = 1;
 
-    auto layer = std::make_unique<DenseLayer>(config);
-    REQUIRE_FALSE(layer->isInitialized());
-
     Model network;
-    network.addSkill(Skill(std::move(layer)));
+    network.addSkill(Skill(std::make_unique<DenseLayer>(config)));
     PerceptronRuleTrainer trainer;
 
     REQUIRE_NOTHROW(trainer.learn(network,

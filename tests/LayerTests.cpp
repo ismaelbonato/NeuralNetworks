@@ -28,12 +28,7 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     denseRecipe.inputSize = inputSize;
     denseRecipe.outputSize = outputSize;
 
-    auto layer = makeLayer<DenseLayer>(denseRecipe);
-    initializeLayerParameters(
-        *layer,
-        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
-    return layer;
+    return makeLayer<DenseLayer>(denseRecipe);
 }
 
 std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
@@ -123,25 +118,29 @@ TEST_CASE("gradient engine rejects unsupported layer backpropagation",
 TEST_CASE("dense layer adds recipe bias to pre-activation", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
-    layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
-    layer->setBiases({10.0F});
+    const LayerParameters parameters{
+        .weights = Pattern::matrix({{1.0F, 1.0F}}),
+        .biases = {10.0F},
+    };
 
-    const Pattern output = layer->infer({1.0F, 1.0F});
+    const Pattern output = layer->infer({1.0F, 1.0F}, parameters);
 
     requireClose(output.at(0), 0.9999938F);
 }
 
-TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dense]")
+TEST_CASE("skill parameter snapshots preserve weights and biases", "[skill][dense]")
 {
-    auto source = makeDenseLayer(2, 2);
-    source->setWeights(Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}}));
-    source->setBiases({0.5F, -0.5F});
+    Skill source(makeDenseLayer(2, 2));
+    source.setParameters({
+        .weights = Pattern::matrix({{1.0F, 2.0F}, {3.0F, 4.0F}}),
+        .biases = {0.5F, -0.5F},
+    });
 
-    auto target = makeDenseLayer(2, 2);
-    target->setParameters(source->getParameters());
+    Skill target(makeDenseLayer(2, 2));
+    target.setParameters(source.getParameters());
 
-    REQUIRE(target->getWeights() == source->getWeights());
-    REQUIRE(target->getBiases() == source->getBiases());
+    REQUIRE(target.getParameters().weights == source.getParameters().weights);
+    REQUIRE(target.getParameters().biases == source.getParameters().biases);
 }
 
 TEST_CASE("parameter initializer initializes dense layer biases",
@@ -168,11 +167,15 @@ TEST_CASE("parameter initializer initializes dense layer biases",
 TEST_CASE("parameter initializer initializes dense layer parameters",
           "[layer][dense]")
 {
-    auto layer = makeDenseLayer(2, 2);
+    DenseLayerRecipe config;
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.inputSize = 2;
+    config.outputSize = 2;
 
+    auto skill = makeTrainableSkill<DenseLayer>(config).intoSkill();
 
-    REQUIRE(layer->getWeights().hasShape({2, 2}));
-    REQUIRE(layer->getBiases().shape() == std::vector<size_t>{2});
+    REQUIRE(skill.getParameters().weights.hasShape({2, 2}));
+    REQUIRE(skill.getParameters().biases.shape() == std::vector<size_t>{2});
 }
 
 TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape]")
@@ -288,18 +291,27 @@ TEST_CASE("optimizer step rejects mismatched activation and delta sizes",
                                      0.1F),
                       std::runtime_error);
 }
-TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors]")
+TEST_CASE("skill parameter setter rejects invalid weight and bias shapes",
+          "[skill][errors]")
 {
-    auto layer = makeDenseLayer(2, 2);
+    Skill skill(makeDenseLayer(2, 2));
 
-    REQUIRE_THROWS_AS(layer->setWeights(Pattern::vector(4, 0.0F)),
+    REQUIRE_THROWS_AS(skill.setParameters(
+                          {.weights = Pattern::vector(4, 0.0F),
+                           .biases = {0.0F, 0.0F}}),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(layer->setWeights(Pattern::matrix(1, 4, 0.0F)),
+    REQUIRE_THROWS_AS(skill.setParameters(
+                          {.weights = Pattern::matrix(1, 4, 0.0F),
+                           .biases = {0.0F, 0.0F}}),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(layer->setBiases({0.0F}), std::runtime_error);
+    REQUIRE_THROWS_AS(skill.setParameters(
+                          {.weights = Pattern::matrix(2, 2, 0.0F),
+                           .biases = {0.0F}}),
+                      std::runtime_error);
 
-    REQUIRE_NOTHROW(layer->setWeights(Pattern::matrix(2, 2, 0.0F)));
-    REQUIRE_NOTHROW(layer->setBiases({0.0F, 0.0F}));
+    REQUIRE_NOTHROW(skill.setParameters(
+        {.weights = Pattern::matrix(2, 2, 0.0F),
+         .biases = {0.0F, 0.0F}}));
 }
 
 TEST_CASE("trainable skill factory initializes dense skill", "[skill][dense]")
@@ -327,9 +339,11 @@ TEST_CASE("trainable skill factory initializes dense skill", "[skill][dense]")
 TEST_CASE("skill performs through its runtime layer", "[skill][runtime]")
 {
     auto layer = makeDenseLayer(2, 1);
-    layer->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
-    layer->setBiases({0.0F});
     Skill skill(std::move(layer));
+    skill.setParameters({
+        .weights = Pattern::matrix({{1.0F, 1.0F}}),
+        .biases = {0.0F},
+    });
 
     const Pattern output = skill.perform({1.0F, 1.0F});
 
@@ -365,11 +379,6 @@ TEST_CASE("skill-owned parameters drive runtime execution",
         .biases = {-1.0F},
     });
 
-    dynamic_cast<DenseLayer &>(skill.layer()).setParameters({
-        .weights = Pattern::matrix({{0.0F}}),
-        .biases = {0.0F},
-    });
-
     const Pattern output = skill.perform({1.0F});
 
     requireClose(output.at(0), 0.7310586F);
@@ -377,7 +386,7 @@ TEST_CASE("skill-owned parameters drive runtime execution",
     REQUIRE(skill.getParameters().biases == Pattern{-1.0F});
 }
 
-TEST_CASE("skill execution does not rewrite wrapped layer parameters",
+TEST_CASE("parameterized runtime layer still requires external parameters",
           "[skill][parameters]")
 {
     auto layer = makeDenseLayer(1, 1);
@@ -386,17 +395,12 @@ TEST_CASE("skill execution does not rewrite wrapped layer parameters",
         .weights = Pattern::matrix({{2.0F}}),
         .biases = {-1.0F},
     });
-    auto &wrappedLayer = dynamic_cast<DenseLayer &>(skill.layer());
-    wrappedLayer.setParameters({
-        .weights = Pattern::matrix({{0.0F}}),
-        .biases = {0.0F},
-    });
+    const auto &wrappedLayer = dynamic_cast<const DenseLayer &>(skill.layer());
 
     const Pattern output = skill.perform({1.0F});
 
     requireClose(output.at(0), 0.7310586F);
-    REQUIRE(wrappedLayer.getParameters().weights == Pattern::matrix({{0.0F}}));
-    REQUIRE(wrappedLayer.getParameters().biases == Pattern{0.0F});
+    REQUIRE_THROWS_AS(wrappedLayer.infer({1.0F}), std::runtime_error);
 }
 
 TEST_CASE("skill initialization uses layer parameter contract",
@@ -416,10 +420,9 @@ TEST_CASE("skill initialization uses layer parameter contract",
         {.weightInitializer = std::make_shared<ConstantInitializer<Scalar>>(2.0F),
          .biasInitializer = std::make_shared<ConstantInitializer<Scalar>>(-1.0F)});
 
-    const auto &wrappedLayer = dynamic_cast<const DenseLayer &>(skill.layer());
     const Pattern output = skill.perform({1.0F});
 
-    REQUIRE_FALSE(wrappedLayer.isInitialized());
+    REQUIRE_THROWS_AS(skill.layer().infer({1.0F}), std::runtime_error);
     REQUIRE(skill.getParameters().weights == Pattern::matrix({{2.0F}}));
     REQUIRE(skill.getParameters().biases == Pattern{-1.0F});
     requireClose(output.at(0), 0.7310586F);
@@ -448,15 +451,18 @@ TEST_CASE("model can infer through added skills", "[model][skill]")
     config.inputSize = 1;
     config.outputSize = 1;
 
-    auto trainableSkill = makeTrainableSkill<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
          .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
-    trainableSkill.layer().setWeights(Pattern::matrix({{2.0F}}));
-    trainableSkill.layer().setBiases({-1.0F});
+    Skill runtimeSkill = skill.intoSkill();
+    runtimeSkill.setParameters({
+        .weights = Pattern::matrix({{2.0F}}),
+        .biases = {-1.0F},
+    });
 
     Model network;
-    network.addSkill(trainableSkill.intoSkill());
+    network.addSkill(std::move(runtimeSkill));
 
     const Pattern output = network.infer({1.0F});
 
@@ -475,12 +481,12 @@ TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer
     config.inputSize = 2;
     config.outputSize = 1;
     auto layer = std::make_unique<UninitializedLayer>(config);
+    Skill skill(std::move(layer));
 
-    REQUIRE_FALSE(layer->isInitialized());
-    REQUIRE_THROWS_AS(layer->requireInitialized(), std::runtime_error);
-    REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
+    REQUIRE_THROWS_AS(skill.requireInitialized(), std::runtime_error);
+    REQUIRE_THROWS_AS(skill.perform({1.0F, 1.0F}), std::runtime_error);
     Model network;
-    network.addSkill(Skill(std::move(layer)));
+    network.addSkill(std::move(skill));
     const auto optimizer = makeSgdOptimizer();
     REQUIRE_THROWS_AS(optimizer.step(network,
                                      {{1.0F, 1.0F}},

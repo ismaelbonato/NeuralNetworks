@@ -32,14 +32,7 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.outputSize = outputSize;
 
     auto layer = makeLayer<DenseLayer>(config);
-    if (randomInitialize) {
-        initializeLayerParameters(*layer);
-    } else {
-        initializeLayerParameters(
-            *layer,
-            {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-             .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
-    }
+    (void)randomInitialize;
     return layer;
 }
 
@@ -91,10 +84,12 @@ TEST_CASE("dense layer computes deterministic pre-activations and activations",
           "[feedforward][dense]")
 {
     auto layer = makeDenseLayer(2, 2);
-    layer->setWeights(Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}}));
-    layer->setBiases({0.0F, -0.5F});
+    const LayerParameters parameters{
+        .weights = Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}}),
+        .biases = {0.0F, -0.5F},
+    };
 
-    const Pattern output = layer->infer({2.0F, 1.0F});
+    const Pattern output = layer->infer({2.0F, 1.0F}, parameters);
 
     requireClose(output.at(0), 0.7310586F);
     requireClose(output.at(1), 0.7310586F);

@@ -34,21 +34,9 @@ public:
     std::optional<LayerParameters> parameters() const;
     LayerParameters getParameters() const;
     void setParameters(const LayerParameters &parameters);
-    void adoptLayerParameters();
     void requireInitialized() const;
-
-    std::unique_ptr<Layer> intoLayer()
-    {
-        if (!runtimeLayer) {
-            throw std::runtime_error("Cannot move a layer out of an empty skill.");
-        }
-        syncParametersToLayer();
-        return std::move(runtimeLayer);
-    }
 
 private:
     std::unique_ptr<Layer> runtimeLayer;
     std::optional<LayerParameters> ownedParameters;
-
-    void syncParametersToLayer() const;
 };

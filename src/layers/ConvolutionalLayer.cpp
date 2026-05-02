@@ -63,73 +63,6 @@ bool ConvolutionalLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-const Pattern &ConvolutionalLayer::getWeights() const
-{
-    return weights;
-}
-
-const Pattern &ConvolutionalLayer::getBiases() const
-{
-    return biases;
-}
-
-LayerParameters ConvolutionalLayer::getParameters() const
-{
-    return {
-        .weights = weights,
-        .biases = biases,
-    };
-}
-
-void ConvolutionalLayer::setParameters(const LayerParameters &parameters)
-{
-    setWeights(parameters.weights);
-    setBiases(parameters.biases);
-}
-
-void ConvolutionalLayer::setWeights(const Pattern &newWeights)
-{
-    if (!hasWeights()) {
-        if (!newWeights.empty()) {
-            throw std::runtime_error("Layer does not use weights.");
-        }
-
-        weights = newWeights;
-        return;
-    }
-
-    if (!newWeights.hasShape(expectedWeightShape())) {
-        throw std::runtime_error(
-            "Layer weights shape does not match layer recipe.");
-    }
-
-    weights = newWeights;
-}
-
-void ConvolutionalLayer::setBiases(const Pattern &newBiases)
-{
-    if (!hasBias()) {
-        if (!newBiases.empty()) {
-            throw std::runtime_error("Layer does not use bias.");
-        }
-
-        biases = newBiases;
-        return;
-    }
-
-    if (!newBiases.hasShape(expectedBiasShape())) {
-        throw std::runtime_error(
-            "Layer bias size does not match layer output size.");
-    }
-
-    biases = newBiases;
-}
-
-bool ConvolutionalLayer::isInitialized() const
-{
-    return isInitialized(getParameters());
-}
-
 bool ConvolutionalLayer::isInitialized(
     const LayerParameters &parameters) const
 {
@@ -137,11 +70,6 @@ bool ConvolutionalLayer::isInitialized(
                          : parameters.weights.empty())
            && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
                          : parameters.biases.empty());
-}
-
-void ConvolutionalLayer::requireInitialized() const
-{
-    requireInitialized(getParameters());
 }
 
 void ConvolutionalLayer::requireInitialized(
@@ -154,8 +82,8 @@ void ConvolutionalLayer::requireInitialized(
 
 Pattern ConvolutionalLayer::forward(const Pattern &input) const
 {
-    Pattern sums = weightedInput(input);
-    return activate(sums);
+    (void)input;
+    throw std::runtime_error("Convolutional layer requires parameters.");
 }
 
 Pattern ConvolutionalLayer::forward(
@@ -164,11 +92,6 @@ Pattern ConvolutionalLayer::forward(
 {
     Pattern sums = weightedInput(input, parameters);
     return activate(sums);
-}
-
-Pattern ConvolutionalLayer::weightedInput(const Pattern &input) const
-{
-    return weightedInput(input, getParameters());
 }
 
 Pattern ConvolutionalLayer::weightedInput(

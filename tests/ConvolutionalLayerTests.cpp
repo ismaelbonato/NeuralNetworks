@@ -81,9 +81,8 @@ TEST_CASE("1D convolution backward spreads output deltas over input windows",
     weights.at({0, 0, 0}) = 2.0F;
     weights.at({0, 0, 1}) = 3.0F;
 
-    auto layer = makeLayer<ConvolutionalLayer>(config);
-    layer->setWeights(weights);
-    layer->setBiases({0.0F});
+    auto skill = makeTrainableSkill<ConvolutionalLayer>(config).intoSkill();
+    skill.setParameters({.weights = weights, .biases = {0.0F}});
 
     Pattern layerDelta = Pattern::withShape({1, 3});
     layerDelta.at({0, 0}) = 5.0F;
@@ -92,7 +91,7 @@ TEST_CASE("1D convolution backward spreads output deltas over input windows",
 
     const Pattern layerInput = Pattern::withShape({1, 4}, Scalar{0});
     const BackpropagationGradientEngine gradientEngine;
-    const Pattern previousDelta = gradientEngine.backwardThroughLayer(*layer,
+    const Pattern previousDelta = gradientEngine.backwardThroughSkill(skill,
                                                                       layerDelta,
                                                                       layerInput);
 

@@ -44,84 +44,12 @@ bool HopfieldLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-const Pattern &HopfieldLayer::getWeights() const
-{
-    return weights;
-}
-
-const Pattern &HopfieldLayer::getBiases() const
-{
-    return biases;
-}
-
-LayerParameters HopfieldLayer::getParameters() const
-{
-    return {
-        .weights = weights,
-        .biases = biases,
-    };
-}
-
-void HopfieldLayer::setParameters(const LayerParameters &parameters)
-{
-    setWeights(parameters.weights);
-    setBiases(parameters.biases);
-}
-
-void HopfieldLayer::setWeights(const Pattern &newWeights)
-{
-    if (!hasWeights()) {
-        if (!newWeights.empty()) {
-            throw std::runtime_error("Layer does not use weights.");
-        }
-
-        weights = newWeights;
-        return;
-    }
-
-    if (!newWeights.hasShape(expectedWeightShape())) {
-        throw std::runtime_error(
-            "Layer weights shape does not match layer recipe.");
-    }
-
-    weights = newWeights;
-}
-
-void HopfieldLayer::setBiases(const Pattern &newBiases)
-{
-    if (!hasBias()) {
-        if (!newBiases.empty()) {
-            throw std::runtime_error("Layer does not use bias.");
-        }
-
-        biases = newBiases;
-        return;
-    }
-
-    if (!newBiases.hasShape(expectedBiasShape())) {
-        throw std::runtime_error(
-            "Layer bias size does not match layer output size.");
-    }
-
-    biases = newBiases;
-}
-
-bool HopfieldLayer::isInitialized() const
-{
-    return isInitialized(getParameters());
-}
-
 bool HopfieldLayer::isInitialized(const LayerParameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
            && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
                          : parameters.biases.empty());
-}
-
-void HopfieldLayer::requireInitialized() const
-{
-    requireInitialized(getParameters());
 }
 
 void HopfieldLayer::requireInitialized(const LayerParameters &parameters) const
@@ -133,18 +61,14 @@ void HopfieldLayer::requireInitialized(const LayerParameters &parameters) const
 
 Pattern HopfieldLayer::forward(const Pattern &input) const
 {
-    return recall(input);
+    (void)input;
+    throw std::runtime_error("Hopfield layer requires parameters.");
 }
 
 Pattern HopfieldLayer::forward(const Pattern &input,
                                const LayerParameters &parameters) const
 {
     return recall(input, parameters);
-}
-
-Pattern HopfieldLayer::weightedInput(const Pattern &input) const
-{
-    return weightedInput(input, getParameters());
 }
 
 Pattern HopfieldLayer::weightedInput(
@@ -169,11 +93,6 @@ Pattern HopfieldLayer::activate(const Pattern &values) const
 
     return values.map(
         [this](Scalar value) { return (*recipe.activation)(value); });
-}
-
-Pattern HopfieldLayer::recall(const Pattern &input) const
-{
-    return recall(input, getParameters());
 }
 
 Pattern HopfieldLayer::recall(const Pattern &input,
