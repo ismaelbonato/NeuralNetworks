@@ -31,14 +31,15 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.inputSize = inputSize;
     config.outputSize = outputSize;
 
-    auto layer = randomInitialize
-                     ? makeInitializedLayer<DenseLayer>(config)
-                     : makeInitializedLayer<DenseLayer>(
-                           config,
-                           {.weightInitializer
-                            = std::make_shared<ZeroInitializer<Scalar>>(),
-                            .biasInitializer
-                            = std::make_shared<ZeroInitializer<Scalar>>()});
+    auto layer = makeLayer<DenseLayer>(config);
+    if (randomInitialize) {
+        initializeLayerParameters(*layer);
+    } else {
+        initializeLayerParameters(
+            *layer,
+            {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+             .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+    }
     return layer;
 }
 
@@ -101,17 +102,15 @@ TEST_CASE("dense layer computes deterministic pre-activations and activations",
 
 TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
 {
-    auto hidden = makeDenseLayer(2, 1);
-    hidden->setWeights(Pattern::matrix({{1.0F, 1.0F}}));
-    hidden->setBiases({0.0F});
-
-    auto output = makeDenseLayer(1, 1);
-    output->setWeights(Pattern::matrix({{2.0F}}));
-    output->setBiases({-1.0F});
-
     Model network;
-    network.addSkill(Skill(std::move(hidden)));
-    network.addSkill(Skill(std::move(output)));
+    network.addSkill(makeDenseSkill(
+        2,
+        1,
+        {.weights = Pattern::matrix({{1.0F, 1.0F}}), .biases = {0.0F}}));
+    network.addSkill(makeDenseSkill(
+        1,
+        1,
+        {.weights = Pattern::matrix({{2.0F}}), .biases = {-1.0F}}));
 
     const Pattern prediction = network.infer({1.0F, 1.0F});
 

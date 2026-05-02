@@ -28,10 +28,12 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     denseRecipe.inputSize = inputSize;
     denseRecipe.outputSize = outputSize;
 
-    return makeInitializedLayer<DenseLayer>(
-        denseRecipe,
+    auto layer = makeLayer<DenseLayer>(denseRecipe);
+    initializeLayerParameters(
+        *layer,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
          .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+    return layer;
 }
 
 std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
@@ -153,13 +155,14 @@ TEST_CASE("parameter initializer initializes dense layer biases",
     config.inputSize = 2;
     config.outputSize = 2;
 
-    auto layer = makeInitializedLayer<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
          .biasInitializer
-         = std::make_shared<ConstantInitializer<Scalar>>(0.25F)});
+         = std::make_shared<ConstantInitializer<Scalar>>(0.25F)})
+                     .intoSkill();
 
-    REQUIRE(layer->getBiases() == Pattern{0.25F, 0.25F});
+    REQUIRE(skill.getParameters().biases == Pattern{0.25F, 0.25F});
 }
 
 TEST_CASE("parameter initializer initializes dense layer parameters",
@@ -182,13 +185,14 @@ TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto layer = makeInitializedLayer<DenseLayer>(config);
+    auto skill = makeTrainableSkill<DenseLayer>(config).intoSkill();
+    const auto &layer = skill.layer();
 
-    REQUIRE(layer->getInputSize() == 2);
-    REQUIRE(layer->getOutputSize() == 1);
-    REQUIRE(layer->getInputShape().dimensions == std::vector<size_t>{2});
-    REQUIRE(layer->getOutputShape().dimensions == std::vector<size_t>{1});
-    REQUIRE(layer->getWeights().hasShape({1, 2}));
+    REQUIRE(layer.getInputSize() == 2);
+    REQUIRE(layer.getOutputSize() == 1);
+    REQUIRE(layer.getInputShape().dimensions == std::vector<size_t>{2});
+    REQUIRE(layer.getOutputShape().dimensions == std::vector<size_t>{1});
+    REQUIRE(skill.getParameters().weights.hasShape({1, 2}));
 }
 
 TEST_CASE("layer recipe rejects inconsistent flat size and shape", "[layer][shape][errors]")
@@ -249,12 +253,13 @@ TEST_CASE("parameter initializer initializes weights using configured scale",
     config.inputSize = 2;
     config.outputSize = 2;
 
-    auto layer = makeInitializedLayer<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         config,
         {.weightInitializer
-         = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F)});
+         = std::make_shared<UniformInitializer<Scalar>>(-0.25F, 0.25F)})
+                     .intoSkill();
 
-    for (const Scalar weight : layer->getWeights()) {
+    for (const Scalar weight : skill.getParameters().weights) {
         REQUIRE(weight >= -0.25F);
         REQUIRE(weight <= 0.25F);
     }
@@ -263,11 +268,13 @@ TEST_CASE("parameter initializer initializes weights using configured scale",
 TEST_CASE("optimizer step rejects mismatched activation and delta sizes",
           "[optimizer][errors]")
 {
-    auto layer = makeDenseLayer(2, 2);
-    layer->setWeights(Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}}));
-    layer->setBiases({0.0F, 0.0F});
+    Skill skill(makeDenseLayer(2, 2));
+    skill.setParameters({
+        .weights = Pattern::matrix({{0.0F, 0.0F}, {0.0F, 0.0F}}),
+        .biases = {0.0F, 0.0F},
+    });
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(std::move(skill));
     const auto optimizer = makeSgdOptimizer();
 
     REQUIRE_THROWS_AS(optimizer.step(network,
@@ -297,7 +304,18 @@ TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors
 
 TEST_CASE("initialized factory initializes dense layer", "[layer][dense]")
 {
-    auto layer = makeDenseLayer(2, 1);
+    DenseLayerRecipe denseRecipe;
+    denseRecipe.name = "legacy initialized dense layer";
+    denseRecipe.type = "DenseLayer";
+    denseRecipe.info = "legacy factory compatibility";
+    denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    denseRecipe.inputSize = 2;
+    denseRecipe.outputSize = 1;
+
+    auto layer = makeInitializedLayer<DenseLayer>(
+        denseRecipe,
+        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
 
     REQUIRE(layer->isInitialized());
     REQUIRE_NOTHROW(layer->requireInitialized());
