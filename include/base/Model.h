@@ -17,8 +17,6 @@ public:
     Model();
     virtual ~Model();
 
-    [[deprecated("Use addSkill(...) instead.")]]
-    Layer &addLayer(std::unique_ptr<Layer> layer);
     Skill &addSkill(Skill skill);
     void removeLayer(size_t index);
 

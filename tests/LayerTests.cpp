@@ -302,23 +302,26 @@ TEST_CASE("layer setters reject invalid weight and bias shapes", "[layer][errors
     REQUIRE_NOTHROW(layer->setBiases({0.0F, 0.0F}));
 }
 
-TEST_CASE("initialized factory initializes dense layer", "[layer][dense]")
+TEST_CASE("trainable skill factory initializes dense skill", "[skill][dense]")
 {
     DenseLayerRecipe denseRecipe;
-    denseRecipe.name = "legacy initialized dense layer";
+    denseRecipe.name = "trainable dense skill";
     denseRecipe.type = "DenseLayer";
-    denseRecipe.info = "legacy factory compatibility";
+    denseRecipe.info = "trainable skill factory";
     denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
     denseRecipe.inputSize = 2;
     denseRecipe.outputSize = 1;
 
-    auto layer = makeInitializedLayer<DenseLayer>(
+    auto skill = makeTrainableSkill<DenseLayer>(
         denseRecipe,
         {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()});
+         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+                     .intoSkill();
 
-    REQUIRE(layer->isInitialized());
-    REQUIRE_NOTHROW(layer->requireInitialized());
+    REQUIRE(skill.hasParameters());
+    REQUIRE(skill.getParameters().weights.hasShape({1, 2}));
+    REQUIRE(skill.getParameters().biases.hasShape({1}));
+    REQUIRE_NOTHROW(skill.requireInitialized());
 }
 
 TEST_CASE("skill performs through its runtime layer", "[skill][runtime]")
@@ -477,7 +480,7 @@ TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer
     REQUIRE_THROWS_AS(layer->requireInitialized(), std::runtime_error);
     REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
     Model network;
-    network.addLayer(std::move(layer));
+    network.addSkill(Skill(std::move(layer)));
     const auto optimizer = makeSgdOptimizer();
     REQUIRE_THROWS_AS(optimizer.step(network,
                                      {{1.0F, 1.0F}},

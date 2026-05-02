@@ -7,11 +7,6 @@ Model::Model() = default;
 
 Model::~Model() = default;
 
-Layer &Model::addLayer(std::unique_ptr<Layer> layer)
-{
-    return addSkill(Skill(std::move(layer))).layer();
-}
-
 Skill &Model::addSkill(Skill skill)
 {
     skills.push_back(std::move(skill));

@@ -89,12 +89,3 @@ TrainableSkill<LayerType> makeTrainableSkill(
     initializeLayerParameters(*layer, initialization);
     return TrainableSkill<LayerType>(std::move(layer));
 }
-
-template<typename LayerType, typename RecipeType>
-[[deprecated("Use makeTrainableSkill(...).intoSkill() instead.")]]
-std::unique_ptr<LayerType> makeInitializedLayer(
-    const RecipeType &recipe,
-    const LayerParameterInitialization &initialization = {})
-{
-    return makeTrainableSkill<LayerType>(recipe, initialization).intoLayer();
-}
