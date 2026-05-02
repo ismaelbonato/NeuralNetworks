@@ -1,5 +1,6 @@
 #include "base/Skill.h"
 
+#include <stdexcept>
 #include <utility>
 
 Skill::Skill(std::unique_ptr<Layer> newLayer)

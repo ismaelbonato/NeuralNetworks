@@ -5,7 +5,6 @@
 
 #include <memory>
 #include <optional>
-#include <stdexcept>
 
 class Skill
 {

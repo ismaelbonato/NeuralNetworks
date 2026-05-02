@@ -7,10 +7,8 @@
 #include "base/Types.h"
 
 #include <memory>
-#include <stdexcept>
 #include <utility>
 
-class Layer;
 class Model;
 class Skill;
 
