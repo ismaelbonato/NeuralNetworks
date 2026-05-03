@@ -2,8 +2,8 @@
 
 #include "base/ActivationFunction.h"
 #include "base/LayerFactory.h"
-#include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "layers/DenseLayer.h"
 #include <opencv2/opencv.hpp>
 
 #include <iostream>
@@ -12,7 +12,6 @@
 #include "training/Coach.h"
 #include "training/ParameterInitializer.h"
 #include "training/PracticePlan.h"
-
 
 inline Pattern png_to_bits(const std::string &filename)
 {
@@ -59,13 +58,14 @@ inline void perceptronNetwork()
     config.expectedInputShape = {inputs.at(0).size()};
     config.expectedOutputShape = {labels.at(0).size()};
 
-    auto skill = makeTrainableSkill<DenseLayer>(
-        config,
-        {.weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
-             Scalar{-1.0},
-             Scalar{1.0}),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
-                     .intoSkill();
+    auto skill
+        = makeTrainableSkill<DenseLayer>(
+              config,
+              {.weightInitializer
+               = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
+                                                              Scalar{1.0}),
+               .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+              .intoSkill();
 
     Model net;
     net.addSkill(std::move(skill));
@@ -81,9 +81,7 @@ inline void perceptronNetwork()
         std::cout << input << std::endl;
         std::cout << output << std::endl;
     }
-        
 }
-
 
 inline void perceptronNaturalSelection()
 {
@@ -106,11 +104,12 @@ inline void perceptronNaturalSelection()
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto skill = makeTrainableSkill<DenseLayer>(
-        config,
-        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
-                     .intoSkill();
+    auto skill
+        = makeTrainableSkill<DenseLayer>(
+              config,
+              {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
+               .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
+              .intoSkill();
 
     Model net;
     net.addSkill(std::move(skill));
@@ -126,7 +125,6 @@ inline void perceptronNaturalSelection()
         std::cout << input << std::endl;
         std::cout << output << std::endl;
     }
-        
 }
 
 inline void feedforwardExperiment()
@@ -142,11 +140,11 @@ inline void feedforwardExperiment()
     inputs.emplace_back(png_to_bits("../Misc/lisa.png"));
 
     Batch labels = {{1.0, 0.0, 0.0, 0.0, 0.0, 0.0},  //bart
-                       {0.0, 1.0, 0.0, 0.0, 0.0, 0.0},  //homer
-                       {0.0, 0.0, 1.0, 0.0, 0.0, 0.0},  //marge
-                       {0.0, 0.0, 0.0, 1.0, 0.0, 0.0},  //meg
-                       {0.0, 0.0, 0.0, 0.0, 1.0, 0.0},  //grandpa
-                       {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}}; //lisa
+                    {0.0, 1.0, 0.0, 0.0, 0.0, 0.0},  //homer
+                    {0.0, 0.0, 1.0, 0.0, 0.0, 0.0},  //marge
+                    {0.0, 0.0, 0.0, 1.0, 0.0, 0.0},  //meg
+                    {0.0, 0.0, 0.0, 0.0, 1.0, 0.0},  //grandpa
+                    {0.0, 0.0, 0.0, 0.0, 0.0, 1.0}}; //lisa
 
     auto col = inputs.at(0).size();
 
@@ -192,15 +190,18 @@ inline void feedforwardExperiment()
     config4.expectedOutputShape = {labels.size()};
 
     ParameterInitialization initialization{
-        .weightInitializer = std::make_shared<UniformInitializer<Scalar>>(
-            Scalar{-1.0},
-            Scalar{1.0}),
+        .weightInitializer
+        = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
+                                                       Scalar{1.0}),
         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()};
-    auto skill1 = makeTrainableSkill<DenseLayer>(config1, initialization).intoSkill();
-    auto skill2 = makeTrainableSkill<DenseLayer>(config2, initialization).intoSkill();
-    auto skill3 = makeTrainableSkill<DenseLayer>(config3, initialization).intoSkill();
-    auto skill4 = makeTrainableSkill<DenseLayer>(config4, initialization).intoSkill();
-    
+    auto skill1
+        = makeTrainableSkill<DenseLayer>(config1, initialization).intoSkill();
+    auto skill2
+        = makeTrainableSkill<DenseLayer>(config2, initialization).intoSkill();
+    auto skill3
+        = makeTrainableSkill<DenseLayer>(config3, initialization).intoSkill();
+    auto skill4
+        = makeTrainableSkill<DenseLayer>(config4, initialization).intoSkill();
 
     Model net;
     net.addSkill(std::move(skill1));
@@ -217,5 +218,66 @@ inline void feedforwardExperiment()
         Pattern output = net.infer(input);
         //std::cout << input << std::endl;
         std::cout << output << std::endl;
+    }
+}
+
+inline void feedforwardXor()
+{
+    Batch inputs = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+    Batch labels = {
+        {0.0}, // 0 XOR 0
+        {1.0}, // 0 XOR 1
+        {1.0}, // 1 XOR 0
+        {0.0}  // 1 XOR 1
+    };
+
+    auto activation = std::make_shared<SigmoidActivation<Scalar>>();
+
+    DenseLayerRecipe hiddenConfig{};
+    hiddenConfig.name = "Hidden Layer";
+    hiddenConfig.type = "DenseLayer";
+    hiddenConfig.info = "XOR hidden layer";
+    hiddenConfig.activation = activation;
+    hiddenConfig.inputSize = 2;
+    hiddenConfig.outputSize = 4;
+    hiddenConfig.expectedInputShape = {2};
+    hiddenConfig.expectedOutputShape = {4};
+
+    DenseLayerRecipe outputConfig{};
+    outputConfig.name = "Output Layer";
+    outputConfig.type = "DenseLayer";
+    outputConfig.info = "XOR output layer";
+    outputConfig.activation = activation;
+    outputConfig.inputSize = 4;
+    outputConfig.outputSize = 1;
+    outputConfig.expectedInputShape = {4};
+    outputConfig.expectedOutputShape = {1};
+
+    ParameterInitialization initialization{
+        .weightInitializer
+        = std::make_shared<UniformInitializer<Scalar>>(Scalar{-1.0},
+                                                       Scalar{1.0}),
+        .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()};
+
+    auto hiddenSkill = makeTrainableSkill<DenseLayer>(hiddenConfig,
+                                                      initialization)
+                           .intoSkill();
+    auto outputSkill = makeTrainableSkill<DenseLayer>(outputConfig,
+                                                      initialization)
+                           .intoSkill();
+
+    Model net;
+    net.addSkill(std::move(hiddenSkill));
+    net.addSkill(std::move(outputSkill));
+
+    Coach coach;
+    coach.practice(net,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = Scalar{0.5f}, .epochs = 20000});
+
+    std::cout << "XOR feedforward trained!" << std::endl;
+    for (const auto &input : inputs) {
+        Pattern output = net.infer(input);
+        std::cout << input << " -> " << output << std::endl;
     }
 }

@@ -16,7 +16,8 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    feedforwardExperiment();
+    feedforwardXor();
+    // feedforwardExperiment();
     std::cout << std::endl;
 
     return 0;
