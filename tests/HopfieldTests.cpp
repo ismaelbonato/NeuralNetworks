@@ -3,8 +3,8 @@
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
 #include "training/Coach.h"
-#include "training/HopfieldPracticePlan.h"
 #include "training/ParameterInitializer.h"
+#include "training/PracticePlan.h"
 
 #include <catch2/catch_test_macros.hpp>
 

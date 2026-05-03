@@ -4,7 +4,7 @@
 #include "base/Model.h"
 #include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/NaturalSelectionPracticePlan.h"
+#include "training/PracticePlan.h"
 
 #include <catch2/catch_test_macros.hpp>
 

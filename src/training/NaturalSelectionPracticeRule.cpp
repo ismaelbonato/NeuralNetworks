@@ -1,4 +1,4 @@
-#include "training/NaturalSelectionPracticePlan.h"
+#include "training/PracticePlan.h"
 
 #include "base/Model.h"
 #include "base/Skill.h"

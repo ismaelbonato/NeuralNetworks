@@ -11,8 +11,7 @@
 
 #include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/NaturalSelectionPracticePlan.h"
-#include "training/PerceptronRulePracticePlan.h"
+#include "training/PracticePlan.h"
 
 
 inline Pattern png_to_bits(const std::string &filename)

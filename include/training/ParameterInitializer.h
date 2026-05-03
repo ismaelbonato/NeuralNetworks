@@ -10,7 +10,6 @@
 #include <utility>
 
 class Model;
-class Skill;
 
 struct ParameterInitialization
 {

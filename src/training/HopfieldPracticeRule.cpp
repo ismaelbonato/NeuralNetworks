@@ -1,4 +1,4 @@
-#include "training/HopfieldPracticePlan.h"
+#include "training/PracticePlan.h"
 
 #include "base/Model.h"
 #include "layers/HopfieldLayer.h"

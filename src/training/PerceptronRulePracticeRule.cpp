@@ -1,4 +1,4 @@
-#include "training/PerceptronRulePracticePlan.h"
+#include "training/PracticePlan.h"
 
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
