@@ -21,6 +21,17 @@
 #include <utility>
 
 namespace {
+void fillFlattenOutput(const Pattern &input, Pattern &output)
+{
+    if (input.size() != output.size()) {
+        throw std::runtime_error("Flatten output size does not match input size.");
+    }
+
+    for (size_t i = 0; i < input.size(); ++i) {
+        output[i] = input[i];
+    }
+}
+
 template<typename LayerType>
 std::optional<std::reference_wrapper<const LayerType>> layerAs(
     const Layer &layer)
@@ -32,61 +43,107 @@ std::optional<std::reference_wrapper<const LayerType>> layerAs(
     }
 }
 
-Pattern preActivationFor(const Skill &skill, const Pattern &input)
+template<typename LayerType>
+void fillMatrixPreActivation(const LayerType &layer,
+                             const Parameters &parameters,
+                             const Pattern &input,
+                             Pattern &output)
 {
-    const auto &layer = skill.layer();
-    if (auto dense = layerAs<const DenseLayer>(layer)) {
-        skill.requireInitialized();
-        if (input.empty()) {
-            throw std::runtime_error("Input is empty");
-        }
-
-        const auto &parameters = skill.getParameters();
-        Pattern sums = input.matVec(parameters.weights);
-        return parameters.biases.empty() ? sums : sums + parameters.biases;
+    if (!output.hasShape(layer.getExpectedOutputShape())) {
+        throw std::runtime_error("Dense pre-activation buffer shape mismatch.");
     }
-    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
-        skill.requireInitialized();
-        if (input.empty()) {
-            throw std::runtime_error("Input is empty");
-        }
-
-        const auto &recipe = convolutional->get().getConvolutionalRecipe();
-        const auto &parameters = skill.getParameters();
-        Pattern result = input.conv1D(parameters.weights,
-                                      recipe.stride,
-                                      recipe.padding);
-        if (!parameters.biases.empty()) {
-            for (size_t outputChannel = 0;
-                 outputChannel < recipe.outputChannels;
-                 ++outputChannel) {
-                for (size_t outputIndex = 0;
-                     outputIndex < result.shape().at(1);
-                     ++outputIndex) {
-                    result.at({outputChannel, outputIndex})
-                        += parameters.biases.at(outputChannel);
-                }
-            }
-        }
-
-        return result;
-    }
-    if (layerAs<const HopfieldLayer>(layer)) {
-        skill.requireInitialized();
-        if (input.empty()) {
-            throw std::runtime_error("Input is empty");
-        }
-
-        const auto &parameters = skill.getParameters();
-        Pattern sums = input.matVec(parameters.weights);
-        return parameters.biases.empty() ? sums : sums + parameters.biases;
+    if (!input.hasShape(layer.getExpectedInputShape())) {
+        throw std::runtime_error("Dense input shape mismatch.");
     }
 
-    throw std::runtime_error(
-        "Feedforward training requires pre-activation support.");
+    for (size_t row = 0; row < output.size(); ++row) {
+        Scalar sum = parameters.biases.empty() ? Scalar{} : parameters.biases.at(row);
+        for (size_t col = 0; col < input.size(); ++col) {
+            sum += parameters.weights.at({row, col}) * input.at(col);
+        }
+        output.at(row) = sum;
+    }
 }
 
-Pattern activateFor(const Layer &layer, const Pattern &values)
+void fillConvolutionalPreActivation(const ConvolutionalLayer &layer,
+                                    const Parameters &parameters,
+                                    const Pattern &input,
+                                    Pattern &output)
+{
+    if (!output.hasShape(layer.getExpectedOutputShape())) {
+        throw std::runtime_error(
+            "Convolutional pre-activation buffer shape mismatch.");
+    }
+    if (!input.hasShape(layer.getExpectedInputShape())) {
+        throw std::runtime_error("Convolutional input shape mismatch.");
+    }
+
+    const auto &recipe = layer.getConvolutionalRecipe();
+    for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
+         ++outputChannel) {
+        for (size_t outputIndex = 0; outputIndex < output.shape().at(1);
+             ++outputIndex) {
+            Scalar sum
+                = parameters.biases.empty() ? Scalar{} : parameters.biases.at(outputChannel);
+            for (size_t inputChannel = 0; inputChannel < recipe.inputChannels;
+                 ++inputChannel) {
+                for (size_t kernelIndex = 0; kernelIndex < recipe.kernelSize;
+                     ++kernelIndex) {
+                    const size_t paddedInputIndex
+                        = (outputIndex * recipe.stride) + kernelIndex;
+
+                    if (paddedInputIndex < recipe.padding) {
+                        continue;
+                    }
+
+                    const size_t inputIndex = paddedInputIndex - recipe.padding;
+                    if (inputIndex >= recipe.inputLength) {
+                        continue;
+                    }
+
+                    sum += input.at({inputChannel, inputIndex})
+                           * parameters.weights.at(
+                               {outputChannel, inputChannel, kernelIndex});
+                }
+            }
+            output.at({outputChannel, outputIndex}) = sum;
+        }
+    }
+}
+
+void fillParameterizedPreActivation(const Skill &skill,
+                                    const Pattern &input,
+                                    Pattern &output)
+{
+    skill.requireInitialized();
+    if (input.empty()) {
+        throw std::runtime_error("Input is empty");
+    }
+
+    const auto &layer = skill.layer();
+    const auto &parameters = skill.getParameters();
+    if (auto dense = layerAs<const DenseLayer>(layer)) {
+        fillMatrixPreActivation(dense->get(), parameters, input, output);
+        return;
+    }
+    if (auto convolutional = layerAs<const ConvolutionalLayer>(layer)) {
+        fillConvolutionalPreActivation(convolutional->get(),
+                                       parameters,
+                                       input,
+                                       output);
+        return;
+    }
+    if (auto hopfield = layerAs<const HopfieldLayer>(layer)) {
+        fillMatrixPreActivation(hopfield->get(), parameters, input, output);
+        return;
+    }
+
+    throw std::runtime_error("Feedforward training requires pre-activation support.");
+}
+
+void activateInto(const Layer &layer,
+                  const Pattern &values,
+                  Pattern &output)
 {
     const auto &activation = layer.getActivation();
     if (!activation) {
@@ -94,8 +151,13 @@ Pattern activateFor(const Layer &layer, const Pattern &values)
             "Activation function is not set for this layer.");
     }
 
-    return values.map(
-        [&activation](Scalar value) { return (*activation)(value); });
+    if (!output.hasSameShapeAs(values)) {
+        throw std::runtime_error("Activation output shape mismatch.");
+    }
+
+    for (size_t i = 0; i < values.size(); ++i) {
+        output[i] = (*activation)(values[i]);
+    }
 }
 
 bool isFlattenLayer(const Layer &layer)
@@ -135,27 +197,39 @@ void recordForwardPass(TrainingSession &session, const Pattern &input)
     auto &network = session.model();
     auto &activations = session.activations();
     auto &preActivations = session.preActivations();
-    Pattern current = input;
-    activations.at(0) = current;
+    activations.at(0) = input;
 
+    // Reuse session-owned tensors so each layer step avoids fresh temporaries.
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {
         const auto &skill = network.getSkill(layerIndex);
         const auto &layer = skill.layer();
+        const auto &current = activations.at(layerIndex);
+        auto &nextActivation = activations.at(layerIndex + 1);
         if (isFlattenLayer(layer)) {
-            current = skill.perform(current);
-            preActivations.at(layerIndex) = {};
+            fillFlattenOutput(current, nextActivation);
         } else {
-            preActivations.at(layerIndex) = preActivationFor(skill, current);
-            current = activateFor(layer, preActivations.at(layerIndex));
+            fillParameterizedPreActivation(skill,
+                                           current,
+                                           preActivations.at(layerIndex));
+            activateInto(layer,
+                         preActivations.at(layerIndex),
+                         nextActivation);
         }
-        activations.at(layerIndex + 1) = current;
     }
 }
 
-Pattern lossDerivative(const Pattern &output, const Pattern &target)
+void writeLossDerivative(const Pattern &output,
+                         const Pattern &target,
+                         Pattern &destination)
 {
-    return output - target;
+    if (!destination.hasSameShapeAs(output) || !output.hasSameShapeAs(target)) {
+        throw std::runtime_error("Loss derivative shapes do not match.");
+    }
+
+    for (size_t i = 0; i < output.size(); ++i) {
+        destination[i] = output[i] - target[i];
+    }
 }
 } // namespace
 
@@ -205,14 +279,15 @@ void BackpropagationPracticePlan::practice(Model &network,
         for (size_t sampleIndex = 0; sampleIndex < inputs.size();
              ++sampleIndex) {
             recordForwardPass(session, inputs.at(sampleIndex));
-            const Pattern outputError = lossDerivative(
-                session.activations().back(),
-                labels.at(sampleIndex));
-            session.setLayerDeltas(gradientEngine->computeLayerDeltas(
+            writeLossDerivative(session.activations().back(),
+                                labels.at(sampleIndex),
+                                session.outputError());
+            gradientEngine->computeLayerDeltas(
                 network,
                 session.activations(),
                 session.preActivations(),
-                outputError));
+                session.outputError(),
+                session.layerDeltas());
 
             optimizer->step(network,
                             session.activations(),

@@ -1,8 +1,6 @@
 #include "Helper.h"
 #include <iostream>
 
-
-
 int main()
 {
     std::cout << "Hello, Neural Networks!" << std::endl;
@@ -12,11 +10,14 @@ int main()
     perceptronNetwork();
     std::cout << std::endl << std::endl << std::endl;
     std::cout << "==========================" << std::endl;
+    std::cout << "Natural Selection Network" << std::endl;
+    std::cout << "==========================" << std::endl;
+    perceptronNaturalSelection();
+    std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;
+    feedforwardExperiment();
     std::cout << std::endl;
 
-    perceptronNaturalSelection();
-    
     return 0;
 }

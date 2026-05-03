@@ -14,7 +14,6 @@ public:
     const Model &model() const;
 
     void initializeForwardBuffers();
-    void setLayerDeltas(Batch newLayerDeltas);
 
     Batch &activations();
     const Batch &activations() const;
@@ -22,10 +21,13 @@ public:
     const Batch &preActivations() const;
     Batch &layerDeltas();
     const Batch &layerDeltas() const;
+    Pattern &outputError();
+    const Pattern &outputError() const;
 
 private:
     Model &network;
     Batch activationBuffer;
     Batch preActivationBuffer;
     Batch layerDeltaBuffer;
+    Pattern outputErrorBuffer;
 };

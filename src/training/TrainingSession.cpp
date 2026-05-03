@@ -35,12 +35,12 @@ void TrainingSession::initializeForwardBuffers()
             = Pattern::withShape(layer.getOutputShape(), Scalar{0});
         preActivationBuffer.at(layerIndex)
             = Pattern::withShape(layer.getOutputShape(), Scalar{0});
+        layerDeltaBuffer.at(layerIndex)
+            = Pattern::withShape(layer.getOutputShape(), Scalar{0});
     }
-}
-
-void TrainingSession::setLayerDeltas(Batch newLayerDeltas)
-{
-    layerDeltaBuffer = std::move(newLayerDeltas);
+    outputErrorBuffer = Pattern::withShape(
+        network.getLayer(network.numLayers() - 1).getOutputShape(),
+        Scalar{0});
 }
 
 Batch &TrainingSession::activations()
@@ -71,4 +71,14 @@ Batch &TrainingSession::layerDeltas()
 const Batch &TrainingSession::layerDeltas() const
 {
     return layerDeltaBuffer;
+}
+
+Pattern &TrainingSession::outputError()
+{
+    return outputErrorBuffer;
+}
+
+const Pattern &TrainingSession::outputError() const
+{
+    return outputErrorBuffer;
 }

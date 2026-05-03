@@ -192,6 +192,8 @@ TEST_CASE("training session initializes forward buffers from model skills",
     REQUIRE(session.activations().at(0).hasShape({1}));
     REQUIRE(session.activations().at(1).hasShape({1}));
     REQUIRE(session.preActivations().at(0).hasShape({1}));
+    REQUIRE(session.layerDeltas().at(0).hasShape({1}));
+    REQUIRE(session.outputError().hasShape({1}));
 }
 
 TEST_CASE("generic coach preserves feedforward training behavior",

@@ -132,6 +132,7 @@ inline void perceptronNaturalSelection()
 inline void feedforwardExperiment()
 {
     Batch inputs;
+    inputs.reserve(6);
 
     inputs.emplace_back(png_to_bits("../Misc/bart.png"));
     inputs.emplace_back(png_to_bits("../Misc/homer.png"));

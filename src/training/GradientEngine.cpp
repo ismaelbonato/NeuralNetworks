@@ -14,6 +14,19 @@
 #include <typeinfo>
 
 namespace {
+void fillFlattenBackwardPass(const Pattern &layerDelta,
+                             Pattern &previousDelta)
+{
+    if (layerDelta.size() != previousDelta.size()) {
+        throw std::runtime_error(
+            "Layer delta size does not match previous activation size.");
+    }
+
+    for (size_t i = 0; i < layerDelta.size(); ++i) {
+        previousDelta[i] = layerDelta[i];
+    }
+}
+
 template<typename LayerType>
 std::optional<std::reference_wrapper<const LayerType>> layerAs(
     const Layer &layer)
@@ -33,10 +46,11 @@ bool supportsParameterizedTraining(const Layer &layer)
 }
 
 template<typename LayerType>
-Pattern parameterizedBackwardPass(const LayerType &layer,
-                                  const Pattern &weights,
-                                  const Pattern &layerDelta,
-                                  const Pattern &layerInput)
+void fillParameterizedBackwardPass(const LayerType &layer,
+                                   const Pattern &weights,
+                                   const Pattern &layerDelta,
+                                   const Pattern &layerInput,
+                                   Pattern &output)
 {
     if (!weights.hasShape(
             static_cast<const Layer &>(layer).expectedWeightShape())) {
@@ -52,13 +66,74 @@ Pattern parameterizedBackwardPass(const LayerType &layer,
             "Layer input shape does not match layer input shape.");
     }
 
-    return weights.transposedMatVec(layerDelta);
+    if (!output.hasShape(layer.getExpectedInputShape())) {
+        throw std::runtime_error("Backward output shape does not match layer input shape.");
+    }
+
+    const size_t rows = weights.shape().at(0);
+    const size_t cols = weights.shape().at(1);
+    for (size_t col = 0; col < cols; ++col) {
+        Scalar sum = Scalar{};
+        for (size_t row = 0; row < rows; ++row) {
+            sum += weights.at({row, col}) * layerDelta.at(row);
+        }
+        output.at(col) = sum;
+    }
 }
 
-Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
-                                  const Pattern &weights,
-                                  const Pattern &layerDelta,
-                                  const Pattern &layerInput)
+void fillConvolutionalBackwardPass(const ConvolutionalLayer &layer,
+                                   const Pattern &weights,
+                                   const Pattern &layerDelta,
+                                   const Pattern &layerInput,
+                                   Pattern &inputDelta);
+
+void fillBackwardThroughSkill(const Skill &skill,
+                              const Pattern &layerDelta,
+                              const Pattern &layerInput,
+                              Pattern &previousDelta)
+{
+    const auto &layer = skill.layer();
+    if (auto dense = layerAs<DenseLayer>(layer)) {
+        fillParameterizedBackwardPass(dense->get(),
+                                      skill.getParameters().weights,
+                                      layerDelta,
+                                      layerInput,
+                                      previousDelta);
+        return;
+    }
+
+    if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
+        fillConvolutionalBackwardPass(convolutional->get(),
+                                      skill.getParameters().weights,
+                                      layerDelta,
+                                      layerInput,
+                                      previousDelta);
+        return;
+    }
+
+    if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
+        fillParameterizedBackwardPass(hopfield->get(),
+                                      skill.getParameters().weights,
+                                      layerDelta,
+                                      layerInput,
+                                      previousDelta);
+        return;
+    }
+
+    if (layerAs<FlattenLayer>(layer)) {
+        fillFlattenBackwardPass(layerDelta, previousDelta);
+        return;
+    }
+
+    throw std::runtime_error(
+        "Skill does not support feedforward backpropagation.");
+}
+
+void fillConvolutionalBackwardPass(const ConvolutionalLayer &layer,
+                                   const Pattern &weights,
+                                   const Pattern &layerDelta,
+                                   const Pattern &layerInput,
+                                   Pattern &inputDelta)
 {
     if (!weights.hasShape(
             static_cast<const Layer &>(layer).expectedWeightShape())) {
@@ -75,10 +150,15 @@ Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
                                  "convolutional layer input shape.");
     }
 
-    const auto &recipe = layer.getConvolutionalRecipe();
-    Pattern inputDelta = Pattern::withShape(layer.getExpectedInputShape(),
-                                            Scalar{0});
+    if (!inputDelta.hasShape(layer.getExpectedInputShape())) {
+        throw std::runtime_error("Backward output shape does not match convolutional input.");
+    }
 
+    for (size_t i = 0; i < inputDelta.size(); ++i) {
+        inputDelta[i] = Scalar{};
+    }
+
+    const auto &recipe = layer.getConvolutionalRecipe();
     for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
          ++outputChannel) {
         for (size_t outputIndex = 0; outputIndex < layerDelta.shape().at(1);
@@ -109,50 +189,58 @@ Pattern convolutionalBackwardPass(const ConvolutionalLayer &layer,
         }
     }
 
-    return inputDelta;
-}
-
-Pattern flattenBackwardPass(const Pattern &layerDelta,
-                            const Pattern &preActivation)
-{
-    if (layerDelta.size() != preActivation.size()) {
-        throw std::runtime_error(
-            "Layer delta size does not match previous activation size.");
-    }
-
-    Pattern previousDelta = layerDelta;
-    previousDelta.reshape(Shape(preActivation.shape()));
-    return previousDelta;
 }
 } // namespace
 
-Batch BackpropagationGradientEngine::computeLayerDeltas(
+void BackpropagationGradientEngine::computeLayerDeltas(
     const Model &network,
     const Batch &activations,
     const Batch &preActivations,
-    const Pattern &outputError) const
+    const Pattern &outputError,
+    Batch &layerDeltas) const
 {
-    Batch layerDeltas(network.numLayers());
+    if (layerDeltas.size() != network.numLayers()) {
+        throw std::runtime_error("Layer delta buffer size does not match network layers.");
+    }
 
-    layerDeltas.back() = outputError
-                         * activationDerivatives(
-                             network.getLayer(network.numLayers() - 1),
-                             preActivations.back());
+    // Fill the caller-owned delta batch in place to avoid per-sample allocation.
+    const Layer &lastLayer = network.getLayer(network.numLayers() - 1);
+    if (!layerDeltas.back().hasShape(lastLayer.getOutputShape())) {
+        throw std::runtime_error("Output layer delta buffer shape mismatch.");
+    }
+    if (!outputError.hasShape(lastLayer.getOutputShape())) {
+        throw std::runtime_error("Output error shape does not match network output.");
+    }
+
+    const auto &outputActivation = lastLayer.getActivation();
+    if (!outputActivation) {
+        throw std::runtime_error("Activation function is not set for this layer.");
+    }
+    for (size_t i = 0; i < outputError.size(); ++i) {
+        layerDeltas.back()[i]
+            = outputError[i] * outputActivation->derivative(preActivations.back()[i]);
+    }
 
     for (size_t layerIndex = network.numLayers() - 1; layerIndex > 0;
          --layerIndex) {
-        const Pattern previousLayerOutputGradient
-            = backwardThroughSkill(network.getSkill(layerIndex),
-                                   layerDeltas.at(layerIndex),
-                                   activations.at(layerIndex));
+        fillBackwardThroughSkill(network.getSkill(layerIndex),
+                                 layerDeltas.at(layerIndex),
+                                 activations.at(layerIndex),
+                                 layerDeltas.at(layerIndex - 1));
 
-        layerDeltas.at(layerIndex - 1)
-            = applyActivationDerivative(network.getLayer(layerIndex - 1),
-                                        previousLayerOutputGradient,
-                                        preActivations.at(layerIndex - 1));
+        const Layer &previousLayer = network.getLayer(layerIndex - 1);
+        if (supportsParameterizedTraining(previousLayer)) {
+            const auto &activation = previousLayer.getActivation();
+            if (!activation) {
+                throw std::runtime_error(
+                    "Activation function is not set for this layer.");
+            }
+            for (size_t i = 0; i < layerDeltas.at(layerIndex - 1).size(); ++i) {
+                layerDeltas.at(layerIndex - 1)[i]
+                    *= activation->derivative(preActivations.at(layerIndex - 1)[i]);
+            }
+        }
     }
-
-    return layerDeltas;
 }
 
 Pattern BackpropagationGradientEngine::backwardThroughLayer(
@@ -179,7 +267,9 @@ Pattern BackpropagationGradientEngine::backwardThroughLayer(
     }
 
     if (layerAs<FlattenLayer>(layer)) {
-        return flattenBackwardPass(layerDelta, layerInput);
+        Pattern previousDelta = Pattern::withShape(Shape(layerInput.shape()), Scalar{0});
+        fillFlattenBackwardPass(layerDelta, previousDelta);
+        return previousDelta;
     }
 
     throw std::runtime_error(
@@ -191,59 +281,7 @@ Pattern BackpropagationGradientEngine::backwardThroughSkill(
     const Pattern &layerDelta,
     const Pattern &layerInput) const
 {
-    const auto &layer = skill.layer();
-    if (auto dense = layerAs<DenseLayer>(layer)) {
-        return parameterizedBackwardPass(dense->get(),
-                                         skill.getParameters().weights,
-                                         layerDelta,
-                                         layerInput);
-    }
-
-    if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
-        return convolutionalBackwardPass(convolutional->get(),
-                                         skill.getParameters().weights,
-                                         layerDelta,
-                                         layerInput);
-    }
-
-    if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
-        return parameterizedBackwardPass(hopfield->get(),
-                                         skill.getParameters().weights,
-                                         layerDelta,
-                                         layerInput);
-    }
-
-    if (layerAs<FlattenLayer>(layer)) {
-        return flattenBackwardPass(layerDelta, layerInput);
-    }
-
-    throw std::runtime_error(
-        "Skill does not support feedforward backpropagation.");
-}
-
-Pattern BackpropagationGradientEngine::activationDerivatives(
-    const Layer &layer,
-    const Pattern &values) const
-{
-    const auto &activation = layer.getActivation();
-    if (!activation) {
-        throw std::runtime_error(
-            "Activation function is not set for this layer.");
-    }
-
-    return values.map([&activation](Scalar value) {
-        return activation->derivative(value);
-    });
-}
-
-Pattern BackpropagationGradientEngine::applyActivationDerivative(
-    const Layer &layer,
-    const Pattern &outputGradient,
-    const Pattern &preActivation) const
-{
-    if (!supportsParameterizedTraining(layer)) {
-        return outputGradient;
-    }
-
-    return outputGradient * activationDerivatives(layer, preActivation);
+    Pattern previousDelta = Pattern::withShape(Shape(layerInput.shape()), Scalar{0});
+    fillBackwardThroughSkill(skill, layerDelta, layerInput, previousDelta);
+    return previousDelta;
 }

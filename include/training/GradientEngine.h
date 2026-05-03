@@ -12,19 +12,21 @@ public:
     GradientEngine() = default;
     virtual ~GradientEngine() = default;
 
-    virtual Batch computeLayerDeltas(const Model &network,
-                                     const Batch &activations,
-                                     const Batch &preActivations,
-                                     const Pattern &outputError) const = 0;
+    virtual void computeLayerDeltas(const Model &network,
+                                    const Batch &activations,
+                                    const Batch &preActivations,
+                                    const Pattern &outputError,
+                                    Batch &layerDeltas) const = 0;
 };
 
 class BackpropagationGradientEngine : public GradientEngine
 {
 public:
-    Batch computeLayerDeltas(const Model &network,
-                             const Batch &activations,
-                             const Batch &preActivations,
-                             const Pattern &outputError) const override;
+    void computeLayerDeltas(const Model &network,
+                            const Batch &activations,
+                            const Batch &preActivations,
+                            const Pattern &outputError,
+                            Batch &layerDeltas) const override;
 
     Pattern backwardThroughLayer(const Layer &layer,
                                  const Pattern &layerDelta,
@@ -32,12 +34,4 @@ public:
     Pattern backwardThroughSkill(const Skill &skill,
                                  const Pattern &layerDelta,
                                  const Pattern &layerInput) const;
-
-    Pattern activationDerivatives(const Layer &layer,
-                                  const Pattern &values) const;
-
-private:
-    Pattern applyActivationDerivative(const Layer &layer,
-                                      const Pattern &outputGradient,
-                                      const Pattern &preActivation) const;
 };

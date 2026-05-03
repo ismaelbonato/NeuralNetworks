@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/Parameters.h"
 #include "base/Types.h"
 #include "training/LearningRule.h"
 
@@ -39,4 +40,7 @@ public:
 
 private:
     std::shared_ptr<LearningRule<Scalar>> learningRule;
+    mutable Pattern weightGradientScratch;
+    mutable Pattern biasGradientScratch;
+    mutable Parameters parameterScratch;
 };

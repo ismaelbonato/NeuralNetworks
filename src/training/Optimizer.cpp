@@ -12,6 +12,27 @@
 #include <typeinfo>
 
 namespace {
+void ensurePatternShape(Pattern &buffer,
+                        const Shape &shape,
+                        Scalar fillValue = Scalar{})
+{
+    if (!buffer.hasShape(shape)) {
+        buffer = Pattern::withShape(shape, fillValue);
+        return;
+    }
+
+    for (size_t i = 0; i < buffer.size(); ++i) {
+        buffer[i] = fillValue;
+    }
+}
+
+void ensurePatternStorage(Pattern &buffer, const Shape &shape)
+{
+    if (!buffer.hasShape(shape)) {
+        buffer = Pattern::withShape(shape, Scalar{0});
+    }
+}
+
 template<typename LayerType>
 std::optional<std::reference_wrapper<LayerType>> layerAs(Layer &layer)
 {
@@ -26,7 +47,9 @@ void updateDenseLayer(Skill &skill,
                       DenseLayer &layer,
                       const Pattern &prevActivations,
                       const Pattern &layerDelta,
-                      const Optimizer &optimizer,
+                      const LearningRuleOptimizer &optimizer,
+                      Pattern &weightGradientScratch,
+                      Parameters &parameterScratch,
                       Scalar learningRate)
 {
     skill.requireInitialized();
@@ -40,28 +63,48 @@ void updateDenseLayer(Skill &skill,
             "Layer delta shape does not match layer output shape.");
     }
 
-    const Pattern weightGradients = layerDelta.outer(prevActivations);
-    const auto updateValue = [&optimizer, learningRate](Scalar value,
-                                                        Scalar gradient) {
-        return optimizer.update(value, gradient, learningRate);
-    };
+    const Parameters &parameters = skill.getParameters();
+    // Reuse optimizer scratch for gradients and updated parameters across steps.
+    ensurePatternShape(weightGradientScratch,
+                       static_cast<const Layer &>(layer).expectedWeightShape());
+    ensurePatternStorage(parameterScratch.weights,
+                         static_cast<const Layer &>(layer).expectedWeightShape());
 
-    Parameters parameters = skill.getParameters();
-    parameters.weights = parameters.weights.zip(weightGradients, updateValue);
-
-    if (!parameters.biases.empty()) {
-        parameters.biases = parameters.biases.zipValues(layerDelta,
-                                                        updateValue);
+    for (size_t row = 0; row < layerDelta.size(); ++row) {
+        for (size_t col = 0; col < prevActivations.size(); ++col) {
+            weightGradientScratch.at({row, col})
+                = layerDelta.at(row) * prevActivations.at(col);
+            parameterScratch.weights.at({row, col})
+                = optimizer.update(parameters.weights.at({row, col}),
+                                   weightGradientScratch.at({row, col}),
+                                   learningRate);
+        }
     }
 
-    skill.setParameters(parameters);
+    if (!parameters.biases.empty()) {
+        ensurePatternStorage(parameterScratch.biases,
+                             layer.getExpectedOutputShape());
+        for (size_t i = 0; i < parameters.biases.size(); ++i) {
+            parameterScratch.biases.at(i)
+                = optimizer.update(parameters.biases.at(i),
+                                   layerDelta.at(i),
+                                   learningRate);
+        }
+    } else {
+        parameterScratch.biases = Pattern{};
+    }
+
+    skill.setParameters(parameterScratch);
 }
 
 void updateConvolutionalLayer(Skill &skill,
                               ConvolutionalLayer &layer,
                               const Pattern &prevActivations,
                               const Pattern &layerDelta,
-                              const Optimizer &optimizer,
+                              const LearningRuleOptimizer &optimizer,
+                              Pattern &weightGradientScratch,
+                              Pattern &biasGradientScratch,
+                              Parameters &parameterScratch,
                               Scalar learningRate)
 {
     skill.requireInitialized();
@@ -76,20 +119,24 @@ void updateConvolutionalLayer(Skill &skill,
     }
 
     const auto &recipe = layer.getConvolutionalRecipe();
-    Parameters parameters = skill.getParameters();
-    Pattern weightGradients = Pattern::withShape(
-        Shape(parameters.weights.shape()),
-        Scalar{0});
-    Pattern biasGradients = Pattern::withShape(
-        Shape(parameters.biases.shape()),
-        Scalar{0});
+    const Parameters &parameters = skill.getParameters();
+    ensurePatternShape(weightGradientScratch,
+                       Shape(parameters.weights.shape()));
+    ensurePatternShape(biasGradientScratch,
+                       Shape(parameters.biases.shape()));
+    ensurePatternStorage(parameterScratch.weights,
+                         Shape(parameters.weights.shape()));
+    if (!parameters.biases.empty()) {
+        ensurePatternStorage(parameterScratch.biases,
+                             Shape(parameters.biases.shape()));
+    }
 
     for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
          ++outputChannel) {
         for (size_t outputIndex = 0; outputIndex < layerDelta.shape().at(1);
              ++outputIndex) {
-            if (!biasGradients.empty()) {
-                biasGradients.at(outputChannel) += layerDelta.at(
+            if (!biasGradientScratch.empty()) {
+                biasGradientScratch.at(outputChannel) += layerDelta.at(
                     {outputChannel, outputIndex});
             }
 
@@ -110,7 +157,7 @@ void updateConvolutionalLayer(Skill &skill,
                         continue;
                     }
 
-                    weightGradients.at(
+                    weightGradientScratch.at(
                         {outputChannel, inputChannel, kernelIndex})
                         += layerDelta.at({outputChannel, outputIndex})
                            * prevActivations.at({inputChannel, inputIndex});
@@ -119,25 +166,33 @@ void updateConvolutionalLayer(Skill &skill,
         }
     }
 
-    const auto updateValue = [&optimizer, learningRate](Scalar value,
-                                                        Scalar gradient) {
-        return optimizer.update(value, gradient, learningRate);
-    };
-
-    parameters.weights = parameters.weights.zip(weightGradients, updateValue);
-
-    if (!parameters.biases.empty()) {
-        parameters.biases = parameters.biases.zipValues(biasGradients,
-                                                        updateValue);
+    for (size_t i = 0; i < parameters.weights.size(); ++i) {
+        parameterScratch.weights[i]
+            = optimizer.update(parameters.weights[i],
+                               weightGradientScratch[i],
+                               learningRate);
     }
 
-    skill.setParameters(parameters);
+    if (!parameters.biases.empty()) {
+        for (size_t i = 0; i < parameters.biases.size(); ++i) {
+            parameterScratch.biases[i]
+                = optimizer.update(parameters.biases[i],
+                                   biasGradientScratch[i],
+                                   learningRate);
+        }
+    } else {
+        parameterScratch.biases = Pattern{};
+    }
+
+    skill.setParameters(parameterScratch);
 }
 
 void updateHopfieldLayer(Skill &skill,
                          HopfieldLayer &layer,
                          const Pattern &pattern,
-                         const Optimizer &optimizer,
+                         const LearningRuleOptimizer &optimizer,
+                         Pattern &weightGradientScratch,
+                         Parameters &parameterScratch,
                          Scalar learningRate)
 {
     skill.requireInitialized();
@@ -153,18 +208,29 @@ void updateHopfieldLayer(Skill &skill,
             "Pattern shape does not match Hopfield layer shape.");
     }
 
-    Pattern weightGradients = pattern.outer(pattern);
-    weightGradients.setDiagonal(Scalar{});
+    const Parameters &parameters = skill.getParameters();
+    ensurePatternShape(weightGradientScratch,
+                       static_cast<const Layer &>(layer).expectedWeightShape());
+    ensurePatternStorage(parameterScratch.weights,
+                         static_cast<const Layer &>(layer).expectedWeightShape());
 
-    Parameters parameters = skill.getParameters();
-    parameters.weights = parameters.weights.zip(
-        weightGradients,
-        [&optimizer, learningRate](Scalar weight, Scalar gradient) {
-            return optimizer.update(weight, gradient, learningRate);
-        });
-    parameters.weights.setDiagonal(Scalar{});
+    for (size_t row = 0; row < pattern.size(); ++row) {
+        for (size_t col = 0; col < pattern.size(); ++col) {
+            Scalar gradient = pattern.at(row) * pattern.at(col);
+            if (row == col) {
+                gradient = Scalar{};
+            }
+            weightGradientScratch.at({row, col}) = gradient;
+            parameterScratch.weights.at({row, col})
+                = optimizer.update(parameters.weights.at({row, col}),
+                                   gradient,
+                                   learningRate);
+        }
+    }
+    parameterScratch.weights.setDiagonal(Scalar{});
+    parameterScratch.biases = Pattern{};
 
-    skill.setParameters(parameters);
+    skill.setParameters(parameterScratch);
 }
 } // namespace
 
@@ -198,6 +264,8 @@ void LearningRuleOptimizer::step(Model &network,
                              activations.at(layerIndex),
                              layerDeltas.at(layerIndex),
                              *this,
+                             weightGradientScratch,
+                             parameterScratch,
                              learningRate);
         } else if (auto convolutional = layerAs<ConvolutionalLayer>(layer)) {
             updateConvolutionalLayer(skill,
@@ -205,12 +273,17 @@ void LearningRuleOptimizer::step(Model &network,
                                      activations.at(layerIndex),
                                      layerDeltas.at(layerIndex),
                                      *this,
+                                     weightGradientScratch,
+                                     biasGradientScratch,
+                                     parameterScratch,
                                      learningRate);
         } else if (auto hopfield = layerAs<HopfieldLayer>(layer)) {
             updateHopfieldLayer(skill,
                                 hopfield->get(),
                                 activations.at(layerIndex),
                                 *this,
+                                weightGradientScratch,
+                                parameterScratch,
                                 learningRate);
         }
     }
