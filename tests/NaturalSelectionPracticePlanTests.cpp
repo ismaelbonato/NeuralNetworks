@@ -67,34 +67,6 @@ void practice(Coach &coach,
 }
 }
 
-TEST_CASE("natural selection coach selects candidate with lowest squared error",
-          "[perceptron][coach][natural-selection]")
-{
-    NaturalSelectionPracticePlan plan;
-    const std::vector<Batch> candidatePredictions = {
-        {{0.0F}, {0.0F}, {0.0F}, {1.0F}},
-        {{1.0F}, {1.0F}, {1.0F}, {1.0F}},
-        {{0.0F}, {1.0F}, {1.0F}, {0.0F}},
-        {{0.0F}, {0.0F}, {1.0F}, {1.0F}},
-    };
-    const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
-
-    REQUIRE(plan.findBestCandidate(candidatePredictions, labels) == 0);
-}
-
-TEST_CASE("natural selection coach scores full output patterns",
-          "[coach][natural-selection]")
-{
-    NaturalSelectionPracticePlan plan;
-    const std::vector<Batch> candidatePredictions = {
-        {{0.0F, 10.0F}},
-        {{1.0F, 1.0F}},
-    };
-    const Batch labels = {{0.0F, 1.0F}};
-
-    REQUIRE(plan.findBestCandidate(candidatePredictions, labels) == 1);
-}
-
 TEST_CASE("natural selection coach rejects invalid training data",
           "[perceptron][coach][natural-selection][errors]")
 {

@@ -92,9 +92,6 @@ public:
                   const PracticeData &data,
                   const PracticeOptions &options) const override;
 
-    size_t findBestCandidate(const std::vector<Batch> &candidatePredictions,
-                             const Batch &labels) const;
-
 private:
     NaturalSelectionConfig config;
 };
