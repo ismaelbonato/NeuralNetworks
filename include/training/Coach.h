@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base/Tensor.h"
 #include "base/Types.h"
 
 #include <cstddef>
@@ -9,6 +10,18 @@ class GradientEngine;
 class Model;
 class Optimizer;
 
+struct PracticeData
+{
+    Batch inputs;
+    Batch labels;
+};
+
+struct PracticeOptions
+{
+    Scalar learningRate = Scalar{1.0F};
+    size_t epochs = 1;
+};
+
 class PracticePlan
 {
 public:
@@ -16,10 +29,8 @@ public:
     virtual ~PracticePlan() = default;
 
     virtual void practice(Model &network,
-                          const Batch &inputs,
-                          const Batch &labels,
-                          Scalar learningRate,
-                          size_t epochs) const = 0;
+                          const PracticeData &data,
+                          const PracticeOptions &options) const = 0;
 };
 
 class BackpropagationPracticePlan : public PracticePlan
@@ -31,10 +42,8 @@ public:
     ~BackpropagationPracticePlan() override;
 
     void practice(Model &network,
-                  const Batch &inputs,
-                  const Batch &labels,
-                  Scalar learningRate,
-                  size_t epochs) const override;
+                  const PracticeData &data,
+                  const PracticeOptions &options) const override;
 
 private:
     std::unique_ptr<GradientEngine> gradientEngine;
@@ -49,10 +58,8 @@ public:
     ~Coach();
 
     void practice(Model &network,
-                  const Batch &inputs,
-                  const Batch &labels,
-                  Scalar learningRate,
-                  size_t epochs) const;
+                  const PracticeData &data,
+                  const PracticeOptions &options) const;
 
 private:
     std::unique_ptr<PracticePlan> practicePlan;

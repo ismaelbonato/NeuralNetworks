@@ -3,7 +3,6 @@
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 #include "training/Coach.h"
-#include "training/FeedforwardCoach.h"
 #include "training/ParameterInitializer.h"
 #include "training/TrainingSession.h"
 
@@ -78,6 +77,18 @@ Parameters denseParameters(Model &network, const size_t index)
 {
     return network.getSkill(index).getParameters();
 }
+
+void practice(Coach &coach,
+              Model &network,
+              const Batch &inputs,
+              const Batch &labels,
+              Scalar learningRate,
+              size_t epochs)
+{
+    coach.practice(network,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = learningRate, .epochs = epochs});
+}
 }
 
 TEST_CASE("dense layer computes deterministic pre-activations and activations",
@@ -117,9 +128,9 @@ TEST_CASE("feedforward coach updates single layer through SGD",
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardCoach coach;
+    Coach coach;
 
-    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    practice(coach, network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
@@ -144,10 +155,10 @@ TEST_CASE("feedforward coach can train the same model more than once",
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardCoach coach;
+    Coach coach;
 
-    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
-    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    practice(coach, network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    practice(coach, network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     REQUIRE(denseParameters(network, 0).weights.at({0, 0}) != 0.0F);
 }
@@ -157,9 +168,9 @@ TEST_CASE("feedforward coach direct API updates weights and biases",
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardCoach coach;
+    Coach coach;
 
-    coach.learn(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    practice(coach, network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
@@ -190,7 +201,7 @@ TEST_CASE("generic coach preserves feedforward training behavior",
     network.addSkill(makeDenseSkill(1, 1));
     Coach coach;
 
-    coach.practice(network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
+    practice(coach, network, {{1.0F}}, {{1.0F}}, 1.0F, 1);
 
     const Parameters parameters = denseParameters(network, 0);
     requireClose(parameters.weights.at({0, 0}), 0.125F);
@@ -217,8 +228,8 @@ TEST_CASE("feedforward coach updates hidden and output layers",
     Model network;
     network.addSkill(std::move(hidden));
     network.addSkill(std::move(output));
-    FeedforwardCoach coach;
-    coach.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
+    Coach coach;
+    practice(coach, network, {{1.0F, 0.0F}}, {{1.0F}}, 0.5F, 1);
 
     REQUIRE(denseParameters(network, 0).weights.at({0, 0}) != hiddenWeightBefore);
     REQUIRE(denseParameters(network, 1).weights.at({0, 0}) != outputWeightBefore);
@@ -228,13 +239,13 @@ TEST_CASE("feedforward coach rejects invalid training data", "[feedforward][erro
 {
     Model network;
     network.addSkill(makeDenseSkill(1, 1));
-    FeedforwardCoach coach;
+    Coach coach;
 
-    REQUIRE_THROWS_AS(coach.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(practice(coach, network, {}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F}}, {}, 0.1F, 1), std::runtime_error);
 
     Model emptyNetwork;
-    REQUIRE_THROWS_AS(coach.learn(emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, emptyNetwork, {{1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
@@ -242,18 +253,18 @@ TEST_CASE("feedforward coach rejects wrong input and label shapes", "[feedforwar
 {
     Model network;
     network.addSkill(makeDenseSkill(2, 2));
-    FeedforwardCoach coach;
+    Coach coach;
 
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 0.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}, {1.0F}},
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 0.0F}, {1.0F}},
                                     {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     0.1F,
                                     1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 0.0F}, {0.0F, 1.0F}},
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 0.0F}, {0.0F, 1.0F}},
                                     {{1.0F, 0.0F}, {1.0F}},
                                     0.1F,
                                     1),
@@ -274,8 +285,8 @@ TEST_CASE("feedforward coach learns OR gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {1.0F}, {1.0F}, {1.0F}};
 
-    FeedforwardCoach coach;
-    coach.learn(network, inputs, labels, 0.5F, 5000);
+    Coach coach;
+    practice(coach, network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) > 0.5F);
@@ -297,8 +308,8 @@ TEST_CASE("feedforward coach learns AND gate", "[feedforward][learning]")
                              {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    FeedforwardCoach coach;
-    coach.learn(network, inputs, labels, 0.5F, 5000);
+    Coach coach;
+    practice(coach, network, inputs, labels, 0.5F, 5000);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.5F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) < 0.5F);

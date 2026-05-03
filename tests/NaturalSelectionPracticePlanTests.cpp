@@ -2,8 +2,9 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/NaturalSelectionCoach.h"
+#include "training/NaturalSelectionPracticePlan.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -47,12 +48,29 @@ Skill makeMultiOutputSkill()
          .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
         .intoSkill();
 }
+
+Coach makeNaturalSelectionPracticeCoach(NaturalSelectionConfig config = {})
+{
+    return Coach(std::make_unique<NaturalSelectionPracticePlan>(config));
+}
+
+void practice(Coach &coach,
+              Model &network,
+              const Batch &inputs,
+              const Batch &labels,
+              Scalar learningRate,
+              size_t epochs)
+{
+    coach.practice(network,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = learningRate, .epochs = epochs});
+}
 }
 
 TEST_CASE("natural selection coach selects candidate with lowest squared error",
           "[perceptron][coach][natural-selection]")
 {
-    NaturalSelectionCoach coach;
+    NaturalSelectionPracticePlan plan;
     const std::vector<Batch> candidatePredictions = {
         {{0.0F}, {0.0F}, {0.0F}, {1.0F}},
         {{1.0F}, {1.0F}, {1.0F}, {1.0F}},
@@ -61,40 +79,40 @@ TEST_CASE("natural selection coach selects candidate with lowest squared error",
     };
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    REQUIRE(coach.findBestCandidate(candidatePredictions, labels) == 0);
+    REQUIRE(plan.findBestCandidate(candidatePredictions, labels) == 0);
 }
 
 TEST_CASE("natural selection coach scores full output patterns",
           "[coach][natural-selection]")
 {
-    NaturalSelectionCoach coach;
+    NaturalSelectionPracticePlan plan;
     const std::vector<Batch> candidatePredictions = {
         {{0.0F, 10.0F}},
         {{1.0F, 1.0F}},
     };
     const Batch labels = {{0.0F, 1.0F}};
 
-    REQUIRE(coach.findBestCandidate(candidatePredictions, labels) == 1);
+    REQUIRE(plan.findBestCandidate(candidatePredictions, labels) == 1);
 }
 
 TEST_CASE("natural selection coach rejects invalid training data",
           "[perceptron][coach][natural-selection][errors]")
 {
-    NaturalSelectionCoach coach;
+    Coach coach = makeNaturalSelectionPracticeCoach();
     Model emptyNetwork;
 
-    REQUIRE_THROWS_AS(coach.learn(emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 
     Model network;
     network.addSkill(makePerceptronSkill());
 
-    REQUIRE_THROWS_AS(coach.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
@@ -103,9 +121,9 @@ TEST_CASE("natural selection coach rejects invalid configuration",
 {
     Model network;
     network.addSkill(makePerceptronSkill());
-    NaturalSelectionCoach coach({.populationSize = 0});
+    Coach coach = makeNaturalSelectionPracticeCoach({.populationSize = 0});
 
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
@@ -114,9 +132,10 @@ TEST_CASE("natural selection coach supports multi-output models",
 {
     Model network;
     network.addSkill(makeMultiOutputSkill());
-    NaturalSelectionCoach coach({.populationSize = 2});
+    Coach coach = makeNaturalSelectionPracticeCoach({.populationSize = 2});
 
-    REQUIRE_NOTHROW(coach.learn(network,
+    REQUIRE_NOTHROW(practice(coach,
+                                  network,
                                   {{1.0F, 0.0F}},
                                   {{1.0F, 0.0F}},
                                   0.0F,

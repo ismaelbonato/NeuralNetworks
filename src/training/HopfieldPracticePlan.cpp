@@ -1,4 +1,4 @@
-#include "training/HopfieldCoach.h"
+#include "training/HopfieldPracticePlan.h"
 
 #include "base/Model.h"
 #include "layers/HopfieldLayer.h"
@@ -21,12 +21,14 @@ HopfieldLayer &requireHopfieldLayer(Layer &layer)
 }
 }
 
-void HopfieldCoach::learn(Model &network,
-                            const Batch &inputs,
-                            Scalar learningRate,
-                            size_t epochs)
+void HopfieldPracticePlan::practice(Model &network,
+                                    const PracticeData &data,
+                                    const PracticeOptions &options) const
 {
-    (void) epochs;
+    const auto &inputs = data.inputs;
+    if (!data.labels.empty()) {
+        throw std::runtime_error("Hopfield practice does not use labels.");
+    }
 
     if (inputs.empty()) {
         throw std::runtime_error("Batch is empty.");
@@ -42,6 +44,9 @@ void HopfieldCoach::learn(Model &network,
         for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
             requireHopfieldLayer(network.getLayer(layerIndex));
         }
-        optimizer.step(network, activations, layerDeltas, learningRate);
+        optimizer.step(network,
+                       activations,
+                       layerDeltas,
+                       options.learningRate);
     }
 }

@@ -1,4 +1,4 @@
-#include "training/PerceptronRuleCoach.h"
+#include "training/PerceptronRulePracticePlan.h"
 
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
@@ -26,12 +26,13 @@ DenseLayer &requireDenseLayer(Layer &layer)
 }
 }
 
-void PerceptronRuleCoach::learn(Model &network,
-                                  const Batch &inputs,
-                                  const Batch &labels,
-                                  Scalar learningRate,
-                                  size_t epochs)
+void PerceptronRulePracticePlan::practice(
+    Model &network,
+    const PracticeData &data,
+    const PracticeOptions &options) const
 {
+    const auto &inputs = data.inputs;
+    const auto &labels = data.labels;
     if (network.numLayers() == 0) {
         throw std::runtime_error("Cannot train perceptron without a layer.");
     }
@@ -48,11 +49,14 @@ void PerceptronRuleCoach::learn(Model &network,
         std::make_shared<PerceptronRule<Scalar>>()};
     initializeModelParameters(network);
 
-    for (size_t epoch = 0; epoch < epochs; ++epoch) {
+    for (size_t epoch = 0; epoch < options.epochs; ++epoch) {
         for (size_t i = 0; i < inputs.size(); ++i) {
             Pattern activated = network.infer(inputs.at(i));
             Pattern error = computeError(labels.at(i), activated);
-            optimizer.step(network, {inputs.at(i)}, {error}, learningRate);
+            optimizer.step(network,
+                           {inputs.at(i)},
+                           {error},
+                           options.learningRate);
         }
     }
 }

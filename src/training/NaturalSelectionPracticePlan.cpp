@@ -1,4 +1,4 @@
-#include "training/NaturalSelectionCoach.h"
+#include "training/NaturalSelectionPracticePlan.h"
 
 #include "base/Model.h"
 #include "base/Skill.h"
@@ -116,23 +116,24 @@ ModelParameters mutateParameters(const Model &network,
 }
 }
 
-NaturalSelectionCoach::NaturalSelectionCoach() = default;
+NaturalSelectionPracticePlan::NaturalSelectionPracticePlan() = default;
 
-NaturalSelectionCoach::NaturalSelectionCoach(NaturalSelectionConfig newConfig)
+NaturalSelectionPracticePlan::NaturalSelectionPracticePlan(NaturalSelectionConfig newConfig)
     : config(newConfig)
 {}
 
-void NaturalSelectionCoach::learn(Model &network,
-                                    const Batch &inputs,
-                                    const Batch &labels,
-                                    Scalar learningRate,
-                                    size_t epochs)
+void NaturalSelectionPracticePlan::practice(
+    Model &network,
+    const PracticeData &data,
+    const PracticeOptions &options) const
 {
+    const auto &inputs = data.inputs;
+    const auto &labels = data.labels;
     validateTrainingData(network, inputs, labels);
     if (config.populationSize == 0) {
         throw std::runtime_error("Natural-selection population size must be greater than zero.");
     }
-    if (learningRate < Scalar{}) {
+    if (options.learningRate < Scalar{}) {
         throw std::runtime_error("Natural-selection mutation strength cannot be negative.");
     }
 
@@ -141,7 +142,7 @@ void NaturalSelectionCoach::learn(Model &network,
     std::vector<ModelParameters> candidateParameters(config.populationSize, initialParameters);
     ModelParameters bestParameters = initialParameters;
 
-    for (size_t epoch = 0; epoch < epochs; ++epoch) {
+    for (size_t epoch = 0; epoch < options.epochs; ++epoch) {
         std::vector<Batch> candidatePredictions(candidateParameters.size());
 
         for (size_t candidateIndex = 0; candidateIndex < candidateParameters.size();
@@ -162,7 +163,7 @@ void NaturalSelectionCoach::learn(Model &network,
              ++candidateIndex) {
             nextGeneration.at(candidateIndex) = mutateParameters(network,
                                                               bestParameters,
-                                                              learningRate);
+                                                              options.learningRate);
         }
 
         candidateParameters = nextGeneration;
@@ -171,7 +172,7 @@ void NaturalSelectionCoach::learn(Model &network,
     applyParameters(network, bestParameters);
 }
 
-size_t NaturalSelectionCoach::findBestCandidate(
+size_t NaturalSelectionPracticePlan::findBestCandidate(
     const std::vector<Batch> &candidatePredictions,
     const Batch &labels) const
 {

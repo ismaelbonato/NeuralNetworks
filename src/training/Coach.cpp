@@ -185,11 +185,11 @@ BackpropagationPracticePlan::BackpropagationPracticePlan(
 BackpropagationPracticePlan::~BackpropagationPracticePlan() = default;
 
 void BackpropagationPracticePlan::practice(Model &network,
-                                           const Batch &inputs,
-                                           const Batch &labels,
-                                           Scalar learningRate,
-                                           size_t epochs) const
+                                           const PracticeData &data,
+                                           const PracticeOptions &options) const
 {
+    const auto &inputs = data.inputs;
+    const auto &labels = data.labels;
     validateTrainingData(network, inputs, labels);
 
     TrainingSession session(network);
@@ -197,7 +197,7 @@ void BackpropagationPracticePlan::practice(Model &network,
     session.initializeForwardBuffers();
 
     std::cout << "Training feedforward Network..." << std::endl;
-    for (size_t epoch = 0; epoch < epochs; ++epoch) {
+    for (size_t epoch = 0; epoch < options.epochs; ++epoch) {
         for (size_t sampleIndex = 0; sampleIndex < inputs.size();
              ++sampleIndex) {
             recordForwardPass(session, inputs.at(sampleIndex));
@@ -213,7 +213,7 @@ void BackpropagationPracticePlan::practice(Model &network,
             optimizer->step(network,
                             session.activations(),
                             session.layerDeltas(),
-                            learningRate);
+                            options.learningRate);
         }
     }
 }
@@ -233,10 +233,8 @@ Coach::Coach(std::unique_ptr<PracticePlan> newPracticePlan)
 Coach::~Coach() = default;
 
 void Coach::practice(Model &network,
-                     const Batch &inputs,
-                     const Batch &labels,
-                     Scalar learningRate,
-                     size_t epochs) const
+                     const PracticeData &data,
+                     const PracticeOptions &options) const
 {
-    practicePlan->practice(network, inputs, labels, learningRate, epochs);
+    practicePlan->practice(network, data, options);
 }

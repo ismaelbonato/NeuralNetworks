@@ -2,7 +2,7 @@
 #include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/ConvolutionalLayer.h"
-#include "training/FeedforwardCoach.h"
+#include "training/Coach.h"
 #include "training/GradientEngine.h"
 #include "training/ParameterInitializer.h"
 
@@ -131,7 +131,7 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
 
     net.addSkill(makeTrainableSkill<ConvolutionalLayer>(config).intoSkill());
 
-    FeedforwardCoach coach;
+    Coach coach;
 
     Pattern expected = {0.880797F,
                         0.880797F,
@@ -143,7 +143,9 @@ TEST_CASE("training 1D convolution", "[convolution][1d]")
                         0.880797F};
     expected.reshape({1, outputLength});
 
-    coach.learn(net, {signal}, {expected}, Scalar{0.1F}, 10000);
+    coach.practice(net,
+                   {.inputs = {signal}, .labels = {expected}},
+                   {.learningRate = Scalar{0.1F}, .epochs = 10000});
 
     Pattern output = net.infer(signal);
 

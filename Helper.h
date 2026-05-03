@@ -11,8 +11,8 @@
 
 #include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/NaturalSelectionCoach.h"
-#include "training/PerceptronRuleCoach.h"
+#include "training/NaturalSelectionPracticePlan.h"
+#include "training/PerceptronRulePracticePlan.h"
 
 
 inline Pattern png_to_bits(const std::string &filename)
@@ -70,9 +70,11 @@ inline void perceptronNetwork()
 
     Model net;
     net.addSkill(std::move(skill));
-    PerceptronRuleCoach coach;
+    Coach coach(std::make_unique<PerceptronRulePracticePlan>());
 
-    coach.learn(net, inputs, labels, Scalar{0.1f}, 1000);
+    coach.practice(net,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = Scalar{0.1f}, .epochs = 1000});
 
     std::cout << "Model Network trained!" << std::endl;
     for (const auto &input : inputs) {
@@ -113,9 +115,11 @@ inline void perceptronNaturalSelection()
 
     Model net;
     net.addSkill(std::move(skill));
-    NaturalSelectionCoach coach;
+    Coach coach(std::make_unique<NaturalSelectionPracticePlan>());
 
-    coach.learn(net, inputs, labels, Scalar{0.1f}, 10000);
+    coach.practice(net,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = Scalar{0.1f}, .epochs = 10000});
 
     std::cout << "Model Network trained!" << std::endl;
     for (const auto &input : inputs) {
@@ -205,7 +209,9 @@ inline void feedforwardExperiment()
     net.addSkill(std::move(skill4));
     Coach coach;
 
-    coach.practice(net, inputs, labels, Scalar{0.1f}, 100000);
+    coach.practice(net,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = Scalar{0.1f}, .epochs = 100000});
 
     for (const auto &input : inputs) {
         Pattern output = net.infer(input);

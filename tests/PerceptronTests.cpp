@@ -2,8 +2,9 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
+#include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/PerceptronRuleCoach.h"
+#include "training/PerceptronRulePracticePlan.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -29,6 +30,23 @@ Skill makePerceptronSkill(const size_t outputSize = 1)
          .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
         .intoSkill();
 }
+
+Coach makePerceptronCoach()
+{
+    return Coach(std::make_unique<PerceptronRulePracticePlan>());
+}
+
+void practice(Coach &coach,
+              Model &network,
+              const Batch &inputs,
+              const Batch &labels,
+              Scalar learningRate,
+              size_t epochs)
+{
+    coach.practice(network,
+                   {.inputs = inputs, .labels = labels},
+                   {.learningRate = learningRate, .epochs = epochs});
+}
 }
 
 TEST_CASE("perceptron inference uses coach-learned AND weights", "[perceptron]")
@@ -42,8 +60,8 @@ TEST_CASE("perceptron inference uses coach-learned AND weights", "[perceptron]")
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    PerceptronRuleCoach coach;
-    coach.learn(network, inputs, labels, 0.1F, 20);
+    Coach coach = makePerceptronCoach();
+    practice(coach, network, inputs, labels, 0.1F, 20);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
@@ -59,11 +77,11 @@ TEST_CASE("perceptron coach learns AND gate", "[perceptron][coach]")
 
     Model network;
     network.addSkill(std::move(skill));
-    PerceptronRuleCoach coach;
+    Coach coach = makePerceptronCoach();
     const Batch inputs = {{0.0F, 0.0F}, {0.0F, 1.0F}, {1.0F, 0.0F}, {1.0F, 1.0F}};
     const Batch labels = {{0.0F}, {0.0F}, {0.0F}, {1.0F}};
 
-    coach.learn(network, inputs, labels, 0.1F, 20);
+    practice(coach, network, inputs, labels, 0.1F, 20);
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
@@ -84,9 +102,10 @@ TEST_CASE("perceptron coach initializes uninitialized layer",
 
     Model network;
     network.addSkill(Skill(std::make_unique<DenseLayer>(config)));
-    PerceptronRuleCoach coach;
+    Coach coach = makePerceptronCoach();
 
-    REQUIRE_NOTHROW(coach.learn(network,
+    REQUIRE_NOTHROW(practice(coach,
+                                  network,
                                   {{0.0F, 0.0F}},
                                   {{0.0F}},
                                   0.1F,
@@ -99,8 +118,8 @@ TEST_CASE("perceptron rejects multi-output layers", "[perceptron][errors]")
     Model network;
     network.addSkill(makePerceptronSkill(2));
 
-    PerceptronRuleCoach coach;
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
+    Coach coach = makePerceptronCoach();
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 1.0F}}, {{1.0F, 0.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
 
@@ -109,12 +128,12 @@ TEST_CASE("perceptron coach rejects invalid training data", "[perceptron][errors
     Model network;
     network.addSkill(makePerceptronSkill());
 
-    PerceptronRuleCoach coach;
-    REQUIRE_THROWS_AS(coach.learn(network, {}, {}, 0.1F, 1), std::runtime_error);
-    REQUIRE_THROWS_AS(coach.learn(network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
+    Coach coach = makePerceptronCoach();
+    REQUIRE_THROWS_AS(practice(coach, network, {}, {}, 0.1F, 1), std::runtime_error);
+    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, 1.0F}}, {}, 0.1F, 1),
                       std::runtime_error);
 
     Model emptyNetwork;
-    REQUIRE_THROWS_AS(coach.learn(emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
+    REQUIRE_THROWS_AS(practice(coach, emptyNetwork, {{1.0F, 1.0F}}, {{1.0F}}, 0.1F, 1),
                       std::runtime_error);
 }
