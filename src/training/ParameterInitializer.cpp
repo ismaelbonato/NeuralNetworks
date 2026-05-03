@@ -51,7 +51,7 @@ void initializeSkillParameters(
 
     skill.setParameters(initializedParametersFor(
         skill.layer(),
-        skill.parameters().value_or(Parameters{}),
+        skill.getParameters(),
         initialization));
 }
 

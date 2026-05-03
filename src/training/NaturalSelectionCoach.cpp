@@ -70,8 +70,9 @@ ModelParameters snapshotParameters(const Model &network)
 
     for (size_t layerIndex = 0; layerIndex < network.numLayers();
          ++layerIndex) {
-        if (auto params = network.getSkill(layerIndex).parameters()) {
-            parameters.push_back(*params);
+        const auto &skill = network.getSkill(layerIndex);
+        if (skill.hasParameters()) {
+            parameters.push_back(skill.getParameters());
         } else {
             parameters.push_back({});
         }

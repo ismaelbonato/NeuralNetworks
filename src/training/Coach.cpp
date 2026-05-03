@@ -41,7 +41,7 @@ Pattern preActivationFor(const Skill &skill, const Pattern &input)
             throw std::runtime_error("Input is empty");
         }
 
-        const Parameters parameters = skill.getParameters();
+        const auto &parameters = skill.getParameters();
         Pattern sums = input.matVec(parameters.weights);
         return parameters.biases.empty() ? sums : sums + parameters.biases;
     }
@@ -52,7 +52,7 @@ Pattern preActivationFor(const Skill &skill, const Pattern &input)
         }
 
         const auto &recipe = convolutional->get().getConvolutionalRecipe();
-        const Parameters parameters = skill.getParameters();
+        const auto &parameters = skill.getParameters();
         Pattern result = input.conv1D(parameters.weights,
                                       recipe.stride,
                                       recipe.padding);
@@ -77,7 +77,7 @@ Pattern preActivationFor(const Skill &skill, const Pattern &input)
             throw std::runtime_error("Input is empty");
         }
 
-        const Parameters parameters = skill.getParameters();
+        const auto &parameters = skill.getParameters();
         Pattern sums = input.matVec(parameters.weights);
         return parameters.biases.empty() ? sums : sums + parameters.biases;
     }

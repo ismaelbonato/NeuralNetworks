@@ -31,7 +31,7 @@ public:
 
     bool hasParameters() const;
     std::optional<Parameters> parameters() const;
-    Parameters getParameters() const;
+    const Parameters &getParameters() const;
     void setParameters(const Parameters &parameters);
     void requireInitialized() const;
 

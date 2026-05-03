@@ -33,13 +33,13 @@ std::optional<Parameters> Skill::parameters() const
         return std::nullopt;
     }
 
-    return ownedParameters.value_or(Parameters{});
+    return ownedParameters;
 }
 
-Parameters Skill::getParameters() const
+const Parameters &Skill::getParameters() const
 {
-    if (auto params = parameters()) {
-        return *params;
+    if (hasParameters() && ownedParameters) {
+        return *ownedParameters;
     }
 
     throw std::runtime_error("Skill does not expose parameters.");
