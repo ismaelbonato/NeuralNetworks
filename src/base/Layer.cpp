@@ -108,14 +108,14 @@ Shape Layer::expectedBiasShape() const
     return {};
 }
 
-bool Layer::isInitialized(const Parameters &parameters) const
+bool Layer::acceptsParameters(const Parameters &parameters) const
 {
     return parameters.weights.empty() && parameters.biases.empty();
 }
 
-void Layer::requireInitialized(const Parameters &parameters) const
+void Layer::requireValidParameters(const Parameters &parameters) const
 {
-    if (!isInitialized(parameters)) {
+    if (!acceptsParameters(parameters)) {
         throw std::runtime_error("Layer does not use parameters.");
     }
 }
@@ -144,17 +144,17 @@ void Layer::setParameters(const Parameters &parameters)
         throw std::runtime_error("Layer does not accept parameters.");
     }
 
-    requireInitialized(parameters);
+    requireValidParameters(parameters);
     ownedParameters = parameters;
 }
 
-void Layer::requireInitialized() const
+void Layer::requireParameters() const
 {
     if (!usesParameters()) {
         return;
     }
 
-    requireInitialized(getParameters());
+    requireValidParameters(getParameters());
 }
 
 void Layer::requireInputShape(const Pattern &input) const

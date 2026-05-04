@@ -86,12 +86,12 @@ public:
     virtual bool usesParameters() const;
     virtual Shape expectedWeightShape() const;
     virtual Shape expectedBiasShape() const;
-    virtual bool isInitialized(const Parameters &parameters) const;
-    virtual void requireInitialized(const Parameters &parameters) const;
+    virtual bool acceptsParameters(const Parameters &parameters) const;
+    virtual void requireValidParameters(const Parameters &parameters) const;
     std::optional<Parameters> parameters() const;
     const Parameters &getParameters() const;
     void setParameters(const Parameters &parameters);
-    void requireInitialized() const;
+    void requireParameters() const;
 
     Pattern infer(const Pattern &input) const;
 };

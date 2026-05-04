@@ -29,8 +29,7 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe
     , convolutionalRecipe(newRecipe)
 {
     if (!newRecipe.isValid()) {
-        throw std::invalid_argument(
-            "Invalid convolutional layer recipe");
+        throw std::invalid_argument("Invalid convolutional layer recipe");
     }
     ownedParameters = Parameters{};
 }
@@ -64,7 +63,7 @@ bool ConvolutionalLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool ConvolutionalLayer::isInitialized(
+bool ConvolutionalLayer::acceptsParameters(
     const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
@@ -73,31 +72,30 @@ bool ConvolutionalLayer::isInitialized(
                          : parameters.biases.empty());
 }
 
-void ConvolutionalLayer::requireInitialized(
+void ConvolutionalLayer::requireValidParameters(
     const Parameters &parameters) const
 {
-    if (!isInitialized(parameters)) {
-        throw std::runtime_error("Layer weights are not initialized.");
+    if (!acceptsParameters(parameters)) {
+        throw std::runtime_error(
+            "Layer parameters do not match expected shapes.");
     }
 }
 
 Pattern ConvolutionalLayer::forward(const Pattern &input) const
 {
-    (void)input;
+    (void) input;
     throw std::runtime_error("Convolutional layer requires parameters.");
 }
 
-Pattern ConvolutionalLayer::forward(
-    const Pattern &input,
-    const Parameters &parameters) const
+Pattern ConvolutionalLayer::forward(const Pattern &input,
+                                    const Parameters &parameters) const
 {
     Pattern sums = weightedInput(input, parameters);
     return activate(sums);
 }
 
-Pattern ConvolutionalLayer::weightedInput(
-    const Pattern &input,
-    const Parameters &parameters) const
+Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
+                                          const Parameters &parameters) const
 {
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
@@ -112,8 +110,8 @@ Pattern ConvolutionalLayer::weightedInput(
              ++outputChannel) {
             for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
                  ++outputIndex) {
-                result.at({outputChannel, outputIndex})
-                    += parameters.biases.at(outputChannel);
+                result.at({outputChannel, outputIndex}) += parameters.biases.at(
+                    outputChannel);
             }
         }
     }

@@ -20,13 +20,13 @@ private:
     ConvolutionalLayerRecipe convolutionalRecipe;
 
 public:
-    using Layer::requireInitialized;
+    using Layer::requireParameters;
 
     bool usesParameters() const override;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
-    bool isInitialized(const Parameters &parameters) const override;
-    void requireInitialized(const Parameters &parameters) const override;
+    bool acceptsParameters(const Parameters &parameters) const override;
+    void requireValidParameters(const Parameters &parameters) const override;
 
 private:
     bool hasWeights() const;

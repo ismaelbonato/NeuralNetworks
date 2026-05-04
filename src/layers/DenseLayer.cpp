@@ -55,7 +55,7 @@ bool DenseLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool DenseLayer::isInitialized(const Parameters &parameters) const
+bool DenseLayer::acceptsParameters(const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
@@ -63,10 +63,11 @@ bool DenseLayer::isInitialized(const Parameters &parameters) const
                          : parameters.biases.empty());
 }
 
-void DenseLayer::requireInitialized(const Parameters &parameters) const
+void DenseLayer::requireValidParameters(const Parameters &parameters) const
 {
-    if (!isInitialized(parameters)) {
-        throw std::runtime_error("Layer weights are not initialized.");
+    if (!acceptsParameters(parameters)) {
+        throw std::runtime_error(
+            "Layer parameters do not match expected shapes.");
     }
 }
 

@@ -42,10 +42,10 @@ void requireClose(const Scalar actual, const Scalar expected)
     REQUIRE(std::fabs(actual - expected) < tolerance);
 }
 
-class UninitializedLayer : public DenseLayer
+class MissingParametersLayer : public DenseLayer
 {
 public:
-    explicit UninitializedLayer(const DenseLayerRecipe &newRecipe)
+    explicit MissingParametersLayer(const DenseLayerRecipe &newRecipe)
         : DenseLayer(newRecipe)
     {}
 };
@@ -220,7 +220,7 @@ TEST_CASE("layer exposes parameter snapshots for parameterized layers",
     REQUIRE(layer->parameters().has_value());
     REQUIRE(layer->getParameters().weights == parameters.weights);
     REQUIRE(layer->getParameters().biases == parameters.biases);
-    REQUIRE_NOTHROW(layer->requireInitialized());
+    REQUIRE_NOTHROW(layer->requireParameters());
 }
 
 TEST_CASE("layer-owned parameters drive runtime execution",
@@ -267,7 +267,7 @@ TEST_CASE("runtime-only layers do not expose parameters",
 
     REQUIRE_FALSE(layer->usesParameters());
     REQUIRE_FALSE(layer->parameters().has_value());
-    REQUIRE_NOTHROW(layer->requireInitialized());
+    REQUIRE_NOTHROW(layer->requireParameters());
     REQUIRE_THROWS_AS(layer->getParameters(), std::runtime_error);
     REQUIRE_THROWS_AS(layer->setParameters({}), std::runtime_error);
 }
@@ -297,18 +297,19 @@ TEST_CASE("model can infer through added layers", "[model][layer]")
     requireClose(output.at(0), 0.7310586F);
 }
 
-TEST_CASE("layer guard rejects derived layers that skip initialization", "[layer][errors]")
+TEST_CASE("layer guard rejects parameter layers without assigned weights",
+          "[layer][errors]")
 {
     DenseLayerRecipe config;
-    config.name = "uninitialized test layer";
+    config.name = "missing parameters test layer";
     config.type = "TestLayer";
-    config.info = "intentionally skips construction initialization";
+    config.info = "intentionally skips parameter assignment";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
     config.inputSize = 2;
     config.outputSize = 1;
-    auto layer = std::make_unique<UninitializedLayer>(config);
+    auto layer = std::make_unique<MissingParametersLayer>(config);
 
-    REQUIRE_THROWS_AS(layer->requireInitialized(), std::runtime_error);
+    REQUIRE_THROWS_AS(layer->requireParameters(), std::runtime_error);
     REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
     Model network;
     network.addLayer(std::move(layer));

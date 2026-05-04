@@ -45,7 +45,7 @@ bool HopfieldLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool HopfieldLayer::isInitialized(const Parameters &parameters) const
+bool HopfieldLayer::acceptsParameters(const Parameters &parameters) const
 {
     return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
                          : parameters.weights.empty())
@@ -53,10 +53,11 @@ bool HopfieldLayer::isInitialized(const Parameters &parameters) const
                          : parameters.biases.empty());
 }
 
-void HopfieldLayer::requireInitialized(const Parameters &parameters) const
+void HopfieldLayer::requireValidParameters(const Parameters &parameters) const
 {
-    if (!isInitialized(parameters)) {
-        throw std::runtime_error("Layer weights are not initialized.");
+    if (!acceptsParameters(parameters)) {
+        throw std::runtime_error(
+            "Layer parameters do not match expected shapes.");
     }
 }
 
