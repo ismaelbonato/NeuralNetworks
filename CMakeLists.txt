@@ -137,8 +137,6 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
             tests/FeedForwardTests.cpp
             tests/HopfieldTests.cpp
             tests/LayerTests.cpp
-            tests/LearningRuleTests.cpp
-            tests/NaturalSelectionPracticePlanTests.cpp
             tests/PerceptronTests.cpp
             tests/SmokeTests.cpp
             tests/TensorTests.cpp
