@@ -318,3 +318,25 @@ TEST_CASE("feedforward coach learns AND gate", "[feedforward][learning]")
     REQUIRE(network.infer({1.0F, 0.0F}).at(0) < 0.5F);
     REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.5F);
 }
+
+TEST_CASE("feedforward inference uses trained XOR fixture weights",
+          "[feedforward][dense][runtime]")
+{
+    Model network;
+    network.addSkill(makeDenseSkill(
+        2,
+        2,
+        {.weights = Pattern::matrix({{8.051888F, 8.051895F},
+                                     {-8.016418F, -8.016412F}}),
+         .biases = {-3.967814F, 12.036060F}}));
+    network.addSkill(makeDenseSkill(
+        2,
+        1,
+        {.weights = Pattern::matrix({{8.243962F, 8.242302F}}),
+         .biases = {-12.212015F}}));
+
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.1F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) > 0.9F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) > 0.9F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) < 0.1F);
+}
