@@ -21,6 +21,8 @@ heaptrack*
 build/
 build-gcc/
 build-gcc-release/
+build-clang/
+build-clang-release/
 CMakeLists.txt.*
 
 # code coverage
