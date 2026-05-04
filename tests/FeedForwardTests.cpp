@@ -2,7 +2,6 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
-#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -16,8 +15,7 @@ namespace
 constexpr Scalar tolerance = 0.0001F;
 
 std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize,
-                                           const bool randomInitialize = false)
+                                           const size_t outputSize)
 {
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     DenseLayerRecipe config;
@@ -29,13 +27,10 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.outputSize = outputSize;
 
     auto layer = makeLayer<DenseLayer>(config);
-    (void)randomInitialize;
     return layer;
 }
 
-Skill makeDenseSkill(const size_t inputSize,
-                     const size_t outputSize,
-                     const bool randomInitialize = false)
+Skill makeDenseSkill(const size_t inputSize, const size_t outputSize)
 {
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     DenseLayerRecipe config;
@@ -46,15 +41,7 @@ Skill makeDenseSkill(const size_t inputSize,
     config.inputSize = inputSize;
     config.outputSize = outputSize;
 
-    return (randomInitialize
-                ? makeTrainableSkill<DenseLayer>(config)
-                : makeTrainableSkill<DenseLayer>(
-                      config,
-                      {.weightInitializer
-                       = std::make_shared<ZeroInitializer<Scalar>>(),
-                       .biasInitializer
-                       = std::make_shared<ZeroInitializer<Scalar>>()}))
-        .intoSkill();
+    return Skill(makeLayer<DenseLayer>(config));
 }
 
 Skill makeDenseSkill(const size_t inputSize,
@@ -71,10 +58,6 @@ void requireClose(const Scalar actual, const Scalar expected)
     REQUIRE(std::fabs(actual - expected) < tolerance);
 }
 
-Parameters denseParameters(Model &network, const size_t index)
-{
-    return network.getSkill(index).getParameters();
-}
 }
 
 TEST_CASE("dense layer computes deterministic pre-activations and activations",

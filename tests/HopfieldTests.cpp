@@ -2,7 +2,6 @@
 #include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
-#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -26,11 +25,7 @@ HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)
 
 Skill makeHopfieldSkill(const size_t size)
 {
-    return makeTrainableSkill<HopfieldLayer>(
-        makeHopfieldRecipe(size),
-        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
-        .intoSkill();
+    return Skill(makeLayer<HopfieldLayer>(makeHopfieldRecipe(size)));
 }
 
 }

@@ -2,7 +2,6 @@
 #include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/ConvolutionalLayer.h"
-#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -38,7 +37,7 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     weights.at({0, 0, 1}) = 0.0F;
     weights.at({0, 0, 2}) = 1.0F;
 
-    auto skill = makeTrainableSkill<ConvolutionalLayer>(config).intoSkill();
+    Skill skill(makeLayer<ConvolutionalLayer>(config));
     skill.setParameters({.weights = weights, .biases = {0.0F}});
     net.addSkill(std::move(skill));
     Pattern output = net.infer(signal);

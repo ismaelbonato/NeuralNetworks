@@ -2,7 +2,6 @@
 #include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
-#include "training/ParameterInitializer.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -22,11 +21,7 @@ Skill makePerceptronSkill(const size_t outputSize = 1)
     config.inputSize = 2;
     config.outputSize = outputSize;
 
-    return makeTrainableSkill<DenseLayer>(
-        config,
-        {.weightInitializer = std::make_shared<ZeroInitializer<Scalar>>(),
-         .biasInitializer = std::make_shared<ZeroInitializer<Scalar>>()})
-        .intoSkill();
+    return Skill(makeLayer<DenseLayer>(config));
 }
 
 }
