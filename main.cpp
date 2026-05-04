@@ -1,24 +1,53 @@
-#include "Helper.h"
+#include "base/ActivationFunction.h"
+#include "base/LayerFactory.h"
+#include "base/Model.h"
+#include "layers/DenseLayer.h"
+
 #include <iostream>
+#include <memory>
+
+namespace
+{
+Skill makeDenseSkill(const size_t inputSize,
+                     const size_t outputSize,
+                     const Parameters &parameters)
+{
+    DenseLayerRecipe recipe;
+    recipe.name = "runtime dense layer";
+    recipe.type = "DenseLayer";
+    recipe.info = "runtime XOR fixture layer";
+    recipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    recipe.inputSize = inputSize;
+    recipe.outputSize = outputSize;
+
+    Skill skill(makeLayer<DenseLayer>(recipe));
+    skill.setParameters(parameters);
+    return skill;
+}
+}
 
 int main()
 {
-    std::cout << "Hello, Neural Networks!" << std::endl;
-    std::cout << "==========================" << std::endl;
-    std::cout << "Perceptron Network" << std::endl;
-    std::cout << "==========================" << std::endl;
-    //perceptronNetwork();
-    std::cout << std::endl << std::endl << std::endl;
-    std::cout << "==========================" << std::endl;
-    std::cout << "Natural Selection Network" << std::endl;
-    std::cout << "==========================" << std::endl;
-    //perceptronNaturalSelection();
-    std::cout << "==========================" << std::endl;
-    std::cout << "Feed Forward Network" << std::endl;
-    std::cout << "==========================" << std::endl;
-    feedforwardXor();
-    // feedforwardExperiment();
-    std::cout << std::endl;
+    Model network;
+    network.addSkill(makeDenseSkill(
+        2,
+        2,
+        {.weights = Pattern::matrix({{8.051888F, 8.051895F},
+                                     {-8.016418F, -8.016412F}}),
+         .biases = {-3.967814F, 12.036060F}}));
+    network.addSkill(makeDenseSkill(
+        2,
+        1,
+        {.weights = Pattern::matrix({{8.243962F, 8.242302F}}),
+         .biases = {-12.212015F}}));
+
+    std::cout << "Runtime XOR fixture" << std::endl;
+    for (const Pattern &input : {Pattern{0.0F, 0.0F},
+                                Pattern{0.0F, 1.0F},
+                                Pattern{1.0F, 0.0F},
+                                Pattern{1.0F, 1.0F}}) {
+        std::cout << input << " -> " << network.infer(input) << std::endl;
+    }
 
     return 0;
 }

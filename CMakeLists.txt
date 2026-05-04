@@ -83,8 +83,31 @@ set(LIBRARIES
     ${OpenCV_LIBS}
 )
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-file(GLOB_RECURSE HEADERS "include/*.h")
+set(SOURCES
+    src/base/Layer.cpp
+    src/base/Model.cpp
+    src/base/Skill.cpp
+    src/layers/ConvolutionalLayer.cpp
+    src/layers/DenseLayer.cpp
+    src/layers/FlattenLayer.cpp
+    src/layers/HopfieldLayer.cpp
+)
+
+set(HEADERS
+    include/base/ActivationFunction.h
+    include/base/ConvolutionGeometry.h
+    include/base/Layer.h
+    include/base/LayerFactory.h
+    include/base/Model.h
+    include/base/Parameters.h
+    include/base/Skill.h
+    include/base/Tensor.h
+    include/base/Types.h
+    include/layers/ConvolutionalLayer.h
+    include/layers/DenseLayer.h
+    include/layers/FlattenLayer.h
+    include/layers/HopfieldLayer.h
+)
 #todo add support to gcc using cmake profile
 if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
