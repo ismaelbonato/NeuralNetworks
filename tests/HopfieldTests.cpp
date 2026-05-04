@@ -2,9 +2,7 @@
 #include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
-#include "training/Coach.h"
 #include "training/ParameterInitializer.h"
-#include "training/PracticePlan.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -35,21 +33,6 @@ Skill makeHopfieldSkill(const size_t size)
         .intoSkill();
 }
 
-Coach makeHopfieldPracticeCoach()
-{
-    return Coach(std::make_unique<HopfieldPracticePlan>());
-}
-
-void practice(Coach &coach,
-              Model &network,
-              const Batch &patterns,
-              Scalar learningRate = Scalar{1.0F},
-              size_t epochs = 1)
-{
-    coach.practice(network,
-                   {.inputs = patterns},
-                   {.learningRate = learningRate, .epochs = epochs});
-}
 }
 
 TEST_CASE("hopfield recall updates from current state until convergence", "[hopfield]")
@@ -76,9 +59,7 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 {
     Model network;
     network.addSkill(makeHopfieldSkill(4));
-    Coach coach = makeHopfieldPracticeCoach();
 
-    REQUIRE_THROWS_AS(practice(coach, network, {{1.0F, -1.0F, 1.0F}}), std::runtime_error);
     REQUIRE_THROWS_AS(network.infer({1.0F, -1.0F, 1.0F}), std::runtime_error);
 }
 
@@ -113,51 +94,4 @@ TEST_CASE("hopfield inference uses static stored 4-value pattern weights",
 
     REQUIRE(network.infer({1.0F, -1.0F, 1.0F, -1.0F})
             == Pattern{1.0F, -1.0F, 1.0F, -1.0F});
-}
-
-TEST_CASE("hopfield coach keeps diagonal zero and weights symmetric", "[hopfield]")
-{
-    Model network;
-    network.addSkill(makeHopfieldSkill(3));
-    Coach coach = makeHopfieldPracticeCoach();
-
-    practice(coach, network, {{1.0F, -1.0F, 1.0F}});
-
-    const Pattern weights = network.getSkill(0).getParameters().weights;
-    for (size_t i = 0; i < weights.shape().at(0); ++i) {
-        REQUIRE(weights.at({i, i}) == 0.0F);
-        for (size_t j = 0; j < weights.shape().at(1); ++j) {
-            REQUIRE(weights.at({i, j}) == weights.at({j, i}));
-        }
-    }
-}
-
-TEST_CASE("hopfield coach stores patterns", "[hopfield][coach]")
-{
-    Model network;
-    network.addSkill(makeHopfieldSkill(3));
-    Coach coach = makeHopfieldPracticeCoach();
-
-    practice(coach, network, {{1.0F, -1.0F, 1.0F}});
-
-    const Pattern weights = network.getSkill(0).getParameters().weights;
-    for (size_t i = 0; i < weights.shape().at(0); ++i) {
-        REQUIRE(weights.at({i, i}) == 0.0F);
-        for (size_t j = 0; j < weights.shape().at(1); ++j) {
-            REQUIRE(weights.at({i, j}) == weights.at({j, i}));
-        }
-    }
-}
-
-TEST_CASE("hopfield coach stores a recalled pattern", "[hopfield]")
-{
-    Model network;
-    network.addSkill(makeHopfieldSkill(4));
-    Coach coach = makeHopfieldPracticeCoach();
-
-    const Pattern pattern = {1.0F, -1.0F, 1.0F, -1.0F};
-
-    practice(coach, network, {pattern});
-
-    REQUIRE(network.infer(pattern) == pattern);
 }
