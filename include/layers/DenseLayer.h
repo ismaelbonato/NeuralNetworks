@@ -10,9 +10,8 @@ public:
     ~DenseLayer() override;
 
 protected:
-    Pattern forward(const Pattern &input) const override;
-    Pattern forward(const Pattern &input,
-                    const Parameters &parameters) const override;
+    Pattern weightedInput(const Pattern &input,
+                          const Parameters &parameters) const override;
 
 public:
     using Layer::requireParameters;
@@ -26,7 +25,4 @@ public:
 private:
     bool hasWeights() const;
     bool hasBias() const;
-    Pattern weightedInput(const Pattern &input,
-                          const Parameters &parameters) const;
-    Pattern activate(const Pattern &values) const;
 };

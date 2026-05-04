@@ -28,8 +28,7 @@ private:
     bool hasWeights() const;
     bool hasBias() const;
     Pattern weightedInput(const Pattern &input,
-                          const Parameters &parameters) const;
-    Pattern activate(const Pattern &values) const;
+                          const Parameters &parameters) const override;
     Pattern recall(const Pattern &input,
                    const Parameters &parameters) const;
 };

@@ -65,9 +65,12 @@ protected:
     std::optional<Parameters> ownedParameters;
 
     void requireInputShape(const Pattern &input) const;
-    virtual Pattern forward(const Pattern &input) const = 0;
+    virtual Pattern forward(const Pattern &input) const;
     virtual Pattern forward(const Pattern &input,
                             const Parameters &parameters) const;
+    virtual Pattern weightedInput(const Pattern &input,
+                                  const Parameters &parameters) const;
+    Pattern activate(const Pattern &values) const;
 
 public:
     Layer() = delete;

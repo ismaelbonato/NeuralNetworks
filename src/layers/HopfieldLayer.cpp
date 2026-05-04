@@ -84,17 +84,6 @@ Pattern HopfieldLayer::weightedInput(
     return hasBias() ? sums + parameters.biases : sums;
 }
 
-Pattern HopfieldLayer::activate(const Pattern &values) const
-{
-    if (recipe.activation == nullptr) {
-        throw std::runtime_error(
-            "Activation function is not set for this layer.");
-    }
-
-    return values.map(
-        [this](Scalar value) { return (*recipe.activation)(value); });
-}
-
 Pattern HopfieldLayer::recall(const Pattern &input,
                               const Parameters &parameters) const
 {

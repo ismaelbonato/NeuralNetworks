@@ -12,9 +12,8 @@ public:
     const ConvolutionalLayerRecipe &getConvolutionalRecipe() const;
 
 protected:
-    Pattern forward(const Pattern &input) const override;
-    Pattern forward(const Pattern &input,
-                    const Parameters &parameters) const override;
+    Pattern weightedInput(const Pattern &input,
+                          const Parameters &parameters) const override;
 
 private:
     ConvolutionalLayerRecipe convolutionalRecipe;
@@ -31,7 +30,4 @@ public:
 private:
     bool hasWeights() const;
     bool hasBias() const;
-    Pattern weightedInput(const Pattern &input,
-                          const Parameters &parameters) const;
-    Pattern activate(const Pattern &values) const;
 };

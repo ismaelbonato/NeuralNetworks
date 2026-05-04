@@ -174,8 +174,32 @@ Pattern Layer::infer(const Pattern &input) const
     return forward(input);
 }
 
+Pattern Layer::forward(const Pattern &input) const
+{
+    (void) input;
+    throw std::runtime_error("Layer requires parameters.");
+}
+
 Pattern Layer::forward(const Pattern &input, const Parameters &parameters) const
 {
+    return activate(weightedInput(input, parameters));
+}
+
+Pattern Layer::weightedInput(const Pattern &input,
+                             const Parameters &parameters) const
+{
+    (void) input;
     (void) parameters;
-    return forward(input);
+    throw std::runtime_error("Layer does not implement weighted input.");
+}
+
+Pattern Layer::activate(const Pattern &values) const
+{
+    if (recipe.activation == nullptr) {
+        throw std::runtime_error(
+            "Activation function is not set for this layer.");
+    }
+
+    return values.map(
+        [this](Scalar value) { return (*recipe.activation)(value); });
 }

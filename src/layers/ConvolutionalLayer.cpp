@@ -81,19 +81,6 @@ void ConvolutionalLayer::requireValidParameters(
     }
 }
 
-Pattern ConvolutionalLayer::forward(const Pattern &input) const
-{
-    (void) input;
-    throw std::runtime_error("Convolutional layer requires parameters.");
-}
-
-Pattern ConvolutionalLayer::forward(const Pattern &input,
-                                    const Parameters &parameters) const
-{
-    Pattern sums = weightedInput(input, parameters);
-    return activate(sums);
-}
-
 Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
                                           const Parameters &parameters) const
 {
@@ -117,17 +104,6 @@ Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
     }
 
     return result;
-}
-
-Pattern ConvolutionalLayer::activate(const Pattern &values) const
-{
-    if (recipe.activation == nullptr) {
-        throw std::runtime_error(
-            "Activation function is not set for this layer.");
-    }
-
-    return values.map(
-        [this](Scalar value) { return (*recipe.activation)(value); });
 }
 
 const ConvolutionalLayerRecipe &ConvolutionalLayer::getConvolutionalRecipe() const

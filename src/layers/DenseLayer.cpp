@@ -71,19 +71,6 @@ void DenseLayer::requireValidParameters(const Parameters &parameters) const
     }
 }
 
-Pattern DenseLayer::forward(const Pattern &input) const
-{
-    (void)input;
-    throw std::runtime_error("Dense layer requires parameters.");
-}
-
-Pattern DenseLayer::forward(const Pattern &input,
-                            const Parameters &parameters) const
-{
-    Pattern sums = weightedInput(input, parameters);
-    return activate(sums);
-}
-
 Pattern DenseLayer::weightedInput(const Pattern &input,
                                   const Parameters &parameters) const
 {
@@ -92,15 +79,4 @@ Pattern DenseLayer::weightedInput(const Pattern &input,
     }
     Pattern sums = input.matVec(parameters.weights);
     return hasBias() ? sums + parameters.biases : sums;
-}
-
-Pattern DenseLayer::activate(const Pattern &values) const
-{
-    if (recipe.activation == nullptr) {
-        throw std::runtime_error(
-            "Activation function is not set for this layer.");
-    }
-
-    return values.map(
-        [this](Scalar value) { return (*recipe.activation)(value); });
 }
