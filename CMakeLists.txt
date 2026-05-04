@@ -99,7 +99,6 @@ set(HEADERS
     include/layers/FlattenLayer.h
     include/layers/HopfieldLayer.h
 )
-#todo add support to gcc using cmake profile
 if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
         COMMAND ${CPPCHECK_EXECUTABLE}

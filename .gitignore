@@ -19,6 +19,8 @@ heaptrack*
 
 # build folder
 build/
+build-gcc/
+build-gcc-release/
 CMakeLists.txt.*
 
 # code coverage
