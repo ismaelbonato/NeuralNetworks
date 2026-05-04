@@ -7,12 +7,12 @@ int main()
     std::cout << "==========================" << std::endl;
     std::cout << "Perceptron Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    perceptronNetwork();
+    //perceptronNetwork();
     std::cout << std::endl << std::endl << std::endl;
     std::cout << "==========================" << std::endl;
     std::cout << "Natural Selection Network" << std::endl;
     std::cout << "==========================" << std::endl;
-    perceptronNaturalSelection();
+    //perceptronNaturalSelection();
     std::cout << "==========================" << std::endl;
     std::cout << "Feed Forward Network" << std::endl;
     std::cout << "==========================" << std::endl;

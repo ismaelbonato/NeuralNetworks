@@ -204,6 +204,8 @@ public:
     Tensor<T> transposedMatVec(const Tensor<T> &b) const;
     Tensor<T> outer(const Tensor<T> &b) const;
 
+    void outerInto(const Tensor<T> &b, Tensor<T> &result) const;
+
     // element wise
     Tensor<T> mul(const Tensor<T> &b);
 
@@ -696,10 +698,15 @@ Tensor<T> Tensor<T>::outer(const Tensor<T> &b) const
         throw std::runtime_error("Outer product requires rank-1 tensors.");
     }
 
-    Tensor<T> result = Tensor<T>::withShape({size(), b.size()});
-    for (size_t row = 0; row < size(); ++row) {
-        for (size_t col = 0; col < b.size(); ++col) {
-            result.at({row, col}) = data[row] * b[col];
+    const size_t rows = size();
+    const size_t cols = b.size();
+
+    Tensor<T> result = Tensor<T>::withShape({rows, cols});
+    for (size_t row = 0; row < rows; ++row) {
+        const T lhs = data[row];
+        const size_t base = row * cols;
+        for (size_t col = 0; col < cols; ++col) {
+            result[base + col] = lhs * b[col];
         }
     }
 
@@ -707,9 +714,26 @@ Tensor<T> Tensor<T>::outer(const Tensor<T> &b) const
 }
 
 template<typename T>
-Tensor<T> Tensor<T>::mul(const Tensor<T> &b)
+void Tensor<T>::outerInto(const Tensor<T> &b, Tensor<T> &result) const
 {
-    return operator* <T>(*this, b);
+    if (rank() != 1 || b.rank() != 1) {
+        throw std::runtime_error("Outer product requires rank-1 tensors.");
+    }
+    if (!result.hasShape({size(), b.size()})) {
+        throw std::runtime_error(
+            "Outer product result tensor has incorrect shape.");
+    }
+
+    const size_t rows = size();
+    const size_t cols = b.size();
+
+    for (size_t row = 0; row < rows; ++row) {
+        const T lhs = data[row];
+        const size_t base = row * cols;
+        for (size_t col = 0; col < cols; ++col) {
+            result[base + col] = lhs * b[col];
+        }
+    }
 }
 
 template<typename T>

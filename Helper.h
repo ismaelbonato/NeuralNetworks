@@ -273,7 +273,7 @@ inline void feedforwardXor()
     Coach coach;
     coach.practice(net,
                    {.inputs = inputs, .labels = labels},
-                   {.learningRate = Scalar{0.5f}, .epochs = 20000});
+                   {.learningRate = Scalar{0.6f}, .epochs = 5000});
 
     std::cout << "XOR feedforward trained!" << std::endl;
     for (const auto &input : inputs) {

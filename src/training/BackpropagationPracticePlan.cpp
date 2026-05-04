@@ -8,8 +8,8 @@
 #include "layers/FlattenLayer.h"
 #include "layers/HopfieldLayer.h"
 #include "training/GradientEngine.h"
-#include "training/ParameterInitializer.h"
 #include "training/Optimizer.h"
+#include "training/ParameterInitializer.h"
 #include "training/TrainingSession.h"
 
 #include <functional>
@@ -24,7 +24,8 @@ namespace {
 void fillFlattenOutput(const Pattern &input, Pattern &output)
 {
     if (input.size() != output.size()) {
-        throw std::runtime_error("Flatten output size does not match input size.");
+        throw std::runtime_error(
+            "Flatten output size does not match input size.");
     }
 
     for (size_t i = 0; i < input.size(); ++i) {
@@ -33,8 +34,7 @@ void fillFlattenOutput(const Pattern &input, Pattern &output)
 }
 
 template<typename LayerType>
-std::optional<std::reference_wrapper<const LayerType>> layerAs(
-    const Layer &layer)
+std::optional<std::reference_wrapper<const LayerType>> layerAs(const Layer &layer)
 {
     try {
         return std::cref(dynamic_cast<const LayerType &>(layer));
@@ -57,7 +57,8 @@ void fillMatrixPreActivation(const LayerType &layer,
     }
 
     for (size_t row = 0; row < output.size(); ++row) {
-        Scalar sum = parameters.biases.empty() ? Scalar{} : parameters.biases.at(row);
+        Scalar sum = parameters.biases.empty() ? Scalar{}
+                                               : parameters.biases.at(row);
         for (size_t col = 0; col < input.size(); ++col) {
             sum += parameters.weights.at({row, col}) * input.at(col);
         }
@@ -83,14 +84,15 @@ void fillConvolutionalPreActivation(const ConvolutionalLayer &layer,
          ++outputChannel) {
         for (size_t outputIndex = 0; outputIndex < output.shape().at(1);
              ++outputIndex) {
-            Scalar sum
-                = parameters.biases.empty() ? Scalar{} : parameters.biases.at(outputChannel);
+            Scalar sum = parameters.biases.empty()
+                             ? Scalar{}
+                             : parameters.biases.at(outputChannel);
             for (size_t inputChannel = 0; inputChannel < recipe.inputChannels;
                  ++inputChannel) {
                 for (size_t kernelIndex = 0; kernelIndex < recipe.kernelSize;
                      ++kernelIndex) {
-                    const size_t paddedInputIndex
-                        = (outputIndex * recipe.stride) + kernelIndex;
+                    const size_t paddedInputIndex = (outputIndex * recipe.stride)
+                                                    + kernelIndex;
 
                     if (paddedInputIndex < recipe.padding) {
                         continue;
@@ -138,12 +140,11 @@ void fillParameterizedPreActivation(const Skill &skill,
         return;
     }
 
-    throw std::runtime_error("Feedforward training requires pre-activation support.");
+    throw std::runtime_error(
+        "Feedforward training requires pre-activation support.");
 }
 
-void activateInto(const Layer &layer,
-                  const Pattern &values,
-                  Pattern &output)
+void activateInto(const Layer &layer, const Pattern &values, Pattern &output)
 {
     const auto &activation = layer.getActivation();
     if (!activation) {
@@ -200,8 +201,7 @@ void recordForwardPass(TrainingSession &session, const Pattern &input)
     activations.at(0) = input;
 
     // Reuse session-owned tensors so each layer step avoids fresh temporaries.
-    for (size_t layerIndex = 0; layerIndex < network.numLayers();
-         ++layerIndex) {
+    for (size_t layerIndex = 0; layerIndex < network.numLayers(); ++layerIndex) {
         const auto &skill = network.getSkill(layerIndex);
         const auto &layer = skill.layer();
         const auto &current = activations.at(layerIndex);
@@ -212,9 +212,7 @@ void recordForwardPass(TrainingSession &session, const Pattern &input)
             fillParameterizedPreActivation(skill,
                                            current,
                                            preActivations.at(layerIndex));
-            activateInto(layer,
-                         preActivations.at(layerIndex),
-                         nextActivation);
+            activateInto(layer, preActivations.at(layerIndex), nextActivation);
         }
     }
 }
@@ -243,8 +241,8 @@ BackpropagationPracticePlan::BackpropagationPracticePlan()
 BackpropagationPracticePlan::BackpropagationPracticePlan(
     std::unique_ptr<GradientEngine> newGradientEngine,
     std::unique_ptr<Optimizer> newOptimizer)
-    : gradientEngine(std::move(newGradientEngine)),
-      optimizer(std::move(newOptimizer))
+    : gradientEngine(std::move(newGradientEngine))
+    , optimizer(std::move(newOptimizer))
 {
     if (!gradientEngine) {
         throw std::invalid_argument(
@@ -258,9 +256,11 @@ BackpropagationPracticePlan::BackpropagationPracticePlan(
 
 BackpropagationPracticePlan::~BackpropagationPracticePlan() = default;
 BackpropagationPracticePlan::BackpropagationPracticePlan(
-    BackpropagationPracticePlan &&) noexcept = default;
+    BackpropagationPracticePlan &&) noexcept
+    = default;
 BackpropagationPracticePlan &BackpropagationPracticePlan::operator=(
-    BackpropagationPracticePlan &&) noexcept = default;
+    BackpropagationPracticePlan &&) noexcept
+    = default;
 
 void BackpropagationPracticePlan::practice(Model &network,
                                            const PracticeData &data,
@@ -282,12 +282,11 @@ void BackpropagationPracticePlan::practice(Model &network,
             writeLossDerivative(session.activations().back(),
                                 labels.at(sampleIndex),
                                 session.outputError());
-            gradientEngine->computeLayerDeltas(
-                network,
-                session.activations(),
-                session.preActivations(),
-                session.outputError(),
-                session.layerDeltas());
+            gradientEngine->computeLayerDeltas(network,
+                                               session.activations(),
+                                               session.preActivations(),
+                                               session.outputError(),
+                                               session.layerDeltas());
 
             optimizer->step(network,
                             session.activations(),

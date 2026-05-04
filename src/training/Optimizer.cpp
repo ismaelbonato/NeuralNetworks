@@ -70,15 +70,14 @@ void updateDenseLayer(Skill &skill,
     ensurePatternStorage(parameterScratch.weights,
                          static_cast<const Layer &>(layer).expectedWeightShape());
 
-    for (size_t row = 0; row < layerDelta.size(); ++row) {
-        for (size_t col = 0; col < prevActivations.size(); ++col) {
-            weightGradientScratch.at({row, col})
-                = layerDelta.at(row) * prevActivations.at(col);
-            parameterScratch.weights.at({row, col})
-                = optimizer.update(parameters.weights.at({row, col}),
-                                   weightGradientScratch.at({row, col}),
-                                   learningRate);
-        }
+    // gradient = outer(layerDelta, prevActivations)
+    layerDelta.outerInto(prevActivations, weightGradientScratch);
+
+    // Apply optimizer using flat contiguous storage.
+    for (size_t i = 0; i < parameters.weights.size(); ++i) {
+        parameterScratch.weights[i] = optimizer.update(parameters.weights[i],
+                                                       weightGradientScratch[i],
+                                                       learningRate);
     }
 
     if (!parameters.biases.empty()) {
@@ -120,10 +119,8 @@ void updateConvolutionalLayer(Skill &skill,
 
     const auto &recipe = layer.getConvolutionalRecipe();
     const Parameters &parameters = skill.getParameters();
-    ensurePatternShape(weightGradientScratch,
-                       Shape(parameters.weights.shape()));
-    ensurePatternShape(biasGradientScratch,
-                       Shape(parameters.biases.shape()));
+    ensurePatternShape(weightGradientScratch, Shape(parameters.weights.shape()));
+    ensurePatternShape(biasGradientScratch, Shape(parameters.biases.shape()));
     ensurePatternStorage(parameterScratch.weights,
                          Shape(parameters.weights.shape()));
     if (!parameters.biases.empty()) {
@@ -144,15 +141,14 @@ void updateConvolutionalLayer(Skill &skill,
                  ++inputChannel) {
                 for (size_t kernelIndex = 0; kernelIndex < recipe.kernelSize;
                      ++kernelIndex) {
-                    const size_t paddedInputIndex
-                        = (outputIndex * recipe.stride) + kernelIndex;
+                    const size_t paddedInputIndex = (outputIndex * recipe.stride)
+                                                    + kernelIndex;
 
                     if (paddedInputIndex < recipe.padding) {
                         continue;
                     }
 
-                    const size_t inputIndex = paddedInputIndex
-                                              - recipe.padding;
+                    const size_t inputIndex = paddedInputIndex - recipe.padding;
                     if (inputIndex >= recipe.inputLength) {
                         continue;
                     }
@@ -167,18 +163,16 @@ void updateConvolutionalLayer(Skill &skill,
     }
 
     for (size_t i = 0; i < parameters.weights.size(); ++i) {
-        parameterScratch.weights[i]
-            = optimizer.update(parameters.weights[i],
-                               weightGradientScratch[i],
-                               learningRate);
+        parameterScratch.weights[i] = optimizer.update(parameters.weights[i],
+                                                       weightGradientScratch[i],
+                                                       learningRate);
     }
 
     if (!parameters.biases.empty()) {
         for (size_t i = 0; i < parameters.biases.size(); ++i) {
-            parameterScratch.biases[i]
-                = optimizer.update(parameters.biases[i],
-                                   biasGradientScratch[i],
-                                   learningRate);
+            parameterScratch.biases[i] = optimizer.update(parameters.biases[i],
+                                                          biasGradientScratch[i],
+                                                          learningRate);
         }
     } else {
         parameterScratch.biases = Pattern{};
