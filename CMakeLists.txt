@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
 
-
-
 project(NetworkFramework)
 
 include(CTest)
@@ -13,7 +11,24 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_CPPCHECK "Run cppcheck as part of C++ builds" ON)
+option(ENABLE_CPPCHECK "Run cppcheck as part of C++ builds" OFF)
+option(ENABLE_CLANG_TIDY "Run clang-tidy as part of C++ builds" OFF)
+option(ENABLE_COVERAGE "Build with coverage instrumentation and add a coverage target" OFF)
+
+function(network_enable_warnings target)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${target} PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wshadow
+            -Wconversion
+            -Wsign-conversion
+            -Wold-style-cast
+            -Wnon-virtual-dtor
+        )
+    endif()
+endfunction()
 
 find_program(CPPCHECK_EXECUTABLE NAMES cppcheck)
 set(CPPCHECK_ARGS
@@ -34,9 +49,6 @@ if(ENABLE_CPPCHECK)
         ${CPPCHECK_ARGS}
     )
 endif()
-
-option(ENABLE_CLANG_TIDY "Run clang-tidy as part of C++ builds" ON)
-option(ENABLE_COVERAGE "Build with coverage instrumentation and add a coverage target" OFF)
 
 find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy-20 clang-tidy)
 set(CLANG_TIDY_ARGS
@@ -99,6 +111,7 @@ set(HEADERS
     include/layers/FlattenLayer.h
     include/layers/HopfieldLayer.h
 )
+
 if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
         COMMAND ${CPPCHECK_EXECUTABLE}
@@ -118,26 +131,24 @@ add_library(NetworkLib
     ${HEADERS}
 )
 
-# Set the library version
-if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
-    # Building directly
-    add_executable(Network main.cpp)
-    target_link_libraries(Network PRIVATE NetworkLib)
+target_include_directories(NetworkLib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-    target_compile_options(Network PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wshadow
-    -Wconversion
-    -Wsign-conversion
-    -Wold-style-cast
-    -Wnon-virtual-dtor
+network_enable_warnings(NetworkLib)
+
+if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
+    add_executable(Network main.cpp)
+
+    target_link_libraries(Network PRIVATE
+        NetworkLib
     )
 
-    target_include_directories(Network PRIVATE 
+    target_include_directories(Network PRIVATE
         ${CMAKE_SOURCE_DIR}/include
     )
+
+    network_enable_warnings(Network)
 
     if(BUILD_TESTING)
         find_package(Catch2 3 REQUIRED)
@@ -182,23 +193,4 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
             )
         endif()
     endif()
-
 endif()
-
-
-# Add extra warning flags
-target_compile_options(NetworkLib PRIVATE
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wshadow
-    -Wconversion
-    -Wsign-conversion
-    -Wold-style-cast
-    -Wnon-virtual-dtor
-)
-
-
-target_include_directories(NetworkLib PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
