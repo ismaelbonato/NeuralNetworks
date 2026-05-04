@@ -96,12 +96,12 @@ TEST_CASE("base layer infer delegates valid input to forward", "[layer][infer]")
 TEST_CASE("dense layer adds recipe bias to pre-activation", "[layer][dense]")
 {
     auto layer = makeDenseLayer(2, 1);
-    const Parameters parameters{
+    layer->setParameters({
         .weights = Pattern::matrix({{1.0F, 1.0F}}),
         .biases = {10.0F},
-    };
+    });
 
-    const Pattern output = layer->infer({1.0F, 1.0F}, parameters);
+    const Pattern output = layer->infer({1.0F, 1.0F});
 
     requireClose(output.at(0), 0.9999938F);
 }
@@ -239,7 +239,7 @@ TEST_CASE("layer-owned parameters drive runtime execution",
     REQUIRE(layer->getParameters().biases == Pattern{-1.0F});
 }
 
-TEST_CASE("parameterized runtime layer supports external parameters",
+TEST_CASE("parameterized runtime layer uses reassigned owned parameters",
           "[layer][parameters]")
 {
     auto layer = makeDenseLayer(1, 1);
@@ -249,12 +249,15 @@ TEST_CASE("parameterized runtime layer supports external parameters",
     });
 
     const Pattern output = layer->infer({1.0F});
-    const Pattern externalOutput = layer->infer(
-        {1.0F},
-        {.weights = Pattern::matrix({{1.0F}}), .biases = {0.0F}});
+
+    layer->setParameters({
+        .weights = Pattern::matrix({{1.0F}}),
+        .biases = {0.0F},
+    });
+    const Pattern reassignedOutput = layer->infer({1.0F});
 
     requireClose(output.at(0), 0.7310586F);
-    requireClose(externalOutput.at(0), 0.7310586F);
+    requireClose(reassignedOutput.at(0), 0.7310586F);
 }
 
 TEST_CASE("runtime-only layers do not expose parameters",

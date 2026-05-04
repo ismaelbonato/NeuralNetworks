@@ -94,6 +94,4 @@ public:
     void requireInitialized() const;
 
     Pattern infer(const Pattern &input) const;
-    Pattern infer(const Pattern &input,
-                  const Parameters &parameters) const;
 };

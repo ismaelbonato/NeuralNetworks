@@ -86,8 +86,6 @@ Pattern DenseLayer::forward(const Pattern &input,
 Pattern DenseLayer::weightedInput(const Pattern &input,
                                   const Parameters &parameters) const
 {
-    requireInitialized(parameters);
-
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }

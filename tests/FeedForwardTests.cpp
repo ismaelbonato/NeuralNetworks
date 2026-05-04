@@ -48,13 +48,12 @@ void requireClose(const Scalar actual, const Scalar expected)
 TEST_CASE("dense layer computes deterministic pre-activations and activations",
           "[feedforward][dense]")
 {
-    auto layer = makeDenseLayer(2, 2);
-    const Parameters parameters{
+    auto layer = makeDenseLayer(2, 2, {
         .weights = Pattern::matrix({{1.0F, -1.0F}, {0.5F, 0.5F}}),
         .biases = {0.0F, -0.5F},
-    };
+    });
 
-    const Pattern output = layer->infer({2.0F, 1.0F}, parameters);
+    const Pattern output = layer->infer({2.0F, 1.0F});
 
     requireClose(output.at(0), 0.7310586F);
     requireClose(output.at(1), 0.7310586F);
