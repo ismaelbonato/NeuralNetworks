@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(NetworkFramework)
+project(nn-runtime)
 
 include(CTest)
 
@@ -126,34 +126,34 @@ if(CPPCHECK_EXECUTABLE)
     )
 endif()
 
-add_library(NetworkLib
+add_library(nn-runtime
     ${SOURCES}
     ${HEADERS}
 )
 
-target_include_directories(NetworkLib PUBLIC
+target_include_directories(nn-runtime PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-network_enable_warnings(NetworkLib)
+network_enable_warnings(nn-runtime)
 
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
-    add_executable(Network main.cpp)
+    add_executable(nn-runtime-main main.cpp)
 
-    target_link_libraries(Network PRIVATE
-        NetworkLib
+    target_link_libraries(nn-runtime-main PRIVATE
+        nn-runtime
     )
 
-    target_include_directories(Network PRIVATE
+    target_include_directories(nn-runtime-main PRIVATE
         ${CMAKE_SOURCE_DIR}/include
     )
 
-    network_enable_warnings(Network)
+    network_enable_warnings(nn-runtime-main)
 
     if(BUILD_TESTING)
         find_package(Catch2 3 REQUIRED)
 
-        add_executable(NetworkTests
+        add_executable(nn-runtime-tests
             tests/ActivationTests.cpp
             tests/ConvolutionGeometryTests.cpp
             tests/ConvolutionalLayerTests.cpp
@@ -165,13 +165,13 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
             tests/TensorTests.cpp
         )
 
-        target_link_libraries(NetworkTests PRIVATE
-            NetworkLib
+        target_link_libraries(nn-runtime-tests PRIVATE
+            nn-runtime
             Catch2::Catch2WithMain
         )
 
         include(Catch)
-        catch_discover_tests(NetworkTests)
+        catch_discover_tests(nn-runtime-tests)
 
         if(ENABLE_COVERAGE)
             add_custom_target(coverage
@@ -187,7 +187,7 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
                     --html-details ${CMAKE_BINARY_DIR}/coverage.html
                     --print-summary
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS NetworkTests
+                DEPENDS nn-runtime-tests
                 COMMENT "Running tests and generating coverage report"
                 VERBATIM
             )

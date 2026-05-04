@@ -1,4 +1,4 @@
-# Network Runtime Library
+# nn-runtime
 
 Small C++23 runtime inference library for simple neural-network style layers.
 The project currently focuses on deterministic forward inference, explicit
@@ -34,6 +34,6 @@ ctest --test-dir build --output-on-failure
 
 When built directly, the project creates:
 
-- `NetworkLib`: reusable runtime library
-- `Network`: tiny executable that runs a static XOR inference fixture
-- `NetworkTests`: Catch2 test executable, when `BUILD_TESTING` is enabled
+- `nn-runtime`: reusable runtime library
+- `nn-runtime-main`: tiny executable that runs a static XOR inference fixture
+- `nn-runtime-tests`: Catch2 test executable, when `BUILD_TESTING` is enabled
