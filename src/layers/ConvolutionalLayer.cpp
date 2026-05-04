@@ -32,6 +32,7 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe
         throw std::invalid_argument(
             "Invalid convolutional layer recipe");
     }
+    ownedParameters = Parameters{};
 }
 
 ConvolutionalLayer::~ConvolutionalLayer() = default;

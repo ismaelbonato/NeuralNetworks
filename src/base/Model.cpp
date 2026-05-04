@@ -7,53 +7,47 @@ Model::Model() = default;
 
 Model::~Model() = default;
 
-Skill &Model::addSkill(Skill skill)
+Layer &Model::addLayer(std::unique_ptr<Layer> layer)
 {
-    skills.push_back(std::move(skill));
-    return skills.back();
+    if (!layer) {
+        throw std::invalid_argument("Cannot add a null layer to the model.");
+    }
+
+    layers.push_back(std::move(layer));
+    return *layers.back();
 }
 
 Layer &Model::getLayer(size_t index)
 {
-    return getSkill(index).layer();
+    if (index >= layers.size()) {
+        throw std::out_of_range("Layer index out of range.");
+    }
+    return *layers.at(index);
 }
 
 const Layer &Model::getLayer(size_t index) const
 {
-    return getSkill(index).layer();
-}
-
-Skill &Model::getSkill(size_t index)
-{
-    if (index >= skills.size()) {
+    if (index >= layers.size()) {
         throw std::out_of_range("Layer index out of range.");
     }
-    return skills.at(index);
-}
-
-const Skill &Model::getSkill(size_t index) const
-{
-    if (index >= skills.size()) {
-        throw std::out_of_range("Layer index out of range.");
-    }
-    return skills.at(index);
+    return *layers.at(index);
 }
 
 size_t Model::numLayers() const
 {
-    return skills.size();
+    return layers.size();
 }
 
 Pattern Model::infer(const Pattern &input)
 {
-    if (skills.empty()) {
+    if (layers.empty()) {
         throw std::runtime_error("No layers exist in the model to perform inference.");
     }
 
     Pattern output = input;
-    for (const auto &skill : skills) {
+    for (const auto &layer : layers) {
         // cppcheck-suppress useStlAlgorithm
-        output = skill.perform(output);
+        output = layer->infer(output);
     }
     return output;
 }

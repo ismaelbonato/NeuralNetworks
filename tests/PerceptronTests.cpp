@@ -11,7 +11,7 @@
 
 namespace
 {
-Skill makePerceptronSkill(const size_t outputSize = 1)
+std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
 {
     DenseLayerRecipe config;
     config.name = "test perceptron";
@@ -21,7 +21,7 @@ Skill makePerceptronSkill(const size_t outputSize = 1)
     config.inputSize = 2;
     config.outputSize = outputSize;
 
-    return Skill(makeLayer<DenseLayer>(config));
+    return makeLayer<DenseLayer>(config);
 }
 
 }
@@ -29,12 +29,12 @@ Skill makePerceptronSkill(const size_t outputSize = 1)
 TEST_CASE("perceptron inference uses static AND fixture weights",
           "[perceptron][runtime]")
 {
-    auto skill = makePerceptronSkill();
-    skill.setParameters({.weights = Pattern::matrix({{0.2F, 0.1F}}),
+    auto layer = makePerceptronLayer();
+    layer->setParameters({.weights = Pattern::matrix({{0.2F, 0.1F}}),
                          .biases = {-0.3F}});
 
     Model network;
-    network.addSkill(std::move(skill));
+    network.addLayer(std::move(layer));
 
     REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
     REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);

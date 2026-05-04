@@ -25,6 +25,7 @@ DenseLayer::DenseLayer(const DenseLayerRecipe &newRecipe)
     if (!newRecipe.isValid()) {
         throw std::invalid_argument("Invalid dense layer recipe");
     }
+    ownedParameters = Parameters{};
 }
 
 DenseLayer::~DenseLayer() = default;

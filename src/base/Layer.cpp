@@ -120,6 +120,43 @@ void Layer::requireInitialized(const Parameters &parameters) const
     }
 }
 
+std::optional<Parameters> Layer::parameters() const
+{
+    if (!usesParameters()) {
+        return std::nullopt;
+    }
+
+    return ownedParameters;
+}
+
+const Parameters &Layer::getParameters() const
+{
+    if (usesParameters() && ownedParameters) {
+        return *ownedParameters;
+    }
+
+    throw std::runtime_error("Layer does not expose parameters.");
+}
+
+void Layer::setParameters(const Parameters &parameters)
+{
+    if (!usesParameters()) {
+        throw std::runtime_error("Layer does not accept parameters.");
+    }
+
+    requireInitialized(parameters);
+    ownedParameters = parameters;
+}
+
+void Layer::requireInitialized() const
+{
+    if (!usesParameters()) {
+        return;
+    }
+
+    requireInitialized(getParameters());
+}
+
 void Layer::requireInputShape(const Pattern &input) const
 {
     if (!input.hasShape(expectedInput)) {
@@ -131,6 +168,9 @@ void Layer::requireInputShape(const Pattern &input) const
 Pattern Layer::infer(const Pattern &input) const
 {
     requireInputShape(input);
+    if (usesParameters()) {
+        return forward(input, getParameters());
+    }
     return forward(input);
 }
 

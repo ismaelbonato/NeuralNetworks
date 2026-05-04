@@ -15,6 +15,7 @@ HopfieldLayer::HopfieldLayer(const HopfieldLayerRecipe &newRecipe)
     if (!newRecipe.isValid()) {
         throw std::invalid_argument("Invalid hopfield layer recipe");
     }
+    ownedParameters = Parameters{};
 }
 
 HopfieldLayer::~HopfieldLayer() = default;

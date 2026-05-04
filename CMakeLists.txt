@@ -86,7 +86,6 @@ set(LIBRARIES
 set(SOURCES
     src/base/Layer.cpp
     src/base/Model.cpp
-    src/base/Skill.cpp
     src/layers/ConvolutionalLayer.cpp
     src/layers/DenseLayer.cpp
     src/layers/FlattenLayer.cpp
@@ -100,7 +99,6 @@ set(HEADERS
     include/base/LayerFactory.h
     include/base/Model.h
     include/base/Parameters.h
-    include/base/Skill.h
     include/base/Tensor.h
     include/base/Types.h
     include/layers/ConvolutionalLayer.h

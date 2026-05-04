@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 
 struct LayerRecipe
@@ -64,6 +65,7 @@ protected:
     LayerRecipe recipe;
     Shape expectedInput;
     Shape expectedOutput;
+    std::optional<Parameters> ownedParameters;
 
     void requireInputShape(const Pattern &input) const;
     virtual Pattern forward(const Pattern &input) const = 0;
@@ -89,6 +91,10 @@ public:
     virtual Shape expectedBiasShape() const;
     virtual bool isInitialized(const Parameters &parameters) const;
     virtual void requireInitialized(const Parameters &parameters) const;
+    std::optional<Parameters> parameters() const;
+    const Parameters &getParameters() const;
+    void setParameters(const Parameters &parameters);
+    void requireInitialized() const;
 
     Pattern infer(const Pattern &input) const;
     Pattern infer(const Pattern &input,

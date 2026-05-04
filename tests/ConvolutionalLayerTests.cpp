@@ -37,9 +37,9 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     weights.at({0, 0, 1}) = 0.0F;
     weights.at({0, 0, 2}) = 1.0F;
 
-    Skill skill(makeLayer<ConvolutionalLayer>(config));
-    skill.setParameters({.weights = weights, .biases = {0.0F}});
-    net.addSkill(std::move(skill));
+    auto layer = makeLayer<ConvolutionalLayer>(config);
+    layer->setParameters({.weights = weights, .biases = {0.0F}});
+    net.addLayer(std::move(layer));
     Pattern output = net.infer(signal);
 
     Pattern expected = {0.880797F,

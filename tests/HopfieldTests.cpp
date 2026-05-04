@@ -23,28 +23,28 @@ HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)
     return config;
 }
 
-Skill makeHopfieldSkill(const size_t size)
+std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
 {
-    return Skill(makeLayer<HopfieldLayer>(makeHopfieldRecipe(size)));
+    return makeLayer<HopfieldLayer>(makeHopfieldRecipe(size));
 }
 
 }
 
 TEST_CASE("hopfield recall updates from current state until convergence", "[hopfield]")
 {
-    auto skill = makeHopfieldSkill(3);
+    auto layer = makeHopfieldLayer(3);
 
-    REQUIRE(skill.getParameters().biases.empty());
-    REQUIRE_THROWS_AS(skill.setParameters({.weights = Pattern::matrix(3, 3, 0.0F),
+    REQUIRE(layer->getParameters().biases.empty());
+    REQUIRE_THROWS_AS(layer->setParameters({.weights = Pattern::matrix(3, 3, 0.0F),
                                            .biases = {0.0F, 0.0F, 0.0F}}),
                       std::runtime_error);
-    skill.setParameters({.weights = Pattern::matrix({{-2.0F, -2.0F, -2.0F},
+    layer->setParameters({.weights = Pattern::matrix({{-2.0F, -2.0F, -2.0F},
                                                      {-2.0F, -2.0F, 1.0F},
                                                      {-2.0F, -2.0F, 0.0F}}),
                          .biases = {}});
 
     Model network;
-    network.addSkill(std::move(skill));
+    network.addLayer(std::move(layer));
 
     REQUIRE(network.infer({-1.0F, 1.0F, -1.0F})
             == Pattern{-1.0F, 1.0F, 1.0F});
@@ -53,7 +53,7 @@ TEST_CASE("hopfield recall updates from current state until convergence", "[hopf
 TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 {
     Model network;
-    network.addSkill(makeHopfieldSkill(4));
+    network.addLayer(makeHopfieldLayer(4));
 
     REQUIRE_THROWS_AS(network.infer({1.0F, -1.0F, 1.0F}), std::runtime_error);
 }
@@ -61,14 +61,14 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
 TEST_CASE("hopfield inference uses static stored 3-value pattern weights",
           "[hopfield][runtime]")
 {
-    auto skill = makeHopfieldSkill(3);
-    skill.setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F},
+    auto layer = makeHopfieldLayer(3);
+    layer->setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F},
                                                      {-1.0F, 0.0F, -1.0F},
                                                      {1.0F, -1.0F, 0.0F}}),
                          .biases = {}});
 
     Model network;
-    network.addSkill(std::move(skill));
+    network.addLayer(std::move(layer));
 
     REQUIRE(network.infer({1.0F, -1.0F, 1.0F})
             == Pattern{1.0F, -1.0F, 1.0F});
@@ -77,15 +77,15 @@ TEST_CASE("hopfield inference uses static stored 3-value pattern weights",
 TEST_CASE("hopfield inference uses static stored 4-value pattern weights",
           "[hopfield][runtime]")
 {
-    auto skill = makeHopfieldSkill(4);
-    skill.setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F, -1.0F},
+    auto layer = makeHopfieldLayer(4);
+    layer->setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F, -1.0F},
                                                      {-1.0F, 0.0F, -1.0F, 1.0F},
                                                      {1.0F, -1.0F, 0.0F, -1.0F},
                                                      {-1.0F, 1.0F, -1.0F, 0.0F}}),
                          .biases = {}});
 
     Model network;
-    network.addSkill(std::move(skill));
+    network.addLayer(std::move(layer));
 
     REQUIRE(network.infer({1.0F, -1.0F, 1.0F, -1.0F})
             == Pattern{1.0F, -1.0F, 1.0F, -1.0F});
