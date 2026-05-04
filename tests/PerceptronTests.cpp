@@ -69,6 +69,22 @@ TEST_CASE("perceptron inference uses coach-learned AND weights", "[perceptron]")
     REQUIRE(network.infer({1.0F, 1.0F}).at(0) == 1.0F);
 }
 
+TEST_CASE("perceptron inference uses static AND fixture weights",
+          "[perceptron][runtime]")
+{
+    auto skill = makePerceptronSkill();
+    skill.setParameters({.weights = Pattern::matrix({{0.2F, 0.1F}}),
+                         .biases = {-0.3F}});
+
+    Model network;
+    network.addSkill(std::move(skill));
+
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) == 0.0F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) == 1.0F);
+}
+
 TEST_CASE("perceptron coach learns AND gate", "[perceptron][coach]")
 {
     auto skill = makePerceptronSkill();

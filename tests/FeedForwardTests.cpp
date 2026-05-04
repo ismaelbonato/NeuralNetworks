@@ -123,6 +123,36 @@ TEST_CASE("feedforward inference composes dense layers", "[feedforward]")
     requireClose(prediction.at(0), 0.6816998F);
 }
 
+TEST_CASE("feedforward inference uses static OR fixture weights",
+          "[feedforward][dense][runtime]")
+{
+    Model network;
+    network.addSkill(makeDenseSkill(
+        2,
+        1,
+        {.weights = Pattern::matrix({{10.0F, 10.0F}}), .biases = {-5.0F}}));
+
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.1F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) > 0.9F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) > 0.9F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.9F);
+}
+
+TEST_CASE("feedforward inference uses static AND fixture weights",
+          "[feedforward][dense][runtime]")
+{
+    Model network;
+    network.addSkill(makeDenseSkill(
+        2,
+        1,
+        {.weights = Pattern::matrix({{10.0F, 10.0F}}), .biases = {-15.0F}}));
+
+    REQUIRE(network.infer({0.0F, 0.0F}).at(0) < 0.1F);
+    REQUIRE(network.infer({0.0F, 1.0F}).at(0) < 0.1F);
+    REQUIRE(network.infer({1.0F, 0.0F}).at(0) < 0.1F);
+    REQUIRE(network.infer({1.0F, 1.0F}).at(0) > 0.9F);
+}
+
 TEST_CASE("feedforward coach updates single layer through SGD",
           "[feedforward][learning]")
 {

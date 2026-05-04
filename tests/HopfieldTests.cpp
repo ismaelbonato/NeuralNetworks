@@ -82,6 +82,39 @@ TEST_CASE("hopfield rejects patterns with wrong size", "[hopfield][errors]")
     REQUIRE_THROWS_AS(network.infer({1.0F, -1.0F, 1.0F}), std::runtime_error);
 }
 
+TEST_CASE("hopfield inference uses static stored 3-value pattern weights",
+          "[hopfield][runtime]")
+{
+    auto skill = makeHopfieldSkill(3);
+    skill.setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F},
+                                                     {-1.0F, 0.0F, -1.0F},
+                                                     {1.0F, -1.0F, 0.0F}}),
+                         .biases = {}});
+
+    Model network;
+    network.addSkill(std::move(skill));
+
+    REQUIRE(network.infer({1.0F, -1.0F, 1.0F})
+            == Pattern{1.0F, -1.0F, 1.0F});
+}
+
+TEST_CASE("hopfield inference uses static stored 4-value pattern weights",
+          "[hopfield][runtime]")
+{
+    auto skill = makeHopfieldSkill(4);
+    skill.setParameters({.weights = Pattern::matrix({{0.0F, -1.0F, 1.0F, -1.0F},
+                                                     {-1.0F, 0.0F, -1.0F, 1.0F},
+                                                     {1.0F, -1.0F, 0.0F, -1.0F},
+                                                     {-1.0F, 1.0F, -1.0F, 0.0F}}),
+                         .biases = {}});
+
+    Model network;
+    network.addSkill(std::move(skill));
+
+    REQUIRE(network.infer({1.0F, -1.0F, 1.0F, -1.0F})
+            == Pattern{1.0F, -1.0F, 1.0F, -1.0F});
+}
+
 TEST_CASE("hopfield coach keeps diagonal zero and weights symmetric", "[hopfield]")
 {
     Model network;
