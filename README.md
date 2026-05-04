@@ -1,76 +1,39 @@
-# Neural Networks: Hopfield, Perceptron, and Feedforward Networks
+# Network Runtime Library
 
-This project implements classic neural network models in C++ for associative memory, pattern recognition, and supervised learning. It now supports **Hopfield networks**, **single-layer perceptrons**, and **multilayer feedforward (MLP) networks** with modular, extensible OOP design.
+Small C++23 runtime inference library for simple neural-network style layers.
+The project currently focuses on deterministic forward inference, explicit
+parameter ownership on layers, and a compact test suite around runtime behavior.
 
 ## Features
 
-- **Modular OOP design:** Core abstractions for `Model`, runtime `Layer`s, gradient engines, optimizers, and learning rules allow easy extension and swapping of components.
-- **Feedforward (MLP) network:** Supports arbitrary depth, customizable layer sizes, and trainer-selected optimization rules (SGD, etc.).
-- **Perceptron:** Classic single-layer perceptron for supervised learning.
-- **Hopfield network:** Associative memory with Hebbian learning for binary pattern storage and recall.
-- **Flexible learning rules:** Learning algorithms (SGD, Hebbian, etc.) are implemented separately and applied by optimizers/trainers instead of runtime layers.
+- `Model` composes runtime `Layer` instances in order.
+- Parameterized layers own their weights and biases directly.
+- Supported runtime layers:
+  - `DenseLayer`
+  - `ConvolutionalLayer`
+  - `FlattenLayer`
+  - `HopfieldLayer`
+- Shared tensor utilities for vectors, matrices, shaped storage, and basic
+  operations used by inference.
+- Runtime fixtures cover OR, AND, XOR, perceptron, Hopfield recall, and 1D
+  convolution behavior.
 
-## Supported Networks
+## Build
 
-- **Feedforward (MLP) Network:**  
-  - Arbitrary number of layers and neurons per layer.
-  - Pluggable activation functions (sigmoid, ReLU, etc.).
-  - Stochastic Gradient Descent (SGD) through the training optimizer.
-- **Perceptron Network:**  
-  - Single-layer, supervised learning with step activation.
-- **Hopfield Network:**  
-  - Unsupervised associative memory with Hebbian learning.
+Dependencies:
 
-## How It Works
-
-1. **Define Patterns:**  
-   Patterns (e.g., 8x8 or 16x16 binary images) are stored as arrays of -1s and +1s (Hopfield) or 0s and 1s (Perceptron/MLP).
-
-2. **Learning:**  
-   - **Feedforward/Perceptron:**  
-     Supervised learning using gradient engines and optimizers.  
-   - **Hopfield:**  
-     Unsupervised Hebbian rule:  
-
-3. **Recall/Inference:**  
-   - **Feedforward/Perceptron:**  
-     Forward pass through the network to compute outputs.
-   - **Hopfield:**  
-     Iterative update until convergence to a stored pattern.
-
-4. **Visualization:**  
-   Patterns and outputs can be printed as ASCII art in the terminal for easy inspection.
-
-## Build Instructions
-
-### Dependencies
-
-- **C++23 compiler** (e.g., g++ 13+ or clang++ 16+)
-- **OpenCV 4** (for image loading)
-- **CMake 3.10+**
-
-## Building the Project
-
-This project builds both a reusable library (`NetworkLib`) and an executable (`Network`) when built directly.
-
-### Steps
+- CMake 3.20+
+- C++23 compiler
+- Catch2 3 for tests
 
 ```sh
-# Clone the repository
-git clone <your-repo-url>
-cd NeuralNetworksUI/NeuralNetwork
-
-# Create a build directory and compile
-mkdir build
-cd build
-cmake ..
-make
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-- The static/shared library `NetworkLib` will be built.
-- The executable `Network` will be built if you build this project directly.
+When built directly, the project creates:
 
-## Notes
-
-- When used as a dependency in another CMake project, only the library is built.
-- Make sure OpenCV is installed and discoverable by CMake.
+- `NetworkLib`: reusable runtime library
+- `Network`: tiny executable that runs a static XOR inference fixture
+- `NetworkTests`: Catch2 test executable, when `BUILD_TESTING` is enabled

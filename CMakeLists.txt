@@ -77,12 +77,6 @@ if(ENABLE_COVERAGE)
     add_link_options(--coverage)
 endif()
 
-find_package(OpenCV REQUIRED)
-
-set(LIBRARIES
-    ${OpenCV_LIBS}
-)
-
 set(SOURCES
     src/base/Layer.cpp
     src/base/Model.cpp
@@ -129,7 +123,7 @@ add_library(NetworkLib
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     # Building directly
     add_executable(Network main.cpp)
-    target_link_libraries(Network PRIVATE NetworkLib ${LIBRARIES})
+    target_link_libraries(Network PRIVATE NetworkLib)
 
     target_compile_options(Network PRIVATE
     -Wall
@@ -143,7 +137,6 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     )
 
     target_include_directories(Network PRIVATE 
-        ${OpenCV_INCLUDE_DIRS} 
         ${CMAKE_SOURCE_DIR}/include
     )
 
@@ -208,6 +201,5 @@ target_compile_options(NetworkLib PRIVATE
 
 
 target_include_directories(NetworkLib PUBLIC 
-    ${OpenCV_INCLUDE_DIRS} 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

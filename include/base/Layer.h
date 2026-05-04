@@ -56,9 +56,6 @@ struct FlattenLayerRecipe : LayerRecipe
     Shape expectedOutputShape() const;
 };
 
-template<typename LayerType, typename RecipeType>
-std::unique_ptr<LayerType> makeLayer(const RecipeType &recipe);
-
 class Layer
 {
 protected:

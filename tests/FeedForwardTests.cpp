@@ -120,7 +120,7 @@ TEST_CASE("feedforward inference rejects missing layers and invalid input sizes"
     REQUIRE_THROWS_AS(network.infer({1.0F}), std::runtime_error);
 }
 
-TEST_CASE("feedforward inference uses trained XOR fixture weights",
+TEST_CASE("feedforward inference uses static XOR fixture weights",
           "[feedforward][dense][runtime]")
 {
     Model network;

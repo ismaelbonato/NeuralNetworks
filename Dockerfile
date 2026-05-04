@@ -30,8 +30,6 @@ RUN apt-get update && apt-get install -y \
     lcov \
     gcovr \
     pkg-config \
-    libopencv-dev \
-    libboost-date-time-dev \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 \
     && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 100 \
