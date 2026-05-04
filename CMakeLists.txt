@@ -96,7 +96,6 @@ set(HEADERS
     include/base/ActivationFunction.h
     include/base/ConvolutionGeometry.h
     include/base/Layer.h
-    include/base/LayerFactory.h
     include/base/Model.h
     include/base/Parameters.h
     include/base/Tensor.h

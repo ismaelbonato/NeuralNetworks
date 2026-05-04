@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/ConvolutionalLayer.h"
 
@@ -37,7 +36,7 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     weights.at({0, 0, 1}) = 0.0F;
     weights.at({0, 0, 2}) = 1.0F;
 
-    auto layer = makeLayer<ConvolutionalLayer>(config);
+    auto layer = std::make_unique<ConvolutionalLayer>(config);
     layer->setParameters({.weights = weights, .biases = {0.0F}});
     net.addLayer(std::move(layer));
     Pattern output = net.infer(signal);

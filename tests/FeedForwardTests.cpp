@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 
@@ -26,7 +25,7 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.inputSize = inputSize;
     config.outputSize = outputSize;
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = std::make_unique<DenseLayer>(config);
     return layer;
 }
 

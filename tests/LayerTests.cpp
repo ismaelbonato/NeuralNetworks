@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LayerFactory.h"
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
 #include "layers/FlattenLayer.h"
@@ -24,7 +23,7 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     denseRecipe.inputSize = inputSize;
     denseRecipe.outputSize = outputSize;
 
-    return makeLayer<DenseLayer>(denseRecipe);
+    return std::make_unique<DenseLayer>(denseRecipe);
 }
 
 std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
@@ -35,7 +34,7 @@ std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
     config.info = "deterministic test layer";
     config.expectedInputShape = inputShape;
 
-    return makeLayer<FlattenLayer>(config);
+    return std::make_unique<FlattenLayer>(config);
 }
 
 void requireClose(const Scalar actual, const Scalar expected)
@@ -132,7 +131,7 @@ TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = std::make_unique<DenseLayer>(config);
 
     REQUIRE(layer->getInputSize() == 2);
     REQUIRE(layer->getOutputSize() == 1);
@@ -152,7 +151,7 @@ TEST_CASE("layer recipe rejects inconsistent flat size and shape", "[layer][shap
     config.expectedInputShape = {2};
     config.expectedOutputShape = {1};
 
-    REQUIRE_THROWS_AS(makeLayer<DenseLayer>(config), std::invalid_argument);
+    REQUIRE_THROWS_AS(std::make_unique<DenseLayer>(config), std::invalid_argument);
 }
 
 TEST_CASE("flatten layer reshapes explicit input shape to a vector", "[layer][flatten]")
@@ -280,7 +279,7 @@ TEST_CASE("model can infer through added layers", "[model][layer]")
     config.inputSize = 1;
     config.outputSize = 1;
 
-    auto layer = makeLayer<DenseLayer>(config);
+    auto layer = std::make_unique<DenseLayer>(config);
     layer->setParameters({
         .weights = Pattern::matrix({{2.0F}}),
         .biases = {-1.0F},

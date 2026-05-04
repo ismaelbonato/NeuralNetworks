@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LayerFactory.h"
 #include "layers/HopfieldLayer.h"
 #include "base/Model.h"
 
@@ -25,7 +24,7 @@ HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)
 
 std::unique_ptr<HopfieldLayer> makeHopfieldLayer(const size_t size)
 {
-    return makeLayer<HopfieldLayer>(makeHopfieldRecipe(size));
+    return std::make_unique<HopfieldLayer>(makeHopfieldRecipe(size));
 }
 
 }

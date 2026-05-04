@@ -1,5 +1,4 @@
 #include "base/ActivationFunction.h"
-#include "base/LayerFactory.h"
 #include "layers/DenseLayer.h"
 #include "base/Model.h"
 
@@ -21,7 +20,7 @@ std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
     config.inputSize = 2;
     config.outputSize = outputSize;
 
-    return makeLayer<DenseLayer>(config);
+    return std::make_unique<DenseLayer>(config);
 }
 
 }
