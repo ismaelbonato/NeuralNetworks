@@ -1,3 +1,42 @@
 {
-    "cmake.useCMakePresets": "always"
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "[c]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "editor.rulers": [
+        80
+    ],
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "cmake.configureOnOpen": true,
+    "cmake.cmakePath": "/usr/bin/cmake",
+    "cmake.useCMakePresets": "always",
+    "cmake.buildBeforeRun": true,
+    "cmake.setBuildTargetSameAsLaunchTarget": true,
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "clangd.path": "/usr/bin/clangd-20",
+    "clangd.arguments": [
+        "--background-index",
+        "--clang-tidy",
+        "--completion-style=detailed",
+        "--header-insertion=iwyu",
+        "--compile-commands-dir=${workspaceFolder}/build"
+    ],
+    "coverage-gutters.coverageFileNames": [
+        "coverage.lcov",
+        "lcov.info",
+        "coverage.info",
+        "cov.xml",
+        "coverage.xml"
+    ],
+    "coverage-gutters.showLineCoverage": true,
+    "coverage-gutters.showRulerCoverage": true,
+    "coverage-gutters.showGutterCoverage": true,
+    "coverage-gutters.coverageBaseDir": "",
+    "cppcheck-official.path": "/usr/bin/cppcheck",
+    "cppcheck-official.standard": "c++23",
+    "cppcheck-official.minSeverity": "info",
+    "cppcheck-official.arguments": "--enable=warning,style,performance,portability --inline-suppr --language=c++ --suppress=missingIncludeSystem -I ${workspaceFolder}/include"
 }

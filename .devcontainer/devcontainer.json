@@ -14,49 +14,6 @@
   "features": {},
   "customizations": {
     "vscode": {
-      "settings": {
-        "editor.formatOnSave": true,
-        "[cpp]": {
-          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-        },
-        "[c]": {
-          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-        },
-        "editor.rulers": [80],
-        "cmake.configureOnOpen": true,
-        "cmake.generator": "Ninja",
-        "cmake.cmakePath": "/usr/bin/cmake",
-        "C_Cpp.default.compilerPath": "/usr/bin/clang++-20",
-        "cmake.configureSettings": {
-          "CMAKE_C_COMPILER": "/usr/bin/clang-20",
-          "CMAKE_CXX_COMPILER": "/usr/bin/clang++-20"
-        },
-        "C_Cpp.intelliSenseEngine": "disabled",
-        "clangd.path": "/usr/bin/clangd-20",
-        "clangd.arguments": [
-          "--background-index",
-          "--clang-tidy",
-          "--completion-style=detailed",
-          "--header-insertion=iwyu",
-          "--compile-commands-dir=${workspaceFolder}/build"
-        ],
-        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
-        "coverage-gutters.coverageFileNames": [
-          "coverage.lcov",
-          "lcov.info",
-          "coverage.info",
-          "cov.xml",
-          "coverage.xml"
-        ],
-        "coverage-gutters.showLineCoverage": true,
-        "coverage-gutters.showRulerCoverage": true,
-        "coverage-gutters.showGutterCoverage": true,
-        "coverage-gutters.coverageBaseDir": "",
-        "cppcheck-official.path": "/usr/bin/cppcheck",
-        "cppcheck-official.standard": "c++23",
-        "cppcheck-official.minSeverity": "info",
-        "cppcheck-official.arguments": "--enable=warning,style,performance,portability --inline-suppr --language=c++ --suppress=missingIncludeSystem -I ${workspaceFolder}/include"
-      },
       "extensions": [
         "llvm-vs-code-extensions.vscode-clangd",
         "CppcheckSolutionsAB.cppcheck-official",
