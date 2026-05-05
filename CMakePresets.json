@@ -60,16 +60,100 @@
       "configurePreset": "gcc-debug"
     },
     {
+      "name": "gcc-debug-main",
+      "configurePreset": "gcc-debug",
+      "targets": [
+        "nn-runtime-main"
+      ]
+    },
+    {
+      "name": "gcc-debug-tests",
+      "configurePreset": "gcc-debug",
+      "targets": [
+        "nn-runtime-tests"
+      ]
+    },
+    {
+      "name": "gcc-debug-library",
+      "configurePreset": "gcc-debug",
+      "targets": [
+        "nn-runtime"
+      ]
+    },
+    {
       "name": "gcc-release",
       "configurePreset": "gcc-release"
+    },
+    {
+      "name": "gcc-release-main",
+      "configurePreset": "gcc-release",
+      "targets": [
+        "nn-runtime-main"
+      ]
+    },
+    {
+      "name": "gcc-release-tests",
+      "configurePreset": "gcc-release",
+      "targets": [
+        "nn-runtime-tests"
+      ]
+    },
+    {
+      "name": "gcc-release-library",
+      "configurePreset": "gcc-release",
+      "targets": [
+        "nn-runtime"
+      ]
     },
     {
       "name": "clang-debug",
       "configurePreset": "clang-debug"
     },
     {
+      "name": "clang-debug-main",
+      "configurePreset": "clang-debug",
+      "targets": [
+        "nn-runtime-main"
+      ]
+    },
+    {
+      "name": "clang-debug-tests",
+      "configurePreset": "clang-debug",
+      "targets": [
+        "nn-runtime-tests"
+      ]
+    },
+    {
+      "name": "clang-debug-library",
+      "configurePreset": "clang-debug",
+      "targets": [
+        "nn-runtime"
+      ]
+    },
+    {
       "name": "clang-release",
       "configurePreset": "clang-release"
+    },
+    {
+      "name": "clang-release-main",
+      "configurePreset": "clang-release",
+      "targets": [
+        "nn-runtime-main"
+      ]
+    },
+    {
+      "name": "clang-release-tests",
+      "configurePreset": "clang-release",
+      "targets": [
+        "nn-runtime-tests"
+      ]
+    },
+    {
+      "name": "clang-release-library",
+      "configurePreset": "clang-release",
+      "targets": [
+        "nn-runtime"
+      ]
     }
   ],
   "testPresets": [
