@@ -2,6 +2,8 @@
 .vscode/
 !.vscode/
 !.vscode/settings.json
+.vscode/launch.json
+
 
 # dynamic analysis tools
 callgrind*
