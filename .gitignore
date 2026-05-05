@@ -1,10 +1,7 @@
 # Visual studio codium
 .vscode/
+!.vscode/
 !.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
 
 # dynamic analysis tools
 callgrind*
@@ -34,6 +31,10 @@ coverage/
 
 # kate
 *kate-swp
+
+# kdevelop
+*.kdev4
+*.kdev5
 
 # Compiled Object files
 *.slo
