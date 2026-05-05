@@ -14,7 +14,7 @@
     "cmake.cmakePath": "/usr/bin/cmake",
     "cmake.useCMakePresets": "always",
     "cmake.buildBeforeRun": true,
-    "cmake.setBuildTargetSameAsLaunchTarget": true,
+    "cmake.setBuildTargetSameAsLaunchTarget": false,
     "C_Cpp.intelliSenseEngine": "disabled",
     "clangd.path": "/usr/bin/clangd-20",
     "clangd.arguments": [

@@ -56,11 +56,14 @@
   ],
   "buildPresets": [
     {
-      "name": "gcc-debug",
-      "configurePreset": "gcc-debug"
+      "name": "gcc-debug-all",
+      "configurePreset": "gcc-debug",
+      "targets": [
+        "all"
+      ]
     },
     {
-      "name": "gcc-debug-main",
+      "name": "gcc-debug-executable",
       "configurePreset": "gcc-debug",
       "targets": [
         "nn-runtime-main"
@@ -81,11 +84,14 @@
       ]
     },
     {
-      "name": "gcc-release",
-      "configurePreset": "gcc-release"
+      "name": "gcc-release-all",
+      "configurePreset": "gcc-release",
+      "targets": [
+        "all"
+      ]
     },
     {
-      "name": "gcc-release-main",
+      "name": "gcc-release-executable",
       "configurePreset": "gcc-release",
       "targets": [
         "nn-runtime-main"
@@ -106,11 +112,14 @@
       ]
     },
     {
-      "name": "clang-debug",
-      "configurePreset": "clang-debug"
+      "name": "clang-debug-all",
+      "configurePreset": "clang-debug",
+      "targets": [
+        "all"
+      ]
     },
     {
-      "name": "clang-debug-main",
+      "name": "clang-debug-executable",
       "configurePreset": "clang-debug",
       "targets": [
         "nn-runtime-main"
@@ -131,11 +140,14 @@
       ]
     },
     {
-      "name": "clang-release",
-      "configurePreset": "clang-release"
+      "name": "clang-release-all",
+      "configurePreset": "clang-release",
+      "targets": [
+        "all"
+      ]
     },
     {
-      "name": "clang-release-main",
+      "name": "clang-release-executable",
       "configurePreset": "clang-release",
       "targets": [
         "nn-runtime-main"
