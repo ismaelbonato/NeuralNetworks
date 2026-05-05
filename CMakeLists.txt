@@ -126,34 +126,37 @@ if(CPPCHECK_EXECUTABLE)
     )
 endif()
 
-add_library(nn-runtime
+add_library(${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
 )
 
-target_include_directories(nn-runtime PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-network_enable_warnings(nn-runtime)
+network_enable_warnings(${PROJECT_NAME})
 
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
-    add_executable(nn-runtime-main main.cpp)
+    set(MAIN_EXECUTABLE "${PROJECT_NAME}-main")
+    set(TEST_EXECUTABLE "${PROJECT_NAME}-tests")
 
-    target_link_libraries(nn-runtime-main PRIVATE
-        nn-runtime
+    add_executable(${MAIN_EXECUTABLE} main.cpp)
+
+    target_link_libraries(${MAIN_EXECUTABLE} PRIVATE
+        ${PROJECT_NAME}
     )
 
-    target_include_directories(nn-runtime-main PRIVATE
+    target_include_directories(${MAIN_EXECUTABLE} PRIVATE
         ${CMAKE_SOURCE_DIR}/include
     )
 
-    network_enable_warnings(nn-runtime-main)
+    network_enable_warnings(${MAIN_EXECUTABLE})
 
     if(BUILD_TESTING)
         find_package(Catch2 3 REQUIRED)
 
-        add_executable(nn-runtime-tests
+        add_executable(${TEST_EXECUTABLE}
             tests/ActivationTests.cpp
             tests/ConvolutionGeometryTests.cpp
             tests/ConvolutionalLayerTests.cpp
@@ -165,13 +168,13 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
             tests/TensorTests.cpp
         )
 
-        target_link_libraries(nn-runtime-tests PRIVATE
-            nn-runtime
+        target_link_libraries(${TEST_EXECUTABLE} PRIVATE
+            ${PROJECT_NAME}
             Catch2::Catch2WithMain
         )
 
         include(Catch)
-        catch_discover_tests(nn-runtime-tests)
+        catch_discover_tests(${TEST_EXECUTABLE})
 
         if(ENABLE_COVERAGE)
             add_custom_target(coverage
@@ -187,7 +190,7 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
                     --html-details ${CMAKE_BINARY_DIR}/coverage.html
                     --print-summary
                 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS nn-runtime-tests
+                DEPENDS ${TEST_EXECUTABLE}
                 COMMENT "Running tests and generating coverage report"
                 VERBATIM
             )
