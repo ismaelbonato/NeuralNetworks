@@ -1,7 +1,7 @@
 {
   "name": "Neural Networks Dev Container",
   "dockerComposeFile": "../docker-compose.yml",
-  "service": "dev-cpp",
+  "service": "dev-nn-runtime",
   "workspaceFolder": "/home/${localEnv:USER}/workspace",
   "initializeCommand": "bash setEnv.sh",
   "shutdownAction": "stopCompose",

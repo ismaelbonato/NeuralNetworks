@@ -1,5 +1,5 @@
 services:
-  dev-cpp:
+  dev-nn-runtime:
     build:
       context: .
       dockerfile: Dockerfile
@@ -7,12 +7,12 @@ services:
         USERNAME: ${USER}
         UID: ${USER_ID}
         GID: ${GROUP_ID}
-    container_name: dev-cpp-container
+    container_name: dev-nn-runtime-container
     volumes:
       - .:/home/${USER}/workspace
       - ~/.ssh:/home/${USER}/.ssh:ro
       - ~/.codex-devcontainer:/home/${USER}/.codex
     working_dir: /home/${USER}/workspace
     command: sleep infinity
-    hostname: NeuralNetworks
+    hostname: nnRuntimeContainer
     restart: "no"
