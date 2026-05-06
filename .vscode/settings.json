@@ -15,6 +15,7 @@
     "cmake.useCMakePresets": "always",
     "cmake.buildBeforeRun": true,
     "cmake.setBuildTargetSameAsLaunchTarget": false,
+    "cmake.copyCompileCommands": "${workspaceFolder}/.cache/clangd/compile_commands.json",
     "C_Cpp.intelliSenseEngine": "disabled",
     "clangd.path": "/usr/bin/clangd-20",
     "clangd.arguments": [
@@ -22,7 +23,7 @@
         "--clang-tidy",
         "--completion-style=detailed",
         "--header-insertion=iwyu",
-        "--compile-commands-dir=${workspaceFolder}/build"
+        "--compile-commands-dir=${workspaceFolder}/.cache/clangd"
     ],
     "coverage-gutters.coverageFileNames": [
         "coverage.lcov",

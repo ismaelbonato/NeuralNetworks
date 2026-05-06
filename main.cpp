@@ -3,6 +3,7 @@
 #include "layers/DenseLayer.h"
 
 #include <iostream>
+#include <memory>
 
 using namespace nn;
 
