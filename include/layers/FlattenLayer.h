@@ -3,6 +3,8 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
+namespace nn {
+
 class FlattenLayer : public Layer
 {
 public:
@@ -13,3 +15,5 @@ public:
 protected:
     Pattern forward(const Pattern &input) const override;
 };
+
+} // namespace nn

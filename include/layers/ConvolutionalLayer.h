@@ -2,6 +2,8 @@
 
 #include "base/Layer.h"
 
+namespace nn {
+
 class ConvolutionalLayer : public Layer
 {
 public:
@@ -31,3 +33,5 @@ private:
     bool hasWeights() const;
     bool hasBias() const;
 };
+
+} // namespace nn

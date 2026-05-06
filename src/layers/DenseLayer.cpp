@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace nn {
+
 namespace
 {
 Shape denseInputShape(const DenseLayerRecipe &recipe)
@@ -80,3 +82,5 @@ Pattern DenseLayer::weightedInput(const Pattern &input,
     Pattern sums = input.matVec(parameters.weights);
     return hasBias() ? sums + parameters.biases : sums;
 }
+
+} // namespace nn

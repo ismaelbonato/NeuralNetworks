@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace nn {
+
 FlattenLayer::FlattenLayer(const FlattenLayerRecipe &newRecipe)
     : Layer(newRecipe,
             newRecipe.expectedInputShape,
@@ -20,3 +22,5 @@ Pattern FlattenLayer::forward(const Pattern &input) const
     output.reshape(getExpectedOutputShape());
     return output;
 }
+
+} // namespace nn

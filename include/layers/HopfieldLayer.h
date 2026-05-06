@@ -3,6 +3,8 @@
 #include "base/Layer.h"
 #include "base/Types.h"
 
+namespace nn {
+
 class HopfieldLayer : public Layer
 {
 public:
@@ -32,3 +34,5 @@ private:
     Pattern recall(const Pattern &input,
                    const Parameters &parameters) const;
 };
+
+} // namespace nn

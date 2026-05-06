@@ -2,6 +2,8 @@
 
 #include "base/Layer.h"
 
+namespace nn {
+
 class DenseLayer : public Layer
 {
 public:
@@ -26,3 +28,5 @@ private:
     bool hasWeights() const;
     bool hasBias() const;
 };
+
+} // namespace nn

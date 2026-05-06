@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <stdexcept>
 
+namespace nn {
+
 struct ConvolutionGeometry
 {
     Shape expectedInputShape;
@@ -87,3 +89,5 @@ private:
         return ((paddedInput - kernel) / stride) + 1;
     }
 };
+
+} // namespace nn

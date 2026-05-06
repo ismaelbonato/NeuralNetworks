@@ -1,6 +1,8 @@
 #include "layers/HopfieldLayer.h"
 #include <stdexcept>
 
+namespace nn {
+
 namespace
 {
 Shape hopfieldShape(const HopfieldLayerRecipe &recipe)
@@ -100,3 +102,5 @@ Pattern HopfieldLayer::recall(const Pattern &input,
     } while (state != prev_state);
     return state;
 }
+
+} // namespace nn

@@ -7,6 +7,8 @@
 
 #include <utility>
 
+using namespace nn;
+
 TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
           "[convolution][1d]")
 {

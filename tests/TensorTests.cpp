@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace nn;
+
 TEST_CASE("tensor keeps value initializer lists as one-dimensional data",
           "[tensor]")
 {

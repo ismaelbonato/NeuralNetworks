@@ -3,7 +3,8 @@
 #include "layers/DenseLayer.h"
 
 #include <iostream>
-#include <memory>
+
+using namespace nn;
 
 namespace {
 std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,

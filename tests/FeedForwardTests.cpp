@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <utility>
 
+using namespace nn;
+
 namespace
 {
 constexpr Scalar tolerance = 0.0001F;

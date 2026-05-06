@@ -10,6 +10,8 @@
 #include <optional>
 #include <string>
 
+namespace nn {
+
 struct LayerRecipe
 {
     std::string name;
@@ -98,3 +100,5 @@ public:
 
     Pattern infer(const Pattern &input) const;
 };
+
+} // namespace nn

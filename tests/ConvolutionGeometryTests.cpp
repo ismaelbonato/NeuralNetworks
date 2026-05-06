@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace nn;
+
 TEST_CASE("convolution geometry computes valid output and parameter shapes",
           "[convolution][shape]")
 {

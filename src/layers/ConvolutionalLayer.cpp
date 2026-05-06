@@ -1,6 +1,8 @@
 #include "layers/ConvolutionalLayer.h"
 #include <stdexcept>
 
+namespace nn {
+
 namespace {
 
 size_t convolutionalOutputLength(const ConvolutionalLayerRecipe &recipe)
@@ -110,3 +112,5 @@ const ConvolutionalLayerRecipe &ConvolutionalLayer::getConvolutionalRecipe() con
 {
     return convolutionalRecipe;
 }
+
+} // namespace nn

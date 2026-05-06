@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <vector>
 
+namespace nn {
+
 struct Shape
 {
     std::vector<size_t> dimensions;
@@ -632,3 +634,5 @@ void Tensor<T>::updateStrides()
         dimensionStrides[i - 1] = dimensionStrides[i] * dimensions[i];
     }
 }
+
+} // namespace nn

@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+namespace nn {
+
 namespace {
 bool isSizeCompatibleWithShape(const size_t size, const Shape &shape)
 {
@@ -203,3 +205,5 @@ Pattern Layer::activate(const Pattern &values) const
     return values.map(
         [this](Scalar value) { return (*recipe.activation)(value); });
 }
+
+} // namespace nn

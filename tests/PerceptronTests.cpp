@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+using namespace nn;
+
 namespace
 {
 std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)

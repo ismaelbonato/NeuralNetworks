@@ -3,6 +3,8 @@
 #include <stdexcept>
 #include <utility>
 
+namespace nn {
+
 Model::Model() = default;
 
 Model::~Model() = default;
@@ -51,3 +53,5 @@ Pattern Model::infer(const Pattern &input)
     }
     return output;
 }
+
+} // namespace nn

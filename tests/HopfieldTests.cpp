@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+using namespace nn;
+
 namespace
 {
 HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)

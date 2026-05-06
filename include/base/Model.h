@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+namespace nn {
+
 class Model
 {
 protected:
@@ -24,3 +26,5 @@ public:
 
     virtual Pattern infer(const Pattern &input);
 };
+
+} // namespace nn

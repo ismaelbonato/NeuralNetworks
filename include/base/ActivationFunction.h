@@ -4,6 +4,8 @@
 #include <limits>
 #include <algorithm>
 
+namespace nn {
+
 template<typename T>
 class ActivationFunction
 {
@@ -260,3 +262,5 @@ public:
         return std::exp(-x);
     }
 };
+
+} // namespace nn
