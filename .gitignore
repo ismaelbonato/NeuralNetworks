@@ -1,3 +1,6 @@
+# local devcontainer environment
+.env
+
 # Visual studio codium
 .vscode/
 !.vscode/
