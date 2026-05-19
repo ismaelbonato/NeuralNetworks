@@ -11,9 +11,10 @@ endif()
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_CPPCHECK "Run cppcheck as part of C++ builds" OFF)
-option(ENABLE_CLANG_TIDY "Run clang-tidy as part of C++ builds" OFF)
+option(ENABLE_CPPCHECK "Run cppcheck as part of C++ builds" ON)
+option(ENABLE_CLANG_TIDY "Run clang-tidy as part of C++ builds" ON)
 option(ENABLE_COVERAGE "Build with coverage instrumentation and add a coverage target" OFF)
+option(ENABLE_PROTOBUF "Build protobuf model serialization support" ON)
 
 function(network_enable_warnings target)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -89,6 +90,21 @@ if(ENABLE_COVERAGE)
     add_link_options(--coverage)
 endif()
 
+if(ENABLE_PROTOBUF)
+    find_package(Protobuf REQUIRED)
+    add_subdirectory(proto)
+
+    list(APPEND PROTO_SRCS
+        src/serialization/ModelSerialization.cpp
+    )
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set_source_files_properties(${PROTO_SRCS} PROPERTIES
+            COMPILE_OPTIONS -Wno-sign-conversion
+        )
+    endif()
+endif()
+
 set(SOURCES
     src/base/Layer.cpp
     src/base/Model.cpp
@@ -96,6 +112,7 @@ set(SOURCES
     src/layers/DenseLayer.cpp
     src/layers/FlattenLayer.cpp
     src/layers/HopfieldLayer.cpp
+    ${PROTO_SRCS}
 )
 
 set(HEADERS
@@ -112,13 +129,18 @@ set(HEADERS
     include/layers/HopfieldLayer.h
 )
 
+set(CPPCHECK_SOURCES ${SOURCES})
+if(ENABLE_PROTOBUF)
+    list(REMOVE_ITEM CPPCHECK_SOURCES ${PROTO_SRCS})
+endif()
+
 if(CPPCHECK_EXECUTABLE)
     add_custom_target(cppcheck
         COMMAND ${CPPCHECK_EXECUTABLE}
             ${CPPCHECK_ARGS}
             -I ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-            ${SOURCES}
+            ${CPPCHECK_SOURCES}
             ${HEADERS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Running cppcheck"
@@ -131,9 +153,23 @@ add_library(${PROJECT_NAME}
     ${HEADERS}
 )
 
+if(ENABLE_PROTOBUF)
+    add_dependencies(${PROJECT_NAME} nn-runtime-protobuf-sources)
+endif()
+
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+if(ENABLE_PROTOBUF)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/generated/proto
+    )
+
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        protobuf::libprotobuf
+    )
+endif()
 
 network_enable_warnings(${PROJECT_NAME})
 

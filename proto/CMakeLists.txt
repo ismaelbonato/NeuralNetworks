@@ -1,0 +1,23 @@
+set(PROTO_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/nn/model.proto
+)
+
+set(PROTO_GENERATED_DIR
+    ${PROJECT_BINARY_DIR}/generated/proto
+)
+
+file(MAKE_DIRECTORY ${PROTO_GENERATED_DIR})
+
+protobuf_generate(
+    LANGUAGE cpp
+    OUT_VAR PROTO_SRCS
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    PROTOC_OUT_DIR ${PROTO_GENERATED_DIR}
+    PROTOS ${PROTO_FILES}
+)
+
+add_custom_target(nn-runtime-protobuf-sources
+    DEPENDS ${PROTO_SRCS}
+)
+
+set(PROTO_SRCS ${PROTO_SRCS} PARENT_SCOPE)
