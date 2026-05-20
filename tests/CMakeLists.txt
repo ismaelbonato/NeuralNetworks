@@ -12,6 +12,7 @@ add_executable(${TEST_EXECUTABLE}
     PerceptronTests.cpp
     SmokeTests.cpp
     TensorTests.cpp
+    SerializationTests.cpp
 )
 
 target_link_libraries(${TEST_EXECUTABLE} PRIVATE

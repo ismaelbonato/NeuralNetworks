@@ -94,8 +94,21 @@ if(ENABLE_PROTOBUF)
     find_package(Protobuf REQUIRED)
     add_subdirectory(proto)
 
-    list(APPEND PROTO_SRCS
+    set(PROTO_WRAPPER_SRCS
         src/serialization/ModelSerialization.cpp
+    )
+
+    set(PROTO_LINT_SKIPPED_SRCS
+        ${PROTO_SRCS}
+        ${PROTO_WRAPPER_SRCS}
+    )
+
+    list(APPEND PROTO_SRCS
+        ${PROTO_WRAPPER_SRCS}
+    )
+
+    set_source_files_properties(${PROTO_LINT_SKIPPED_SRCS} PROPERTIES
+        SKIP_LINTING TRUE
     )
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
