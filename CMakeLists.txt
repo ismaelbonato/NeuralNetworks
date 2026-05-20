@@ -175,7 +175,6 @@ network_enable_warnings(${PROJECT_NAME})
 
 if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     set(MAIN_EXECUTABLE "${PROJECT_NAME}-main")
-    set(TEST_EXECUTABLE "${PROJECT_NAME}-tests")
 
     add_executable(${MAIN_EXECUTABLE} main.cpp)
 
@@ -190,46 +189,6 @@ if(PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
     network_enable_warnings(${MAIN_EXECUTABLE})
 
     if(BUILD_TESTING)
-        find_package(Catch2 3 REQUIRED)
-
-        add_executable(${TEST_EXECUTABLE}
-            tests/ActivationTests.cpp
-            tests/ConvolutionGeometryTests.cpp
-            tests/ConvolutionalLayerTests.cpp
-            tests/FeedForwardTests.cpp
-            tests/HopfieldTests.cpp
-            tests/LayerTests.cpp
-            tests/PerceptronTests.cpp
-            tests/SmokeTests.cpp
-            tests/TensorTests.cpp
-        )
-
-        target_link_libraries(${TEST_EXECUTABLE} PRIVATE
-            ${PROJECT_NAME}
-            Catch2::Catch2WithMain
-        )
-
-        include(Catch)
-        catch_discover_tests(${TEST_EXECUTABLE})
-
-        if(ENABLE_COVERAGE)
-            add_custom_target(coverage
-                COMMAND ${CMAKE_CTEST_COMMAND}
-                    --test-dir ${CMAKE_BINARY_DIR}
-                    --output-on-failure
-                COMMAND ${GCOVR_EXECUTABLE}
-                    --root ${CMAKE_SOURCE_DIR}
-                    --gcov-executable ${GCOVR_GCOV_EXECUTABLE}
-                    --filter ${CMAKE_SOURCE_DIR}/include
-                    --filter ${CMAKE_SOURCE_DIR}/src
-                    --exclude ${CMAKE_SOURCE_DIR}/tests
-                    --html-details ${CMAKE_BINARY_DIR}/coverage.html
-                    --print-summary
-                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-                DEPENDS ${TEST_EXECUTABLE}
-                COMMENT "Running tests and generating coverage report"
-                VERBATIM
-            )
-        endif()
+        add_subdirectory(tests)
     endif()
 endif()
