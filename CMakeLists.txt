@@ -18,31 +18,7 @@ include(cmake/Coverage.cmake)
 option(ENABLE_PROTOBUF "Build protobuf model serialization support" ON)
 
 if(ENABLE_PROTOBUF)
-    find_package(Protobuf REQUIRED)
     add_subdirectory(proto)
-
-    set(PROTO_WRAPPER_SRCS
-        src/serialization/ModelSerialization.cpp
-    )
-
-    set(PROTO_LINT_SKIPPED_SRCS
-        ${PROTO_SRCS}
-        ${PROTO_WRAPPER_SRCS}
-    )
-
-    list(APPEND PROTO_SRCS
-        ${PROTO_WRAPPER_SRCS}
-    )
-
-    set_source_files_properties(${PROTO_LINT_SKIPPED_SRCS} PROPERTIES
-        SKIP_LINTING TRUE
-    )
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        set_source_files_properties(${PROTO_SRCS} PROPERTIES
-            COMPILE_OPTIONS -Wno-sign-conversion
-        )
-    endif()
 endif()
 
 set(SOURCES
@@ -84,21 +60,13 @@ add_library(${PROJECT_NAME}
     ${HEADERS}
 )
 
-if(ENABLE_PROTOBUF)
-    add_dependencies(${PROJECT_NAME} nn-runtime-protobuf-sources)
-endif()
-
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 if(ENABLE_PROTOBUF)
-    target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/generated/proto
-    )
-
     target_link_libraries(${PROJECT_NAME} PRIVATE
-        protobuf::libprotobuf
+        nn-runtime-protobuf
     )
 endif()
 
