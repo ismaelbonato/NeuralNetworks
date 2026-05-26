@@ -43,6 +43,7 @@ set(HEADERS
     include/layers/DenseLayer.h
     include/layers/FlattenLayer.h
     include/layers/HopfieldLayer.h
+    include/serialization/ModelSerialization.h
 )
 
 set(CPPCHECK_SOURCES ${SOURCES})

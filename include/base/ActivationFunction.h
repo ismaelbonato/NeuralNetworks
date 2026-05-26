@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <limits>
 #include <algorithm>
+#include <string_view>
 
 namespace nn {
 
@@ -13,12 +14,15 @@ public:
     virtual ~ActivationFunction() = default;
     virtual T operator()(T x) const = 0;
     virtual T derivative(T x) const = 0;
+    virtual std::string_view name() const { return "unknown"; }
 };
 
 template<typename T>
 class IdentityActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "identity"; }
+
     inline T operator()(T x) const override
     {
         return x;
@@ -34,6 +38,8 @@ template<typename T>
 class SigmoidActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "sigmoid"; }
+
     inline T operator()(T x) const override
     {
         return static_cast<T>(1.0) / (static_cast<T>(1.0) + std::exp(-x));
@@ -49,6 +55,8 @@ template<typename T>
 class StepActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "step"; }
+
     inline T operator()(T x) const override
     {
         return (x >= 0) ? static_cast<T>(1.0) : static_cast<T>(0.0); // Step function
@@ -63,6 +71,8 @@ template<typename T>
 class StepPolarActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "step_polar"; }
+
     inline T operator()(T x) const override
     {
         return (x >= 0) ? static_cast<T>(1.0) : static_cast<T>(-1.0); // Step function
@@ -79,6 +89,8 @@ template<typename T>
 class ReLUActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "relu"; }
+
     inline T operator()(T x) const override
     {
         return (x > static_cast<T>(0)) ? x : static_cast<T>(0);
@@ -93,6 +105,8 @@ template<typename T>
 class TanhActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "tanh"; }
+
     inline T operator()(T x) const override
     {
         return std::tanh(x);
@@ -109,6 +123,8 @@ template<typename T>
 class LogSigmoidActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "log_sigmoid"; }
+
     inline T operator()(T x) const override
     {
         return std::log(static_cast<T>(1.0) / (static_cast<T>(1.0) + std::exp(-x)));
@@ -124,6 +140,8 @@ template<typename T>
 class LogActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "log"; }
+
     inline T operator()(T x) const override
     {
         // Handle domain: log is only defined for positive values
@@ -139,6 +157,8 @@ template<typename T>
 class SoftplusActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "softplus"; }
+
     inline T operator()(T x) const override
     {
         return std::log(static_cast<T>(1.0) + std::exp(x));
@@ -153,6 +173,8 @@ template<typename T>
 class LogCoshActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "log_cosh"; }
+
     inline T operator()(T x) const override
     {
         return std::log(std::cosh(x));
@@ -168,6 +190,8 @@ template<typename T>
 class ScaledTanhActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "scaled_tanh"; }
+
     inline T operator()(T x) const override
     {
         return (std::tanh(x) + static_cast<T>(1.0)) / static_cast<T>(2.0);
@@ -184,6 +208,8 @@ template<typename T>
 class HardSigmoidActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "hard_sigmoid"; }
+
     inline T operator()(T x) const override
     {
         return std::max(static_cast<T>(0.0), 
@@ -201,6 +227,8 @@ template<typename T>
 class SwishActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "swish"; }
+
     inline T operator()(T x) const override
     {
         return x / (static_cast<T>(1.0) + std::exp(-x)); // x * sigmoid(x)
@@ -217,6 +245,8 @@ class ScaledELUActivation : public ActivationFunction<T>
 {
     T alpha = static_cast<T>(1.0);
 public:
+    std::string_view name() const override { return "scaled_elu"; }
+
     inline T operator()(T x) const override
     {
         T elu = (x > static_cast<T>(0)) ? x : alpha * (std::exp(x) - static_cast<T>(1.0));
@@ -234,6 +264,8 @@ template<typename T>
 class MishActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "mish"; }
+
     inline T operator()(T x) const override
     {
         return x * std::tanh(std::log(static_cast<T>(1.0) + std::exp(x))); // x * tanh(softplus(x))
@@ -253,6 +285,8 @@ template<typename T>
 class NegativeExpActivation : public ActivationFunction<T>
 {
 public:
+    std::string_view name() const override { return "negative_exp"; }
+
     inline T operator()(T x) const override
     {
         return static_cast<T>(1.0) - std::exp(-x);

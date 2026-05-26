@@ -95,6 +95,11 @@ const std::shared_ptr<ActivationFunction<Scalar>> &Layer::getActivation() const
     return recipe.activation;
 }
 
+const LayerRecipe &Layer::getRecipe() const
+{
+    return recipe;
+}
+
 bool Layer::usesParameters() const
 {
     return false;
