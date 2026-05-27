@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace nn {
@@ -31,7 +32,7 @@ public:
     virtual Pattern infer(const Pattern &input);
 
     static Model loadFromFile(const std::string &file);
-    void saveToFile(const std::string &file);
+    void saveToFile(const std::string &file) const;
 };
 
 } // namespace nn

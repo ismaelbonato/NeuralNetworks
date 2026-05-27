@@ -2,7 +2,6 @@
 #include "base/Model.h"
 #include "layers/DenseLayer.h"
 #include "nn/model.pb.h"
-#include "serialization/ModelSerialization.h"
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -88,7 +87,7 @@ TEST_CASE("model serializer saves dense model as protobuf binary",
     Model model;
     model.addLayer(makeDenseLayer());
 
-    serialization::saveModelToFile(model, path.string());
+    model.saveToFile(path.string());
 
     REQUIRE(std::filesystem::exists(path));
 
@@ -139,8 +138,8 @@ TEST_CASE("model serializer loads saved dense model", "[serialization]")
     model.addLayer(makeDenseLayer());
     const Pattern before = model.infer({2.0F, -1.0F});
 
-    serialization::saveModelToFile(model, path.string());
-    Model loaded = serialization::loadModelFromFile(path.string());
+    model.saveToFile(path.string());
+    Model loaded = Model::loadFromFile(path.string());
     const Pattern after = loaded.infer({2.0F, -1.0F});
 
     REQUIRE(loaded.numLayers() == 1);
@@ -153,7 +152,7 @@ TEST_CASE("model serializer rejects missing model files", "[serialization][error
     const std::filesystem::path path = modelPath("missing-model.nn");
     std::filesystem::remove(path);
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }
 
@@ -165,7 +164,7 @@ TEST_CASE("model serializer rejects malformed model files", "[serialization][err
     output << "not a protobuf model";
     output.close();
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }
 
@@ -178,7 +177,7 @@ TEST_CASE("model serializer rejects unsupported format versions",
     addDenseProtoLayer(protoModel);
     writeProtoModel(protoModel, path);
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }
 
@@ -191,7 +190,7 @@ TEST_CASE("model serializer rejects unsupported activation names",
     addDenseProtoLayer(protoModel).set_activation("does_not_exist");
     writeProtoModel(protoModel, path);
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }
 
@@ -206,7 +205,7 @@ TEST_CASE("model serializer rejects invalid tensor value counts",
     layer.mutable_parameters()->mutable_weights()->add_values(1.0F);
     writeProtoModel(protoModel, path);
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }
 
@@ -223,6 +222,6 @@ TEST_CASE("model serializer rejects unsupported layer kinds",
     layer.mutable_flatten()->add_expected_input_shape(2);
     writeProtoModel(protoModel, path);
 
-    REQUIRE_THROWS_AS(serialization::loadModelFromFile(path.string()),
+    REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
                       std::runtime_error);
 }

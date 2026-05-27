@@ -19,7 +19,7 @@ Model Model::loadFromFile(const std::string &file)
     return serialization::loadModelFromFile(file);
 }
 
-void Model::saveToFile(const std::string &file)
+void Model::saveToFile(const std::string &file) const
 {
     serialization::saveModelToFile(*this, file);
 }

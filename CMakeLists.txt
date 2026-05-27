@@ -43,7 +43,6 @@ set(HEADERS
     include/layers/DenseLayer.h
     include/layers/FlattenLayer.h
     include/layers/HopfieldLayer.h
-    include/serialization/ModelSerialization.h
 )
 
 set(CPPCHECK_SOURCES ${SOURCES})
@@ -63,6 +62,10 @@ add_library(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 if(ENABLE_PROTOBUF)
