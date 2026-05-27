@@ -1,4 +1,5 @@
 #include "base/Model.h"
+#include "serialization/ModelSerialization.h"
 
 #include <stdexcept>
 #include <utility>
@@ -7,7 +8,21 @@ namespace nn {
 
 Model::Model() = default;
 
+Model::Model(Model &&) noexcept = default;
+
+Model &Model::operator=(Model &&) noexcept = default;
+
 Model::~Model() = default;
+
+Model Model::loadFromFile(const std::string &file)
+{
+    return serialization::loadModelFromFile(file);
+}
+
+void Model::saveToFile(const std::string &file)
+{
+    serialization::saveModelToFile(*this, file);
+}
 
 Layer &Model::addLayer(std::unique_ptr<Layer> layer)
 {
@@ -43,7 +58,8 @@ size_t Model::numLayers() const
 Pattern Model::infer(const Pattern &input)
 {
     if (layers.empty()) {
-        throw std::runtime_error("No layers exist in the model to perform inference.");
+        throw std::runtime_error(
+            "No layers exist in the model to perform inference.");
     }
 
     Pattern output = input;

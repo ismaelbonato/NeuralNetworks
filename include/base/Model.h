@@ -16,6 +16,10 @@ protected:
 
 public:
     Model();
+    Model(const Model &) = delete;
+    Model &operator=(const Model &) = delete;
+    Model(Model &&) noexcept;
+    Model &operator=(Model &&) noexcept;
     virtual ~Model();
 
     Layer &addLayer(std::unique_ptr<Layer> layer);
@@ -25,6 +29,9 @@ public:
     size_t numLayers() const;
 
     virtual Pattern infer(const Pattern &input);
+
+    static Model loadFromFile(const std::string &file);
+    void saveToFile(const std::string &file);
 };
 
 } // namespace nn
