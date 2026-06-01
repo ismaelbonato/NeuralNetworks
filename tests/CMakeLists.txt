@@ -4,7 +4,6 @@ set(TEST_EXECUTABLE "${PROJECT_NAME}-tests")
 
 add_executable(${TEST_EXECUTABLE}
     ActivationTests.cpp
-    ConvolutionGeometryTests.cpp
     ConvolutionalLayerTests.cpp
     FeedForwardTests.cpp
     HopfieldTests.cpp

@@ -41,9 +41,6 @@ public:
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
 private:
-    const ConvolutionalLayerRecipe &recipeConfig() const;
-    bool hasWeights() const;
-    bool hasBias() const;
-};
+    const ConvolutionalLayerRecipe &recipeConfig() const;};
 
 } // namespace nn

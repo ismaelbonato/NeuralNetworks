@@ -13,16 +13,16 @@ using namespace nn;
 namespace {
 constexpr Scalar tolerance = 0.0001F;
 
-std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize)
+std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputFeatures,
+                                           const size_t outputFeatures)
 {
     DenseLayerRecipe denseRecipe;
     denseRecipe.name = "test dense layer";
     denseRecipe.type = "DenseLayer";
     denseRecipe.info = "deterministic test layer";
     denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    denseRecipe.inputShape = {inputSize};
-    denseRecipe.outputShape = {outputSize};
+    denseRecipe.inputShape = {inputFeatures};
+    denseRecipe.outputShape = {outputFeatures};
 
     return std::make_unique<DenseLayer>(denseRecipe);
 }
@@ -137,7 +137,7 @@ TEST_CASE("layer parameter snapshots preserve weights and biases",
     REQUIRE(target->getParameters().biases == source->getParameters().biases);
 }
 
-TEST_CASE("layer recipe derives flat sizes from explicit shapes",
+TEST_CASE("layer recipe exposes explicit shapes",
           "[layer][shape]")
 {
     DenseLayerRecipe config;

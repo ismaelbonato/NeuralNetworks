@@ -66,16 +66,6 @@ Shape ConvolutionalLayer::expectedBiasShape() const
     return {recipe.outputChannels};
 }
 
-bool ConvolutionalLayer::hasBias() const
-{
-    return !expectedBiasShape().dimensions.empty();
-}
-
-bool ConvolutionalLayer::hasWeights() const
-{
-    return !expectedWeightShape().dimensions.empty();
-}
-
 Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
                                           const Parameters &parameters) const
 {
@@ -87,14 +77,12 @@ Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
     Pattern result = input.conv1D(parameters.weights,
                                   recipe.stride,
                                   recipe.padding);
-    if (hasBias()) {
-        for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
-             ++outputChannel) {
-            for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
-                 ++outputIndex) {
-                result.at({outputChannel, outputIndex}) += parameters.biases.at(
-                    outputChannel);
-            }
+    for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
+         ++outputChannel) {
+        for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
+             ++outputIndex) {
+            result.at({outputChannel, outputIndex}) += parameters.biases.at(
+                outputChannel);
         }
     }
 

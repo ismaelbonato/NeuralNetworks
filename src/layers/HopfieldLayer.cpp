@@ -40,16 +40,6 @@ Shape HopfieldLayer::expectedBiasShape() const
     return {};
 }
 
-bool HopfieldLayer::hasBias() const
-{
-    return !expectedBiasShape().dimensions.empty();
-}
-
-bool HopfieldLayer::hasWeights() const
-{
-    return !expectedWeightShape().dimensions.empty();
-}
-
 Pattern HopfieldLayer::forward(const Pattern &input) const
 {
     (void) input;
@@ -69,7 +59,7 @@ Pattern HopfieldLayer::weightedInput(const Pattern &input,
         throw std::runtime_error("Input is empty");
     }
     Pattern sums = input.matVec(parameters.weights);
-    return hasBias() ? sums + parameters.biases : sums;
+    return sums;
 }
 
 Pattern HopfieldLayer::recall(const Pattern &input,

@@ -31,8 +31,6 @@ public:
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
 private:
-    bool hasWeights() const;
-    bool hasBias() const;
     Pattern weightedInput(const Pattern &input,
                           const Parameters &parameters) const override;
     Pattern recall(const Pattern &input, const Parameters &parameters) const;

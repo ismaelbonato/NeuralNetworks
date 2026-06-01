@@ -8,8 +8,8 @@
 using namespace nn;
 
 namespace {
-std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize,
+std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputFeatures,
+                                           const size_t outputFeatures,
                                            const Parameters &parameters)
 {
     DenseLayerRecipe recipe;
@@ -17,8 +17,8 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     recipe.type = "DenseLayer";
     recipe.info = "runtime XOR fixture layer";
     recipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    recipe.inputShape = {inputSize};
-    recipe.outputShape = {outputSize};
+    recipe.inputShape = {inputFeatures};
+    recipe.outputShape = {outputFeatures};
 
     auto layer = std::make_unique<DenseLayer>(recipe);
     layer->setParameters(parameters);

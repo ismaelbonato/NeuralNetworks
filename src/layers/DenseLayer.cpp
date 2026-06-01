@@ -41,16 +41,6 @@ Shape DenseLayer::expectedBiasShape() const
     return {getOutputShape().elementCount()};
 }
 
-bool DenseLayer::hasBias() const
-{
-    return !expectedBiasShape().dimensions.empty();
-}
-
-bool DenseLayer::hasWeights() const
-{
-    return !expectedWeightShape().dimensions.empty();
-}
-
 Pattern DenseLayer::weightedInput(const Pattern &input,
                                   const Parameters &parameters) const
 {
@@ -58,7 +48,7 @@ Pattern DenseLayer::weightedInput(const Pattern &input,
         throw std::runtime_error("Input is empty");
     }
     Pattern sums = input.matVec(parameters.weights);
-    return hasBias() ? sums + parameters.biases : sums;
+    return sums + parameters.biases;
 }
 
 } // namespace nn

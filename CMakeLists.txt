@@ -33,7 +33,6 @@ set(SOURCES
 
 set(HEADERS
     include/base/ActivationFunction.h
-    include/base/ConvolutionGeometry.h
     include/base/Layer.h
     include/base/Model.h
     include/base/Parameters.h

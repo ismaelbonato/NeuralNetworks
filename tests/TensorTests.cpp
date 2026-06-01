@@ -213,7 +213,7 @@ TEST_CASE("tensor maps values with a unary operation", "[tensor]")
             == Pattern{1.0F, 4.0F, 9.0F});
 }
 
-TEST_CASE("tensor reports explicit flat shape", "[tensor]")
+TEST_CASE("tensor reports explicit multidimensional shape", "[tensor]")
 {
     const auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
 

@@ -15,8 +15,8 @@ namespace
 {
 constexpr Scalar tolerance = 0.0001F;
 
-std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize)
+std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputFeatures,
+                                           const size_t outputFeatures)
 {
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     DenseLayerRecipe config;
@@ -24,18 +24,18 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = activation;
-    config.inputShape = {inputSize};
-    config.outputShape = {outputSize};
+    config.inputShape = {inputFeatures};
+    config.outputShape = {outputFeatures};
 
     auto layer = std::make_unique<DenseLayer>(config);
     return layer;
 }
 
-std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
-                                           const size_t outputSize,
+std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputFeatures,
+                                           const size_t outputFeatures,
                                            const Parameters &parameters)
 {
-    auto layer = makeDenseLayer(inputSize, outputSize);
+    auto layer = makeDenseLayer(inputFeatures, outputFeatures);
     layer->setParameters(parameters);
     return layer;
 }

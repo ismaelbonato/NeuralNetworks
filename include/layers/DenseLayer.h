@@ -30,8 +30,6 @@ public:
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
 private:
-    bool hasWeights() const;
-    bool hasBias() const;
 };
 
 } // namespace nn

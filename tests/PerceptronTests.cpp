@@ -12,7 +12,7 @@ using namespace nn;
 
 namespace
 {
-std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
+std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputFeatures = 1)
 {
     DenseLayerRecipe config;
     config.name = "test perceptron";
@@ -20,7 +20,7 @@ std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepActivation<Scalar>>();
     config.inputShape = {2};
-    config.outputShape = {outputSize};
+    config.outputShape = {outputFeatures};
 
     return std::make_unique<DenseLayer>(config);
 }
