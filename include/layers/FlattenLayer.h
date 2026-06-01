@@ -5,6 +5,14 @@
 
 namespace nn {
 
+struct FlattenLayerRecipe : LayerRecipe
+{
+    Shape inputShape;
+
+    Shape getInputShape() const override;
+    Shape getOutputShape() const override;
+};
+
 class FlattenLayer : public Layer
 {
 public:

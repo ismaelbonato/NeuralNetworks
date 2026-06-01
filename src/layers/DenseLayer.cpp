@@ -1,50 +1,44 @@
 #include "layers/DenseLayer.h"
+#include "base/Layer.h"
 
+#include <memory>
 #include <stdexcept>
 
 namespace nn {
 
-namespace
+Shape DenseLayerRecipe::getInputShape() const
 {
-Shape denseInputShape(const DenseLayerRecipe &recipe)
-{
-    return recipe.expectedInputShape.isValid()
-               ? recipe.expectedInputShape
-               : Shape{recipe.inputSize};
+    return inputShape;
 }
 
-Shape denseOutputShape(const DenseLayerRecipe &recipe)
+Shape DenseLayerRecipe::getOutputShape() const
 {
-    return recipe.expectedOutputShape.isValid()
-               ? recipe.expectedOutputShape
-               : Shape{recipe.outputSize};
+    return outputShape;
 }
+
+void DenseLayerRecipe::validateRecipe() const
+{
+    LayerRecipe::validateRecipe();
+
+    if (!activation) {
+        throw std::invalid_argument("Dense layer requires an activation.");
+    }
 }
 
 DenseLayer::DenseLayer(const DenseLayerRecipe &newRecipe)
-    : Layer(newRecipe, denseInputShape(newRecipe), denseOutputShape(newRecipe))
-{
-    if (!newRecipe.isValid()) {
-        throw std::invalid_argument("Invalid dense layer recipe");
-    }
-    ownedParameters = Parameters{};
-}
+    : Layer(std::make_unique<DenseLayerRecipe>(newRecipe))
+{}
 
 DenseLayer::~DenseLayer() = default;
 
-bool DenseLayer::usesParameters() const
-{
-    return true;
-}
-
 Shape DenseLayer::expectedWeightShape() const
 {
-    return {getOutputSize(), getInputSize()};
+    return {getOutputShape().elementCount(), getInputShape().elementCount()};
 }
 
 Shape DenseLayer::expectedBiasShape() const
 {
-    return {getOutputSize()};
+    return {getOutputShape().elementCount()};
 }
 
 bool DenseLayer::hasBias() const
@@ -55,22 +49,6 @@ bool DenseLayer::hasBias() const
 bool DenseLayer::hasWeights() const
 {
     return !expectedWeightShape().dimensions.empty();
-}
-
-bool DenseLayer::acceptsParameters(const Parameters &parameters) const
-{
-    return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
-                         : parameters.weights.empty())
-           && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
-                         : parameters.biases.empty());
-}
-
-void DenseLayer::requireValidParameters(const Parameters &parameters) const
-{
-    if (!acceptsParameters(parameters)) {
-        throw std::runtime_error(
-            "Layer parameters do not match expected shapes.");
-    }
 }
 
 Pattern DenseLayer::weightedInput(const Pattern &input,

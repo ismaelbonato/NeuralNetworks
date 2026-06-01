@@ -15,7 +15,7 @@ include(cmake/Warnings.cmake)
 include(cmake/StaticAnalysis.cmake)
 include(cmake/Coverage.cmake)
 
-option(ENABLE_PROTOBUF "Build protobuf model serialization support" ON)
+option(ENABLE_PROTOBUF "Build protobuf model serialization support" OFF)
 
 if(ENABLE_PROTOBUF)
     add_subdirectory(proto)
@@ -71,6 +71,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 if(ENABLE_PROTOBUF)
     target_link_libraries(${PROJECT_NAME} PRIVATE
         nn-runtime-protobuf
+    )
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
+        NN_RUNTIME_ENABLE_PROTOBUF=1
     )
 endif()
 

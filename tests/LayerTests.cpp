@@ -10,8 +10,7 @@
 
 using namespace nn;
 
-namespace
-{
+namespace {
 constexpr Scalar tolerance = 0.0001F;
 
 std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
@@ -22,8 +21,8 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     denseRecipe.type = "DenseLayer";
     denseRecipe.info = "deterministic test layer";
     denseRecipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    denseRecipe.inputSize = inputSize;
-    denseRecipe.outputSize = outputSize;
+    denseRecipe.inputShape = {inputSize};
+    denseRecipe.outputShape = {outputSize};
 
     return std::make_unique<DenseLayer>(denseRecipe);
 }
@@ -34,7 +33,7 @@ std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
     config.name = "test flatten layer";
     config.type = "FlattenLayer";
     config.info = "deterministic test layer";
-    config.expectedInputShape = inputShape;
+    config.inputShape = inputShape;
 
     return std::make_unique<FlattenLayer>(config);
 }
@@ -52,17 +51,31 @@ public:
     {}
 };
 
+struct DelegatingLayerRecipe : LayerRecipe
+{
+    DelegatingLayerRecipe()
+    {
+        name = "test delegating layer";
+        type = "DelegatingLayer";
+        info = "test layer for base inference delegation";
+    }
+
+    Shape getInputShape() const override { return {2}; }
+    Shape getOutputShape() const override { return {2}; }
+    void validateRecipe() const override
+    {
+        LayerRecipe::validateRecipe();
+    }
+};
+
 class DelegatingLayer : public Layer
 {
 public:
     DelegatingLayer()
-        : Layer(LayerRecipe{}, {2}, {2})
+        : Layer(std::make_unique<DelegatingLayerRecipe>())
     {}
 
-    size_t forwardCalls() const
-    {
-        return calls;
-    }
+    size_t forwardCalls() const { return calls; }
 
 protected:
     Pattern forward(const Pattern &input) const override
@@ -74,7 +87,7 @@ protected:
 private:
     mutable size_t calls = 0;
 };
-}
+} // namespace
 
 TEST_CASE("base layer infer rejects shape mismatches before delegation",
           "[layer][infer][errors]")
@@ -108,7 +121,8 @@ TEST_CASE("dense layer adds recipe bias to pre-activation", "[layer][dense]")
     requireClose(output.at(0), 0.9999938F);
 }
 
-TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dense]")
+TEST_CASE("layer parameter snapshots preserve weights and biases",
+          "[layer][dense]")
 {
     auto source = makeDenseLayer(2, 2);
     source->setParameters({
@@ -123,40 +137,42 @@ TEST_CASE("layer parameter snapshots preserve weights and biases", "[layer][dens
     REQUIRE(target->getParameters().biases == source->getParameters().biases);
 }
 
-TEST_CASE("layer recipe derives flat sizes from explicit shapes", "[layer][shape]")
+TEST_CASE("layer recipe derives flat sizes from explicit shapes",
+          "[layer][shape]")
 {
     DenseLayerRecipe config;
     config.name = "shape recipe dense layer";
     config.type = "DenseLayer";
     config.info = "shape-only test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.expectedInputShape = {2};
-    config.expectedOutputShape = {1};
+    config.inputShape = {2};
+    config.outputShape = {1};
 
     auto layer = std::make_unique<DenseLayer>(config);
 
-    REQUIRE(layer->getInputSize() == 2);
-    REQUIRE(layer->getOutputSize() == 1);
+    REQUIRE(layer->getInputShape().elementCount() == 2);
+    REQUIRE(layer->getOutputShape().elementCount() == 1);
     REQUIRE(layer->getInputShape().dimensions == std::vector<size_t>{2});
     REQUIRE(layer->getOutputShape().dimensions == std::vector<size_t>{1});
 }
 
-TEST_CASE("layer recipe rejects inconsistent flat size and shape", "[layer][shape][errors]")
+TEST_CASE("layer recipe rejects invalid dense shapes",
+          "[layer][shape][errors]")
 {
     DenseLayerRecipe config;
     config.name = "invalid shape recipe dense layer";
     config.type = "DenseLayer";
-    config.info = "shape mismatch test layer";
+    config.info = "invalid shape test layer";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.inputSize = 3;
-    config.outputSize = 1;
-    config.expectedInputShape = {2};
-    config.expectedOutputShape = {1};
+    config.inputShape = {0};
+    config.outputShape = {1};
 
-    REQUIRE_THROWS_AS(std::make_unique<DenseLayer>(config), std::invalid_argument);
+    REQUIRE_THROWS_AS(std::make_unique<DenseLayer>(config),
+                      std::invalid_argument);
 }
 
-TEST_CASE("flatten layer reshapes explicit input shape to a vector", "[layer][flatten]")
+TEST_CASE("flatten layer reshapes explicit input shape to a vector",
+          "[layer][flatten]")
 {
     auto layer = makeFlattenLayer({2, 2});
     auto input = Pattern::withShape({2, 2});
@@ -176,9 +192,8 @@ TEST_CASE("layer parameter setter rejects invalid weight and bias shapes",
 {
     auto layer = makeDenseLayer(2, 2);
 
-    REQUIRE_THROWS_AS(layer->setParameters(
-                          {.weights = Pattern::vector(4, 0.0F),
-                           .biases = {0.0F, 0.0F}}),
+    REQUIRE_THROWS_AS(layer->setParameters({.weights = Pattern::vector(4, 0.0F),
+                                            .biases = {0.0F, 0.0F}}),
                       std::runtime_error);
     REQUIRE_THROWS_AS(layer->setParameters(
                           {.weights = Pattern::matrix(1, 4, 0.0F),
@@ -190,11 +205,11 @@ TEST_CASE("layer parameter setter rejects invalid weight and bias shapes",
                       std::runtime_error);
 
     REQUIRE_NOTHROW(layer->setParameters(
-        {.weights = Pattern::matrix(2, 2, 0.0F),
-         .biases = {0.0F, 0.0F}}));
+        {.weights = Pattern::matrix(2, 2, 0.0F), .biases = {0.0F, 0.0F}}));
 }
 
-TEST_CASE("parameterized layer infers through owned parameters", "[layer][runtime]")
+TEST_CASE("parameterized layer infers through owned parameters",
+          "[layer][runtime]")
 {
     auto layer = makeDenseLayer(2, 1);
     layer->setParameters({
@@ -262,8 +277,7 @@ TEST_CASE("parameterized runtime layer uses reassigned owned parameters",
     requireClose(reassignedOutput.at(0), 0.7310586F);
 }
 
-TEST_CASE("runtime-only layers do not expose parameters",
-          "[layer][parameters]")
+TEST_CASE("runtime-only layers do not expose parameters", "[layer][parameters]")
 {
     auto layer = makeFlattenLayer({1, 2});
 
@@ -281,8 +295,8 @@ TEST_CASE("model can infer through added layers", "[model][layer]")
     config.type = "DenseLayer";
     config.info = "model construction test";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.inputSize = 1;
-    config.outputSize = 1;
+    config.inputShape = {1};
+    config.outputShape = {1};
 
     auto layer = std::make_unique<DenseLayer>(config);
     layer->setParameters({
@@ -307,8 +321,8 @@ TEST_CASE("layer guard rejects parameter layers without assigned weights",
     config.type = "TestLayer";
     config.info = "intentionally skips parameter assignment";
     config.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    config.inputSize = 2;
-    config.outputSize = 1;
+    config.inputShape = {2};
+    config.outputShape = {1};
     auto layer = std::make_unique<MissingParametersLayer>(config);
 
     REQUIRE_THROWS_AS(layer->requireParameters(), std::runtime_error);

@@ -1,108 +1,59 @@
 #include "base/Layer.h"
 
+#include <memory>
 #include <stdexcept>
 
 namespace nn {
 
-namespace {
-bool isSizeCompatibleWithShape(const size_t size, const Shape &shape)
+void LayerRecipe::validateRecipe() const
 {
-    return size == 0 || shape.empty()
-           || (shape.isValid() && shape.elementCount() == size);
-}
-
-} // namespace
-
-bool ConvolutionalLayerRecipe::isValid() const
-{
-    const size_t paddedInputLength = inputLength + (2 * padding);
-
-    return activation && inputChannels > 0 && inputLength > 0
-           && outputChannels > 0 && kernelSize > 0 && stride > 0
-           && kernelSize <= paddedInputLength;
-}
-
-bool DenseLayerRecipe::isValid() const
-{
-    return activation && (inputSize > 0 || expectedInputShape.isValid())
-           && (outputSize > 0 || expectedOutputShape.isValid())
-           && isSizeCompatibleWithShape(inputSize, expectedInputShape)
-           && isSizeCompatibleWithShape(outputSize, expectedOutputShape);
-}
-
-bool HopfieldLayerRecipe::isValid() const
-{
-    return activation && (size > 0 || expectedShape.isValid())
-           && isSizeCompatibleWithShape(size, expectedShape);
-}
-
-bool FlattenLayerRecipe::isValid() const
-{
-    return expectedInputShape.isValid();
-}
-
-Shape FlattenLayerRecipe::expectedOutputShape() const
-{
-    return {expectedInputShape.elementCount()};
-}
-
-Layer::Layer(const LayerRecipe &newRecipe,
-             const Shape &newExpectedInput,
-             const Shape &newExpectedOutput)
-    : recipe(newRecipe)
-    , expectedInput(newExpectedInput)
-    , expectedOutput(newExpectedOutput)
-{
-    if (!expectedInput.isValid() || !expectedOutput.isValid()) {
-        throw std::invalid_argument("Invalid layer recipe");
+    if (!getInputShape().isValid() || !getOutputShape().isValid()) {
+        throw std::invalid_argument("Layer recipe requires valid shapes.");
     }
+}
+
+Layer::Layer(std::unique_ptr<LayerRecipe> newRecipe)
+    : recipe(std::move(newRecipe))
+{
+    recipe->validateRecipe();
+    ownedParameters = Parameters{};
 }
 
 Layer::~Layer() = default;
 
-size_t Layer::getInputSize() const
+Shape Layer::getInputShape() const
 {
-    return expectedInput.elementCount();
+    return recipe->getInputShape();
 }
 
-size_t Layer::getOutputSize() const
+Shape Layer::getOutputShape() const
 {
-    return expectedOutput.elementCount();
-}
-
-const Shape &Layer::getExpectedInputShape() const
-{
-    return expectedInput;
-}
-
-const Shape &Layer::getExpectedOutputShape() const
-{
-    return expectedOutput;
-}
-
-const Shape &Layer::getInputShape() const
-{
-    return getExpectedInputShape();
-}
-
-const Shape &Layer::getOutputShape() const
-{
-    return getExpectedOutputShape();
+    return recipe->getOutputShape();
 }
 
 const std::shared_ptr<ActivationFunction<Scalar>> &Layer::getActivation() const
 {
-    return recipe.activation;
+    return recipe->activation;
 }
 
-const LayerRecipe &Layer::getRecipe() const
+const std::string &Layer::getName() const
 {
-    return recipe;
+    return recipe->name;
+}
+
+const std::string &Layer::getType() const
+{
+    return recipe->type;
+}
+
+const std::string &Layer::getInfo() const
+{
+    return recipe->info;
 }
 
 bool Layer::usesParameters() const
 {
-    return false;
+    return !expectedWeightShape().empty() || !expectedBiasShape().empty();
 }
 
 Shape Layer::expectedWeightShape() const
@@ -115,15 +66,21 @@ Shape Layer::expectedBiasShape() const
     return {};
 }
 
-bool Layer::acceptsParameters(const Parameters &parameters) const
-{
-    return parameters.weights.empty() && parameters.biases.empty();
-}
-
 void Layer::requireValidParameters(const Parameters &parameters) const
 {
-    if (!acceptsParameters(parameters)) {
-        throw std::runtime_error("Layer does not use parameters.");
+    const Shape weightShape = expectedWeightShape();
+    const Shape biasShape = expectedBiasShape();
+
+    const bool weightsValid = weightShape.empty()
+                                  ? parameters.weights.empty()
+                                  : parameters.weights.hasShape(weightShape);
+    const bool biasesValid = biasShape.empty()
+                                 ? parameters.biases.empty()
+                                 : parameters.biases.hasShape(biasShape);
+
+    if (!weightsValid || !biasesValid) {
+        throw std::runtime_error(
+            "Layer parameters do not match expected shapes.");
     }
 }
 
@@ -166,7 +123,7 @@ void Layer::requireParameters() const
 
 void Layer::requireInputShape(const Pattern &input) const
 {
-    if (!input.hasShape(expectedInput)) {
+    if (!input.hasShape(getInputShape())) {
         throw std::runtime_error(
             "Input shape does not match layer input shape.");
     }
@@ -202,13 +159,13 @@ Pattern Layer::weightedInput(const Pattern &input,
 
 Pattern Layer::activate(const Pattern &values) const
 {
-    if (recipe.activation == nullptr) {
+    if (recipe->activation == nullptr) {
         throw std::runtime_error(
             "Activation function is not set for this layer.");
     }
 
     return values.map(
-        [this](Scalar value) { return (*recipe.activation)(value); });
+        [this](Scalar value) { return (*recipe->activation)(value); });
 }
 
 } // namespace nn

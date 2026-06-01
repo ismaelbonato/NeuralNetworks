@@ -24,8 +24,8 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = activation;
-    config.inputSize = inputSize;
-    config.outputSize = outputSize;
+    config.inputShape = {inputSize};
+    config.outputShape = {outputSize};
 
     auto layer = std::make_unique<DenseLayer>(config);
     return layer;

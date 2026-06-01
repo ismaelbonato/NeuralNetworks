@@ -17,8 +17,8 @@ std::unique_ptr<DenseLayer> makeDenseLayer(const size_t inputSize,
     recipe.type = "DenseLayer";
     recipe.info = "runtime XOR fixture layer";
     recipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    recipe.inputSize = inputSize;
-    recipe.outputSize = outputSize;
+    recipe.inputShape = {inputSize};
+    recipe.outputShape = {outputSize};
 
     auto layer = std::make_unique<DenseLayer>(recipe);
     layer->setParameters(parameters);

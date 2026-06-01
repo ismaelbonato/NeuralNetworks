@@ -19,8 +19,8 @@ std::unique_ptr<DenseLayer> makePerceptronLayer(const size_t outputSize = 1)
     config.type = "DenseLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepActivation<Scalar>>();
-    config.inputSize = 2;
-    config.outputSize = outputSize;
+    config.inputShape = {2};
+    config.outputShape = {outputSize};
 
     return std::make_unique<DenseLayer>(config);
 }

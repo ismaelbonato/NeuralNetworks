@@ -21,8 +21,8 @@ std::unique_ptr<DenseLayer> makeDenseLayer()
     recipe.type = "DenseLayer";
     recipe.info = "serialization fixture";
     recipe.activation = std::make_shared<SigmoidActivation<Scalar>>();
-    recipe.inputSize = 2;
-    recipe.outputSize = 1;
+    recipe.inputShape = {2};
+    recipe.outputShape = {1};
 
     auto layer = std::make_unique<DenseLayer>(recipe);
     layer->setParameters({

@@ -1,5 +1,8 @@
 #include "base/Model.h"
+
+#ifdef NN_RUNTIME_ENABLE_PROTOBUF
 #include "serialization/ModelSerialization.h"
+#endif
 
 #include <stdexcept>
 #include <utility>
@@ -16,12 +19,22 @@ Model::~Model() = default;
 
 Model Model::loadFromFile(const std::string &file)
 {
+#ifdef NN_RUNTIME_ENABLE_PROTOBUF
     return serialization::loadModelFromFile(file);
+#else
+    (void)file;
+    throw std::runtime_error("Model loading requires protobuf support.");
+#endif
 }
 
 void Model::saveToFile(const std::string &file) const
 {
+#ifdef NN_RUNTIME_ENABLE_PROTOBUF
     serialization::saveModelToFile(*this, file);
+#else
+    (void)file;
+    throw std::runtime_error("Model saving requires protobuf support.");
+#endif
 }
 
 Layer &Model::addLayer(std::unique_ptr<Layer> layer)

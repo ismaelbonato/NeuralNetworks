@@ -66,10 +66,9 @@ void fillCommonLayer(nn::proto::Layer &protoLayer,
                      const Layer &layer,
                      const std::string &fallbackType)
 {
-    const LayerRecipe &recipe = layer.getRecipe();
-    protoLayer.set_name(recipe.name);
-    protoLayer.set_type(recipe.type.empty() ? fallbackType : recipe.type);
-    protoLayer.set_info(recipe.info);
+    protoLayer.set_name(layer.getName());
+    protoLayer.set_type(layer.getType().empty() ? fallbackType : layer.getType());
+    protoLayer.set_info(layer.getInfo());
     protoLayer.set_activation(activationName(layer));
 
     if (const auto parameters = layer.parameters()) {
@@ -82,12 +81,12 @@ void fillDenseLayer(nn::proto::Layer &protoLayer, const DenseLayer &layer)
     fillCommonLayer(protoLayer, layer, "DenseLayer");
 
     auto &dense = *protoLayer.mutable_dense();
-    dense.set_input_size(static_cast<uint64_t>(layer.getInputSize()));
-    dense.set_output_size(static_cast<uint64_t>(layer.getOutputSize()));
+    dense.set_input_size(static_cast<uint64_t>(layer.getInputShape().elementCount()));
+    dense.set_output_size(static_cast<uint64_t>(layer.getOutputShape().elementCount()));
     fillShape(*dense.mutable_expected_input_shape(),
-              layer.getExpectedInputShape());
+              layer.getInputShape());
     fillShape(*dense.mutable_expected_output_shape(),
-              layer.getExpectedOutputShape());
+              layer.getOutputShape());
 }
 
 void fillConvolutionalLayer(nn::proto::Layer &protoLayer,
@@ -95,16 +94,15 @@ void fillConvolutionalLayer(nn::proto::Layer &protoLayer,
 {
     fillCommonLayer(protoLayer, layer, "ConvolutionalLayer");
 
-    const auto &recipe = layer.getConvolutionalRecipe();
     auto &convolutional = *protoLayer.mutable_convolutional();
     convolutional.set_input_channels(
-        static_cast<uint64_t>(recipe.inputChannels));
-    convolutional.set_input_length(static_cast<uint64_t>(recipe.inputLength));
+        static_cast<uint64_t>(layer.getInputChannels()));
+    convolutional.set_input_length(static_cast<uint64_t>(layer.getInputLength()));
     convolutional.set_output_channels(
-        static_cast<uint64_t>(recipe.outputChannels));
-    convolutional.set_kernel_size(static_cast<uint64_t>(recipe.kernelSize));
-    convolutional.set_stride(static_cast<uint64_t>(recipe.stride));
-    convolutional.set_padding(static_cast<uint64_t>(recipe.padding));
+        static_cast<uint64_t>(layer.getOutputChannels()));
+    convolutional.set_kernel_size(static_cast<uint64_t>(layer.getKernelSize()));
+    convolutional.set_stride(static_cast<uint64_t>(layer.getStride()));
+    convolutional.set_padding(static_cast<uint64_t>(layer.getPadding()));
 }
 
 void fillFlattenLayer(nn::proto::Layer &protoLayer, const FlattenLayer &layer)
@@ -113,7 +111,7 @@ void fillFlattenLayer(nn::proto::Layer &protoLayer, const FlattenLayer &layer)
 
     auto &flatten = *protoLayer.mutable_flatten();
     fillShape(*flatten.mutable_expected_input_shape(),
-              layer.getExpectedInputShape());
+              layer.getInputShape());
 }
 
 void fillHopfieldLayer(nn::proto::Layer &protoLayer, const HopfieldLayer &layer)
@@ -121,8 +119,8 @@ void fillHopfieldLayer(nn::proto::Layer &protoLayer, const HopfieldLayer &layer)
     fillCommonLayer(protoLayer, layer, "HopfieldLayer");
 
     auto &hopfield = *protoLayer.mutable_hopfield();
-    hopfield.set_size(static_cast<uint64_t>(layer.getInputSize()));
-    fillShape(*hopfield.mutable_expected_shape(), layer.getExpectedInputShape());
+    hopfield.set_size(static_cast<uint64_t>(layer.getInputShape().elementCount()));
+    fillShape(*hopfield.mutable_expected_shape(), layer.getInputShape());
 }
 
 void fillLayer(nn::proto::Layer &protoLayer, const Layer &layer)
@@ -230,16 +228,25 @@ DenseLayerRecipe denseRecipeFromProto(const nn::proto::Layer &protoLayer)
     recipe.type = protoLayer.type().empty() ? "DenseLayer" : protoLayer.type();
     recipe.info = protoLayer.info();
     recipe.activation = activationFromName(protoLayer.activation());
-    recipe.inputSize = static_cast<size_t>(protoDense.input_size());
-    recipe.outputSize = static_cast<size_t>(protoDense.output_size());
 
-    if (protoDense.expected_input_shape_size() > 0) {
-        recipe.expectedInputShape = shapeFromProto(
-            protoDense.expected_input_shape());
+    const auto inputSize = static_cast<size_t>(protoDense.input_size());
+    const auto outputSize = static_cast<size_t>(protoDense.output_size());
+
+    recipe.inputShape = protoDense.expected_input_shape_size() > 0
+                       ? shapeFromProto(protoDense.expected_input_shape())
+                       : Shape{inputSize};
+    recipe.outputShape = protoDense.expected_output_shape_size() > 0
+                        ? shapeFromProto(protoDense.expected_output_shape())
+                        : Shape{outputSize};
+
+    if (inputSize > 0 && recipe.inputShape.elementCount() != inputSize) {
+        throw std::runtime_error(
+            "Dense input shape does not match serialized input size.");
     }
-    if (protoDense.expected_output_shape_size() > 0) {
-        recipe.expectedOutputShape = shapeFromProto(
-            protoDense.expected_output_shape());
+
+    if (outputSize > 0 && recipe.outputShape.elementCount() != outputSize) {
+        throw std::runtime_error(
+            "Dense output shape does not match serialized output size.");
     }
 
     return recipe;

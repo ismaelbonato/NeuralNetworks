@@ -5,6 +5,15 @@
 
 namespace nn {
 
+struct HopfieldLayerRecipe : LayerRecipe
+{
+    Shape stateShape;
+
+    Shape getInputShape() const override;
+    Shape getOutputShape() const override;
+    void validateRecipe() const override;
+};
+
 class HopfieldLayer : public Layer
 {
 public:
@@ -19,20 +28,14 @@ protected:
 
 public:
     using Layer::requireParameters;
-
-    bool usesParameters() const override;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
-    bool acceptsParameters(const Parameters &parameters) const override;
-    void requireValidParameters(const Parameters &parameters) const override;
-
 private:
     bool hasWeights() const;
     bool hasBias() const;
     Pattern weightedInput(const Pattern &input,
                           const Parameters &parameters) const override;
-    Pattern recall(const Pattern &input,
-                   const Parameters &parameters) const;
+    Pattern recall(const Pattern &input, const Parameters &parameters) const;
 };
 
 } // namespace nn

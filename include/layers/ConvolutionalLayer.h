@@ -4,6 +4,20 @@
 
 namespace nn {
 
+struct ConvolutionalLayerRecipe : LayerRecipe
+{
+    size_t inputChannels = 0;
+    size_t inputLength = 0;
+    size_t outputChannels = 0;
+    size_t kernelSize = 0;
+    size_t stride = 1;
+    size_t padding = 0;
+
+    Shape getInputShape() const override;
+    Shape getOutputShape() const override;
+    void validateRecipe() const override;
+};
+
 class ConvolutionalLayer : public Layer
 {
 public:
@@ -11,25 +25,23 @@ public:
     explicit ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe);
     ~ConvolutionalLayer() override;
 
-    const ConvolutionalLayerRecipe &getConvolutionalRecipe() const;
+    size_t getInputChannels() const;
+    size_t getInputLength() const;
+    size_t getOutputChannels() const;
+    size_t getKernelSize() const;
+    size_t getStride() const;
+    size_t getPadding() const;
 
 protected:
     Pattern weightedInput(const Pattern &input,
                           const Parameters &parameters) const override;
 
-private:
-    ConvolutionalLayerRecipe convolutionalRecipe;
-
 public:
     using Layer::requireParameters;
-
-    bool usesParameters() const override;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
-    bool acceptsParameters(const Parameters &parameters) const override;
-    void requireValidParameters(const Parameters &parameters) const override;
-
 private:
+    const ConvolutionalLayerRecipe &recipeConfig() const;
     bool hasWeights() const;
     bool hasBias() const;
 };

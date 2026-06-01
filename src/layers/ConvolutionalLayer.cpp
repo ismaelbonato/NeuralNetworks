@@ -1,10 +1,11 @@
 #include "layers/ConvolutionalLayer.h"
+#include "base/Layer.h"
+#include <memory>
 #include <stdexcept>
 
 namespace nn {
 
 namespace {
-
 size_t convolutionalOutputLength(const ConvolutionalLayerRecipe &recipe)
 {
     return ((recipe.inputLength + (2 * recipe.padding) - recipe.kernelSize)
@@ -12,47 +13,57 @@ size_t convolutionalOutputLength(const ConvolutionalLayerRecipe &recipe)
            + 1;
 }
 
-Shape convolutionalInputShape(const ConvolutionalLayerRecipe &recipe)
-{
-    return {recipe.inputChannels, recipe.inputLength};
-}
-
-Shape convolutionalOutputShape(const ConvolutionalLayerRecipe &recipe)
-{
-    return {recipe.outputChannels, convolutionalOutputLength(recipe)};
-}
-
 } // namespace
 
-ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe)
-    : Layer(newRecipe,
-            convolutionalInputShape(newRecipe),
-            convolutionalOutputShape(newRecipe))
-    , convolutionalRecipe(newRecipe)
+Shape ConvolutionalLayerRecipe::getInputShape() const
 {
-    if (!newRecipe.isValid()) {
-        throw std::invalid_argument("Invalid convolutional layer recipe");
-    }
-    ownedParameters = Parameters{};
+    return {inputChannels, inputLength};
 }
+
+Shape ConvolutionalLayerRecipe::getOutputShape() const
+{
+    return {outputChannels, convolutionalOutputLength(*this)};
+}
+
+void ConvolutionalLayerRecipe::validateRecipe() const
+{
+    if (inputChannels == 0 || inputLength == 0 || outputChannels == 0
+        || kernelSize == 0 || stride == 0) {
+        throw std::invalid_argument(
+            "Convolutional layer dimensions must be greater than zero.");
+    }
+
+    const size_t paddedInputLength = inputLength + (2 * padding);
+    if (kernelSize > paddedInputLength) {
+        throw std::invalid_argument(
+            "Convolutional kernel is larger than padded input.");
+    }
+
+    if (!activation) {
+        throw std::invalid_argument(
+            "Convolutional layer requires an activation.");
+    }
+
+    LayerRecipe::validateRecipe();
+}
+
+ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe)
+    : Layer(std::make_unique<ConvolutionalLayerRecipe>(newRecipe))
+{}
 
 ConvolutionalLayer::~ConvolutionalLayer() = default;
 
-bool ConvolutionalLayer::usesParameters() const
-{
-    return true;
-}
-
 Shape ConvolutionalLayer::expectedWeightShape() const
 {
-    return {convolutionalRecipe.outputChannels,
-            convolutionalRecipe.inputChannels,
-            convolutionalRecipe.kernelSize};
+    const auto &recipe = recipeConfig();
+
+    return {recipe.outputChannels, recipe.inputChannels, recipe.kernelSize};
 }
 
 Shape ConvolutionalLayer::expectedBiasShape() const
 {
-    return {convolutionalRecipe.outputChannels};
+    const auto &recipe = recipeConfig();
+    return {recipe.outputChannels};
 }
 
 bool ConvolutionalLayer::hasBias() const
@@ -65,37 +76,19 @@ bool ConvolutionalLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool ConvolutionalLayer::acceptsParameters(
-    const Parameters &parameters) const
-{
-    return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
-                         : parameters.weights.empty())
-           && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
-                         : parameters.biases.empty());
-}
-
-void ConvolutionalLayer::requireValidParameters(
-    const Parameters &parameters) const
-{
-    if (!acceptsParameters(parameters)) {
-        throw std::runtime_error(
-            "Layer parameters do not match expected shapes.");
-    }
-}
-
 Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
                                           const Parameters &parameters) const
 {
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
     }
+    const auto &recipe = recipeConfig();
 
     Pattern result = input.conv1D(parameters.weights,
-                                  convolutionalRecipe.stride,
-                                  convolutionalRecipe.padding);
+                                  recipe.stride,
+                                  recipe.padding);
     if (hasBias()) {
-        for (size_t outputChannel = 0;
-             outputChannel < convolutionalRecipe.outputChannels;
+        for (size_t outputChannel = 0; outputChannel < recipe.outputChannels;
              ++outputChannel) {
             for (size_t outputIndex = 0; outputIndex < result.shape().at(1);
                  ++outputIndex) {
@@ -108,9 +101,39 @@ Pattern ConvolutionalLayer::weightedInput(const Pattern &input,
     return result;
 }
 
-const ConvolutionalLayerRecipe &ConvolutionalLayer::getConvolutionalRecipe() const
+const ConvolutionalLayerRecipe &ConvolutionalLayer::recipeConfig() const
 {
-    return convolutionalRecipe;
+    return static_cast<const ConvolutionalLayerRecipe &>(*recipe);
+}
+
+size_t ConvolutionalLayer::getInputChannels() const
+{
+    return recipeConfig().inputChannels;
+}
+
+size_t ConvolutionalLayer::getInputLength() const
+{
+    return recipeConfig().inputLength;
+}
+
+size_t ConvolutionalLayer::getOutputChannels() const
+{
+    return recipeConfig().outputChannels;
+}
+
+size_t ConvolutionalLayer::getKernelSize() const
+{
+    return recipeConfig().kernelSize;
+}
+
+size_t ConvolutionalLayer::getStride() const
+{
+    return recipeConfig().stride;
+}
+
+size_t ConvolutionalLayer::getPadding() const
+{
+    return recipeConfig().padding;
 }
 
 } // namespace nn

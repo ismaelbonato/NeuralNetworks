@@ -8,62 +8,29 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 namespace nn {
 
 struct LayerRecipe
 {
+    virtual ~LayerRecipe() = default;
+
     std::string name;
     std::string type;
     std::string info;
     std::shared_ptr<ActivationFunction<Scalar>> activation;
-};
 
-struct ConvolutionalLayerRecipe : LayerRecipe
-{
-    size_t inputChannels = 0;
-    size_t inputLength = 0;
-    size_t outputChannels = 0;
-    size_t kernelSize = 0;
-    size_t stride = 1;
-    size_t padding = 0;
-
-    bool isValid() const;
-};
-
-struct DenseLayerRecipe : LayerRecipe
-{
-    size_t inputSize = 0;
-    size_t outputSize = 0;
-    Shape expectedInputShape;
-    Shape expectedOutputShape;
-
-    bool isValid() const;
-};
-
-struct HopfieldLayerRecipe : LayerRecipe
-{
-    size_t size = 0;
-    Shape expectedShape;
-
-    bool isValid() const;
-};
-
-struct FlattenLayerRecipe : LayerRecipe
-{
-    Shape expectedInputShape;
-
-    bool isValid() const;
-    Shape expectedOutputShape() const;
+    virtual Shape getInputShape() const = 0;
+    virtual Shape getOutputShape() const = 0;
+    virtual void validateRecipe() const;
 };
 
 class Layer
 {
 protected:
-    LayerRecipe recipe;
-    Shape expectedInput;
-    Shape expectedOutput;
+    std::unique_ptr<LayerRecipe> recipe;
     std::optional<Parameters> ownedParameters;
 
     void requireInputShape(const Pattern &input) const;
@@ -76,24 +43,20 @@ protected:
 
 public:
     Layer() = delete;
-    Layer(const LayerRecipe &newRecipe,
-          const Shape &newExpectedInput,
-          const Shape &newExpectedOutput);
+    explicit Layer(std::unique_ptr<LayerRecipe> newRecipe);
+
     virtual ~Layer();
 
-    size_t getInputSize() const;
-    size_t getOutputSize() const;
-    const Shape &getExpectedInputShape() const;
-    const Shape &getExpectedOutputShape() const;
-    const Shape &getInputShape() const;
-    const Shape &getOutputShape() const;
+    Shape getInputShape() const;
+    Shape getOutputShape() const;
     const std::shared_ptr<ActivationFunction<Scalar>> &getActivation() const;
-    const LayerRecipe &getRecipe() const;
-    virtual bool usesParameters() const;
+    const std::string &getName() const;
+    const std::string &getType() const;
+    const std::string &getInfo() const;
+    bool usesParameters() const;
     virtual Shape expectedWeightShape() const;
     virtual Shape expectedBiasShape() const;
-    virtual bool acceptsParameters(const Parameters &parameters) const;
-    virtual void requireValidParameters(const Parameters &parameters) const;
+    void requireValidParameters(const Parameters &parameters) const;
     std::optional<Parameters> parameters() const;
     const Parameters &getParameters() const;
     void setParameters(const Parameters &parameters);

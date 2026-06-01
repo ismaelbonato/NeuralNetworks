@@ -19,7 +19,7 @@ HopfieldLayerRecipe makeHopfieldRecipe(const size_t size)
     config.type = "HopfieldLayer";
     config.info = "deterministic test layer";
     config.activation = std::make_shared<StepPolarActivation<Scalar>>();
-    config.size = size;
+    config.stateShape = {size};
 
     return config;
 }

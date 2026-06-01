@@ -1,35 +1,38 @@
 #include "layers/HopfieldLayer.h"
+#include "base/Layer.h"
+#include <memory>
 #include <stdexcept>
 
 namespace nn {
 
-namespace
+Shape HopfieldLayerRecipe::getInputShape() const
 {
-Shape hopfieldShape(const HopfieldLayerRecipe &recipe)
-{
-    return recipe.expectedShape.isValid() ? recipe.expectedShape : Shape{recipe.size};
+    return stateShape;
 }
+
+Shape HopfieldLayerRecipe::getOutputShape() const
+{
+    return stateShape;
+}
+
+void HopfieldLayerRecipe::validateRecipe() const
+{
+    LayerRecipe::validateRecipe();
+
+    if (!activation) {
+        throw std::invalid_argument("Hopfield layer requires an activation.");
+    }
 }
 
 HopfieldLayer::HopfieldLayer(const HopfieldLayerRecipe &newRecipe)
-    : Layer(newRecipe, hopfieldShape(newRecipe), hopfieldShape(newRecipe))
-{
-    if (!newRecipe.isValid()) {
-        throw std::invalid_argument("Invalid hopfield layer recipe");
-    }
-    ownedParameters = Parameters{};
-}
+    : Layer(std::make_unique<HopfieldLayerRecipe>(newRecipe))
+{}
 
 HopfieldLayer::~HopfieldLayer() = default;
 
-bool HopfieldLayer::usesParameters() const
-{
-    return true;
-}
-
 Shape HopfieldLayer::expectedWeightShape() const
 {
-    return {getOutputSize(), getInputSize()};
+    return {getOutputShape().elementCount(), getInputShape().elementCount()};
 }
 
 Shape HopfieldLayer::expectedBiasShape() const
@@ -47,25 +50,9 @@ bool HopfieldLayer::hasWeights() const
     return !expectedWeightShape().dimensions.empty();
 }
 
-bool HopfieldLayer::acceptsParameters(const Parameters &parameters) const
-{
-    return (hasWeights() ? parameters.weights.hasShape(expectedWeightShape())
-                         : parameters.weights.empty())
-           && (hasBias() ? parameters.biases.hasShape(expectedBiasShape())
-                         : parameters.biases.empty());
-}
-
-void HopfieldLayer::requireValidParameters(const Parameters &parameters) const
-{
-    if (!acceptsParameters(parameters)) {
-        throw std::runtime_error(
-            "Layer parameters do not match expected shapes.");
-    }
-}
-
 Pattern HopfieldLayer::forward(const Pattern &input) const
 {
-    (void)input;
+    (void) input;
     throw std::runtime_error("Hopfield layer requires parameters.");
 }
 
@@ -75,9 +62,8 @@ Pattern HopfieldLayer::forward(const Pattern &input,
     return recall(input, parameters);
 }
 
-Pattern HopfieldLayer::weightedInput(
-    const Pattern &input,
-    const Parameters &parameters) const
+Pattern HopfieldLayer::weightedInput(const Pattern &input,
+                                     const Parameters &parameters) const
 {
     if (input.empty()) {
         throw std::runtime_error("Input is empty");
@@ -89,8 +75,9 @@ Pattern HopfieldLayer::weightedInput(
 Pattern HopfieldLayer::recall(const Pattern &input,
                               const Parameters &parameters) const
 {
-    if (!input.hasShape(getExpectedInputShape())) {
-        throw std::runtime_error("Input shape does not match Hopfield layer shape.");
+    if (!input.hasShape(getInputShape())) {
+        throw std::runtime_error(
+            "Input shape does not match Hopfield layer shape.");
     }
 
     Pattern state = input;

@@ -4,6 +4,16 @@
 
 namespace nn {
 
+struct DenseLayerRecipe : LayerRecipe
+{
+    Shape inputShape;
+    Shape outputShape;
+
+    Shape getInputShape() const override;
+    Shape getOutputShape() const override;
+    void validateRecipe() const override;
+};
+
 class DenseLayer : public Layer
 {
 public:
@@ -17,13 +27,8 @@ protected:
 
 public:
     using Layer::requireParameters;
-
-    bool usesParameters() const override;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
-    bool acceptsParameters(const Parameters &parameters) const override;
-    void requireValidParameters(const Parameters &parameters) const override;
-
 private:
     bool hasWeights() const;
     bool hasBias() const;
