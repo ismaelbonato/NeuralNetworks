@@ -6,16 +6,10 @@ namespace nn {
 
 struct ConvolutionalLayerRecipe : LayerRecipe
 {
-    size_t inputChannels = 0;
-    size_t inputLength = 0;
-    size_t outputChannels = 0;
+    void validateRecipe() const override;
     size_t kernelSize = 0;
     size_t stride = 1;
     size_t padding = 0;
-
-    Shape getInputShape() const override;
-    Shape getOutputShape() const override;
-    void validateRecipe() const override;
 };
 
 class ConvolutionalLayer : public Layer
@@ -25,9 +19,12 @@ public:
     explicit ConvolutionalLayer(const ConvolutionalLayerRecipe &newRecipe);
     ~ConvolutionalLayer() override;
 
-    size_t getInputChannels() const;
-    size_t getInputLength() const;
-    size_t getOutputChannels() const;
+private:
+    size_t inputChannelsFromShape() const;
+    size_t inputLengthFromShape() const;
+    size_t outputChannelsFromShape() const;
+    size_t outputLengthFromShape() const;
+    size_t outputLengthFromGeometry() const;
     size_t getKernelSize() const;
     size_t getStride() const;
     size_t getPadding() const;
@@ -37,10 +34,13 @@ protected:
                           const Parameters &parameters) const override;
 
 public:
-    using Layer::requireParameters;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
+
+    LayerSnapshot snapshot() const override;
+
 private:
-    const ConvolutionalLayerRecipe &recipeConfig() const;};
+    const ConvolutionalLayerRecipe &recipeConfig() const;
+};
 
 } // namespace nn

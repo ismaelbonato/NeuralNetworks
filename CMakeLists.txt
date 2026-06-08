@@ -15,7 +15,7 @@ include(cmake/Warnings.cmake)
 include(cmake/StaticAnalysis.cmake)
 include(cmake/Coverage.cmake)
 
-option(ENABLE_PROTOBUF "Build protobuf model serialization support" OFF)
+option(ENABLE_PROTOBUF "Build protobuf model serialization support" ON)
 
 if(ENABLE_PROTOBUF)
     add_subdirectory(proto)

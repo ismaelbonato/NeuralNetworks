@@ -10,8 +10,32 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <variant>
+#include <vector>
 
 namespace nn {
+
+using LayerFieldValue = std::variant<size_t, std::string>;
+
+struct LayerField
+{
+    std::string name;
+    LayerFieldValue value;
+};
+
+struct LayerSnapshot
+{
+    std::string name;
+    std::string type;
+    std::string info;
+    std::string activation;
+
+    std::vector<size_t> inputShape;
+    std::vector<size_t> outputShape;
+    std::vector<LayerField> fields;
+    std::optional<Parameters> parameters;
+};
 
 struct LayerRecipe
 {
@@ -22,8 +46,11 @@ struct LayerRecipe
     std::string info;
     std::shared_ptr<ActivationFunction<Scalar>> activation;
 
-    virtual Shape getInputShape() const = 0;
-    virtual Shape getOutputShape() const = 0;
+    Shape inputShape;
+    Shape outputShape;
+
+    virtual const Shape &getInputShape() const;
+    virtual const Shape &getOutputShape() const;
     virtual void validateRecipe() const;
 };
 
@@ -47,8 +74,10 @@ public:
 
     virtual ~Layer();
 
-    Shape getInputShape() const;
-    Shape getOutputShape() const;
+    virtual LayerSnapshot snapshot() const;
+
+    const Shape &getInputShape() const;
+    const Shape &getOutputShape() const;
     const std::shared_ptr<ActivationFunction<Scalar>> &getActivation() const;
     const std::string &getName() const;
     const std::string &getType() const;

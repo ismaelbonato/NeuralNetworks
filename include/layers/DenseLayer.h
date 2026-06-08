@@ -6,12 +6,7 @@ namespace nn {
 
 struct DenseLayerRecipe : LayerRecipe
 {
-    Shape inputShape;
-    Shape outputShape;
-
-    Shape getInputShape() const override;
-    Shape getOutputShape() const override;
-    void validateRecipe() const override;
+    virtual void validateRecipe() const override;
 };
 
 class DenseLayer : public Layer
@@ -26,9 +21,9 @@ protected:
                           const Parameters &parameters) const override;
 
 public:
-    using Layer::requireParameters;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
+
 private:
 };
 

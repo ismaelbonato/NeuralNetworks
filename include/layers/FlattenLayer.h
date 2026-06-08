@@ -7,10 +7,7 @@ namespace nn {
 
 struct FlattenLayerRecipe : LayerRecipe
 {
-    Shape inputShape;
-
-    Shape getInputShape() const override;
-    Shape getOutputShape() const override;
+    virtual void validateRecipe() const override;
 };
 
 class FlattenLayer : public Layer

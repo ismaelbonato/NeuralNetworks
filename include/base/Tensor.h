@@ -52,6 +52,7 @@ struct Shape
 
         return count;
     }
+    std::vector<size_t> snapshot() const { return dimensions; }
 };
 
 template<typename T>

@@ -6,14 +6,14 @@
 
 namespace nn {
 
-Shape FlattenLayerRecipe::getInputShape() const
+void FlattenLayerRecipe::validateRecipe() const
 {
-    return inputShape;
-}
+    LayerRecipe::validateRecipe();
 
-Shape FlattenLayerRecipe::getOutputShape() const
-{
-    return {inputShape.elementCount()};
+    if (outputShape.dimensions != std::vector<size_t>{inputShape.elementCount()}) {
+        throw std::invalid_argument(
+            "Flatten output shape must match flattened input shape.");
+    }
 }
 
 FlattenLayer::FlattenLayer(const FlattenLayerRecipe &newRecipe)

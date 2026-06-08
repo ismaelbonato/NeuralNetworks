@@ -5,19 +5,14 @@
 
 namespace nn {
 
-Shape HopfieldLayerRecipe::getInputShape() const
-{
-    return stateShape;
-}
-
-Shape HopfieldLayerRecipe::getOutputShape() const
-{
-    return stateShape;
-}
-
 void HopfieldLayerRecipe::validateRecipe() const
 {
     LayerRecipe::validateRecipe();
+
+    if (inputShape.dimensions != outputShape.dimensions) {
+        throw std::invalid_argument(
+            "Hopfield input and output shapes must match.");
+    }
 
     if (!activation) {
         throw std::invalid_argument("Hopfield layer requires an activation.");

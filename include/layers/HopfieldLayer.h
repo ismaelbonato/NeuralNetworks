@@ -7,10 +7,6 @@ namespace nn {
 
 struct HopfieldLayerRecipe : LayerRecipe
 {
-    Shape stateShape;
-
-    Shape getInputShape() const override;
-    Shape getOutputShape() const override;
     void validateRecipe() const override;
 };
 
@@ -27,9 +23,9 @@ protected:
                     const Parameters &parameters) const override;
 
 public:
-    using Layer::requireParameters;
     Shape expectedWeightShape() const override;
     Shape expectedBiasShape() const override;
+
 private:
     Pattern weightedInput(const Pattern &input,
                           const Parameters &parameters) const override;

@@ -8,7 +8,7 @@
 #include <utility>
 
 using namespace nn;
-
+//todo: make more tests
 TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
           "[convolution][1d]")
 {
@@ -18,9 +18,7 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
 
     auto activation = std::make_shared<SigmoidActivation<Scalar>>();
     ConvolutionalLayerRecipe config{};
-    config.inputChannels = 1;
-    config.inputLength = signal.size();
-    config.outputChannels = 1;
+    config.inputShape = {1, signal.size()};
     config.kernelSize = 3;
     config.stride = 1;
     config.padding = 0;
@@ -29,7 +27,8 @@ TEST_CASE("valid 1D convolution slides a kernel over a simple signal",
     config.info = "deterministic test layer";
     config.activation = activation;
 
-    const size_t outputLength = config.inputLength - config.kernelSize + 1;
+    const size_t outputLength = signal.size() - config.kernelSize + 1;
+    config.outputShape = {1, outputLength};
 
     Model net;
 

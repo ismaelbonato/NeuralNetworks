@@ -6,16 +6,6 @@
 
 namespace nn {
 
-Shape DenseLayerRecipe::getInputShape() const
-{
-    return inputShape;
-}
-
-Shape DenseLayerRecipe::getOutputShape() const
-{
-    return outputShape;
-}
-
 void DenseLayerRecipe::validateRecipe() const
 {
     LayerRecipe::validateRecipe();

@@ -34,6 +34,7 @@ std::unique_ptr<FlattenLayer> makeFlattenLayer(const Shape &inputShape)
     config.type = "FlattenLayer";
     config.info = "deterministic test layer";
     config.inputShape = inputShape;
+    config.outputShape = {inputShape.elementCount()};
 
     return std::make_unique<FlattenLayer>(config);
 }
@@ -58,10 +59,10 @@ struct DelegatingLayerRecipe : LayerRecipe
         name = "test delegating layer";
         type = "DelegatingLayer";
         info = "test layer for base inference delegation";
+        inputShape = {2};
+        outputShape = {2};
     }
 
-    Shape getInputShape() const override { return {2}; }
-    Shape getOutputShape() const override { return {2}; }
     void validateRecipe() const override
     {
         LayerRecipe::validateRecipe();

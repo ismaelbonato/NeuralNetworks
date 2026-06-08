@@ -2,47 +2,24 @@ syntax = "proto3";
 
 package nn.proto;
 
-message Tensor {
-  repeated uint64 shape = 1;
-  repeated float values = 2;
-}
-
-message Parameters {
-  Tensor weights = 1;
-  Tensor biases = 2;
-}
-
-message DenseLayer {
-  uint64 input_size = 1;
-  uint64 output_size = 2;
-  repeated uint64 expected_input_shape = 3;
-  repeated uint64 expected_output_shape = 4;
-}
-
-message ConvolutionalLayer {
-  uint64 input_channels = 1;
-  uint64 input_length = 2;
-  uint64 output_channels = 3;
-  uint64 kernel_size = 4;
-  uint64 stride = 5;
-  uint64 padding = 6;
-}
-
-message FlattenLayer {
-  repeated uint64 expected_input_shape = 1;
-}
-
-message HopfieldLayer {
-  uint64 size = 1;
-  repeated uint64 expected_shape = 2;
+message Model {
+  uint32 format_version = 1;
+  repeated Layer layers = 2;
 }
 
 message Layer {
+  LayerRecipe recipe = 1;
+  Parameters parameters = 2;
+}
+
+message LayerRecipe {
   string name = 1;
   string type = 2;
   string info = 3;
   string activation = 4;
-  Parameters parameters = 5;
+
+  repeated uint64 input_shape = 5;
+  repeated uint64 output_shape = 6;
 
   oneof kind {
     DenseLayer dense = 10;
@@ -52,7 +29,30 @@ message Layer {
   }
 }
 
-message Model {
-  uint32 format_version = 1;
-  repeated Layer layers = 2;
+message Parameters {
+  Tensor weights = 1;
+  Tensor biases = 2;
 }
+
+message Tensor {
+  repeated uint64 shape = 1;
+  repeated float values = 2;
+}
+
+message DenseLayer {
+}
+
+message FlattenLayer {
+}
+
+message HopfieldLayer {
+}
+
+message ConvolutionalLayer {
+  uint64 kernel_size = 4;
+  uint64 stride = 5;
+  uint64 padding = 6;
+}
+
+
+

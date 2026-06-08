@@ -7,6 +7,7 @@
 
 using namespace nn;
 
+//todo:make sure one assert per test
 TEST_CASE("tensor keeps value initializer lists as one-dimensional data",
           "[tensor]")
 {

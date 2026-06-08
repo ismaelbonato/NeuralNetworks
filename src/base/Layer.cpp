@@ -1,16 +1,10 @@
 #include "base/Layer.h"
+#include "base/Parameters.h"
 
 #include <memory>
 #include <stdexcept>
 
 namespace nn {
-
-void LayerRecipe::validateRecipe() const
-{
-    if (!getInputShape().isValid() || !getOutputShape().isValid()) {
-        throw std::invalid_argument("Layer recipe requires valid shapes.");
-    }
-}
 
 Layer::Layer(std::unique_ptr<LayerRecipe> newRecipe)
     : recipe(std::move(newRecipe))
@@ -21,12 +15,29 @@ Layer::Layer(std::unique_ptr<LayerRecipe> newRecipe)
 
 Layer::~Layer() = default;
 
-Shape Layer::getInputShape() const
+void LayerRecipe::validateRecipe() const
+{
+    if (!getInputShape().isValid() || !getOutputShape().isValid()) {
+        throw std::invalid_argument("Layer recipe requires valid shapes.");
+    }
+}
+
+const Shape &LayerRecipe::getInputShape() const
+{
+    return inputShape;
+}
+
+const Shape &LayerRecipe::getOutputShape() const
+{
+    return outputShape;
+}
+
+const Shape &Layer::getInputShape() const
 {
     return recipe->getInputShape();
 }
 
-Shape Layer::getOutputShape() const
+const Shape &Layer::getOutputShape() const
 {
     return recipe->getOutputShape();
 }
@@ -166,6 +177,22 @@ Pattern Layer::activate(const Pattern &values) const
 
     return values.map(
         [this](Scalar value) { return (*recipe->activation)(value); });
+}
+
+LayerSnapshot Layer::snapshot() const
+{
+    return LayerSnapshot{
+        .name = getName(),
+        .type = getType(),
+        .info = getInfo(),
+        .activation = recipe->activation
+                          ? std::string{recipe->activation->name()}
+                          : std::string{},
+        .inputShape = getInputShape().snapshot(),
+        .outputShape = getOutputShape().snapshot(),
+        .fields = {},
+        .parameters = parameters(),
+    };
 }
 
 } // namespace nn

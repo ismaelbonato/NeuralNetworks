@@ -53,16 +53,14 @@ void writeProtoModel(const nn::proto::Model &protoModel,
 nn::proto::Layer &addDenseProtoLayer(nn::proto::Model &protoModel)
 {
     auto &layer = *protoModel.add_layers();
-    layer.set_name("dense fixture");
-    layer.set_type("DenseLayer");
-    layer.set_info("load failure fixture");
-    layer.set_activation("sigmoid");
-
-    auto &dense = *layer.mutable_dense();
-    dense.set_input_size(2);
-    dense.set_output_size(1);
-    dense.add_expected_input_shape(2);
-    dense.add_expected_output_shape(1);
+    auto &recipe = *layer.mutable_recipe();
+    recipe.set_name("dense fixture");
+    recipe.set_type("DenseLayer");
+    recipe.set_info("load failure fixture");
+    recipe.set_activation("sigmoid");
+    recipe.add_input_shape(2);
+    recipe.add_output_shape(1);
+    recipe.mutable_dense();
 
     auto &weights = *layer.mutable_parameters()->mutable_weights();
     weights.add_shape(1);
@@ -100,18 +98,17 @@ TEST_CASE("model serializer saves dense model as protobuf binary",
     REQUIRE(protoModel.layers_size() == 1);
 
     const auto &layer = protoModel.layers(0);
-    REQUIRE(layer.has_dense());
-    REQUIRE(layer.name() == "serialize dense");
-    REQUIRE(layer.type() == "DenseLayer");
-    REQUIRE(layer.info() == "serialization fixture");
-    REQUIRE(layer.activation() == "sigmoid");
+    const auto &recipe = layer.recipe();
+    REQUIRE(recipe.has_dense());
+    REQUIRE(recipe.name() == "serialize dense");
+    REQUIRE(recipe.type() == "DenseLayer");
+    REQUIRE(recipe.info() == "serialization fixture");
+    REQUIRE(recipe.activation() == "sigmoid");
 
-    REQUIRE(layer.dense().input_size() == 2);
-    REQUIRE(layer.dense().output_size() == 1);
-    REQUIRE(layer.dense().expected_input_shape_size() == 1);
-    REQUIRE(layer.dense().expected_input_shape(0) == 2);
-    REQUIRE(layer.dense().expected_output_shape_size() == 1);
-    REQUIRE(layer.dense().expected_output_shape(0) == 1);
+    REQUIRE(recipe.input_shape_size() == 1);
+    REQUIRE(recipe.input_shape(0) == 2);
+    REQUIRE(recipe.output_shape_size() == 1);
+    REQUIRE(recipe.output_shape(0) == 1);
 
     REQUIRE(layer.parameters().weights().shape_size() == 2);
     REQUIRE(layer.parameters().weights().shape(0) == 1);
@@ -187,7 +184,7 @@ TEST_CASE("model serializer rejects unsupported activation names",
     const std::filesystem::path path = modelPath("unsupported-activation.nn");
     nn::proto::Model protoModel;
     protoModel.set_format_version(1);
-    addDenseProtoLayer(protoModel).set_activation("does_not_exist");
+    addDenseProtoLayer(protoModel).mutable_recipe()->set_activation("does_not_exist");
     writeProtoModel(protoModel, path);
 
     REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),
@@ -217,9 +214,12 @@ TEST_CASE("model serializer rejects unsupported layer kinds",
     protoModel.set_format_version(1);
 
     auto &layer = *protoModel.add_layers();
-    layer.set_name("flatten fixture");
-    layer.set_activation("identity");
-    layer.mutable_flatten()->add_expected_input_shape(2);
+    auto &recipe = *layer.mutable_recipe();
+    recipe.set_name("flatten fixture");
+    recipe.set_activation("identity");
+    recipe.add_input_shape(2);
+    recipe.add_output_shape(2);
+    recipe.mutable_flatten();
     writeProtoModel(protoModel, path);
 
     REQUIRE_THROWS_AS(Model::loadFromFile(path.string()),

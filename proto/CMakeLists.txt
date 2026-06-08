@@ -19,6 +19,7 @@ protobuf_generate(
 )
 
 set(PROTO_WRAPPER_SRCS
+    ${PROJECT_SOURCE_DIR}/src/serialization/LayerSerialization.cpp
     ${PROJECT_SOURCE_DIR}/src/serialization/ModelSerialization.cpp
 )
 
