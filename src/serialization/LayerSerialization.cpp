@@ -1,6 +1,7 @@
 #include "serialization/LayerSerialization.h"
 
 #include "base/ActivationFunction.h"
+#include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 
 #include <cstdint>
@@ -111,30 +112,57 @@ Pattern tensorFromProto(const nn::proto::Tensor &protoTensor)
     return tensor;
 }
 
-std::unique_ptr<Layer> layerFromProto(const nn::proto::Layer &protoLayer)
+template<typename Recipe>
+void fillCommonRecipeFields(Recipe &recipe,
+                            const nn::proto::LayerRecipe &protoRecipe)
 {
-    const auto &protoRecipe = protoLayer.recipe();
-
-    if (!protoRecipe.has_dense()) {
-        throw std::runtime_error("Unsupported layer kind.");
-    }
-
-    DenseLayerRecipe recipe;
     recipe.name = protoRecipe.name();
     recipe.type = protoRecipe.type();
     recipe.info = protoRecipe.info();
     recipe.activation = activationFromName(protoRecipe.activation());
     recipe.inputShape = shapeFromProto(protoRecipe.input_shape());
     recipe.outputShape = shapeFromProto(protoRecipe.output_shape());
+}
 
-    auto layer = std::make_unique<DenseLayer>(recipe);
-    if (protoLayer.has_parameters()) {
-        layer->setParameters({
-            .weights = tensorFromProto(protoLayer.parameters().weights()),
-            .biases = tensorFromProto(protoLayer.parameters().biases()),
-        });
+void assignParameters(Layer &layer, const nn::proto::Layer &protoLayer)
+{
+    if (!protoLayer.has_parameters()) {
+        return;
     }
-    return layer;
+
+    layer.setParameters({
+        .weights = tensorFromProto(protoLayer.parameters().weights()),
+        .biases = tensorFromProto(protoLayer.parameters().biases()),
+    });
+}
+
+std::unique_ptr<Layer> layerFromProto(const nn::proto::Layer &protoLayer)
+{
+    const auto &protoRecipe = protoLayer.recipe();
+
+    if (protoRecipe.has_dense()) {
+        DenseLayerRecipe recipe;
+        fillCommonRecipeFields(recipe, protoRecipe);
+
+        auto layer = std::make_unique<DenseLayer>(recipe);
+        assignParameters(*layer, protoLayer);
+        return layer;
+    }
+
+    if (protoRecipe.has_convolutional()) {
+        ConvolutionalLayerRecipe recipe;
+        fillCommonRecipeFields(recipe, protoRecipe);
+        const auto &convolutional = protoRecipe.convolutional();
+        recipe.kernelSize = static_cast<size_t>(convolutional.kernel_size());
+        recipe.stride = static_cast<size_t>(convolutional.stride());
+        recipe.padding = static_cast<size_t>(convolutional.padding());
+
+        auto layer = std::make_unique<ConvolutionalLayer>(recipe);
+        assignParameters(*layer, protoLayer);
+        return layer;
+    }
+
+    throw std::runtime_error("Unsupported layer kind.");
 }
 
 } // namespace nn::serialization

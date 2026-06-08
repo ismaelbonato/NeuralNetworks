@@ -1,5 +1,6 @@
 #include "base/ActivationFunction.h"
 #include "base/Model.h"
+#include "layers/ConvolutionalLayer.h"
 #include "layers/DenseLayer.h"
 #include "nn/model.pb.h"
 
@@ -29,6 +30,29 @@ std::unique_ptr<DenseLayer> makeDenseLayer()
         .weights = Pattern::matrix({{1.5F, -2.0F}}),
         .biases = {0.25F},
     });
+    return layer;
+}
+
+std::unique_ptr<ConvolutionalLayer> makeConvolutionalLayer()
+{
+    ConvolutionalLayerRecipe recipe;
+    recipe.name = "serialize convolution";
+    recipe.type = "ConvolutionalLayer";
+    recipe.info = "serialization fixture";
+    recipe.activation = std::make_shared<IdentityActivation<Scalar>>();
+    recipe.inputShape = {1, 4};
+    recipe.outputShape = {1, 2};
+    recipe.kernelSize = 3;
+    recipe.stride = 1;
+    recipe.padding = 0;
+
+    Pattern weights = Pattern::withShape({1, 1, 3});
+    weights.at({0, 0, 0}) = -1.0F;
+    weights.at({0, 0, 1}) = 0.0F;
+    weights.at({0, 0, 2}) = 1.0F;
+
+    auto layer = std::make_unique<ConvolutionalLayer>(recipe);
+    layer->setParameters({.weights = weights, .biases = {0.5F}});
     return layer;
 }
 
@@ -222,6 +246,28 @@ TEST_CASE("model serializer loads saved dense model", "[serialization]")
     REQUIRE(loaded.numLayers() == 1);
     REQUIRE(after.size() == before.size());
     REQUIRE(after.at(0) == Catch::Approx(before.at(0)));
+}
+
+TEST_CASE("model serializer loads saved convolutional model", "[serialization]")
+{
+    const std::filesystem::path path = modelPath(
+        "nn-runtime-convolution-save-load-test.nn");
+    std::filesystem::remove(path);
+
+    Pattern input = {0.0F, 1.0F, 2.0F, 3.0F};
+    input.reshape({1, 4});
+
+    Model model;
+    model.addLayer(makeConvolutionalLayer());
+    const Pattern before = model.infer(input);
+
+    model.saveToFile(path.string());
+    Model loaded = Model::loadFromFile(path.string());
+    const Pattern after = loaded.infer(input);
+
+    REQUIRE(after.shape() == before.shape());
+    REQUIRE(after.at(0) == Catch::Approx(before.at(0)));
+    REQUIRE(after.at(1) == Catch::Approx(before.at(1)));
 }
 
 TEST_CASE("model serializer rejects missing model files", "[serialization][errors]")
