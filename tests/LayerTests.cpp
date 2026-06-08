@@ -188,7 +188,7 @@ TEST_CASE("flatten layer reshapes explicit input shape to a vector",
     REQUIRE(output == Pattern{1.0F, 2.0F, 3.0F, 4.0F});
 }
 
-TEST_CASE("layer parameter setter rejects invalid weight and bias shapes",
+TEST_CASE("layer parameter setter rejects vector-shaped weights",
           "[layer][errors]")
 {
     auto layer = makeDenseLayer(2, 2);
@@ -196,14 +196,34 @@ TEST_CASE("layer parameter setter rejects invalid weight and bias shapes",
     REQUIRE_THROWS_AS(layer->setParameters({.weights = Pattern::vector(4, 0.0F),
                                             .biases = {0.0F, 0.0F}}),
                       std::runtime_error);
+}
+
+TEST_CASE("layer parameter setter rejects wrong matrix weight shape",
+          "[layer][errors]")
+{
+    auto layer = makeDenseLayer(2, 2);
+
     REQUIRE_THROWS_AS(layer->setParameters(
                           {.weights = Pattern::matrix(1, 4, 0.0F),
                            .biases = {0.0F, 0.0F}}),
                       std::runtime_error);
+}
+
+TEST_CASE("layer parameter setter rejects wrong bias shape",
+          "[layer][errors]")
+{
+    auto layer = makeDenseLayer(2, 2);
+
     REQUIRE_THROWS_AS(layer->setParameters(
                           {.weights = Pattern::matrix(2, 2, 0.0F),
                            .biases = {0.0F}}),
                       std::runtime_error);
+}
+
+TEST_CASE("layer parameter setter accepts matching parameter shapes",
+          "[layer][parameters]")
+{
+    auto layer = makeDenseLayer(2, 2);
 
     REQUIRE_NOTHROW(layer->setParameters(
         {.weights = Pattern::matrix(2, 2, 0.0F), .biases = {0.0F, 0.0F}}));
@@ -223,7 +243,15 @@ TEST_CASE("parameterized layer infers through owned parameters",
     requireClose(output.at(0), 0.880797F);
 }
 
-TEST_CASE("layer exposes parameter snapshots for parameterized layers",
+TEST_CASE("parameterized layer reports that it uses parameters",
+          "[layer][parameters]")
+{
+    auto layer = makeDenseLayer(2, 1);
+
+    REQUIRE(layer->usesParameters());
+}
+
+TEST_CASE("parameterized layer exposes parameter snapshots",
           "[layer][parameters]")
 {
     auto layer = makeDenseLayer(2, 1);
@@ -234,10 +262,33 @@ TEST_CASE("layer exposes parameter snapshots for parameterized layers",
 
     layer->setParameters(parameters);
 
-    REQUIRE(layer->usesParameters());
     REQUIRE(layer->parameters().has_value());
+}
+
+TEST_CASE("parameterized layer returns assigned parameters",
+          "[layer][parameters]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    const Parameters parameters{
+        .weights = Pattern::matrix({{1.0F, -1.0F}}),
+        .biases = {0.5F},
+    };
+
+    layer->setParameters(parameters);
+
     REQUIRE(layer->getParameters().weights == parameters.weights);
     REQUIRE(layer->getParameters().biases == parameters.biases);
+}
+
+TEST_CASE("parameterized layer accepts valid assigned parameters",
+          "[layer][parameters]")
+{
+    auto layer = makeDenseLayer(2, 1);
+    layer->setParameters({
+        .weights = Pattern::matrix({{1.0F, -1.0F}}),
+        .biases = {0.5F},
+    });
+
     REQUIRE_NOTHROW(layer->requireParameters());
 }
 
@@ -253,6 +304,16 @@ TEST_CASE("layer-owned parameters drive runtime execution",
     const Pattern output = layer->infer({1.0F});
 
     requireClose(output.at(0), 0.7310586F);
+}
+
+TEST_CASE("layer stores assigned owned parameters", "[layer][parameters]")
+{
+    auto layer = makeDenseLayer(1, 1);
+    layer->setParameters({
+        .weights = Pattern::matrix({{2.0F}}),
+        .biases = {-1.0F},
+    });
+
     REQUIRE(layer->getParameters().weights == Pattern::matrix({{2.0F}}));
     REQUIRE(layer->getParameters().biases == Pattern{-1.0F});
 }
@@ -266,27 +327,63 @@ TEST_CASE("parameterized runtime layer uses reassigned owned parameters",
         .biases = {-1.0F},
     });
 
-    const Pattern output = layer->infer({1.0F});
-
     layer->setParameters({
-        .weights = Pattern::matrix({{1.0F}}),
+        .weights = Pattern::matrix({{0.0F}}),
         .biases = {0.0F},
     });
+
     const Pattern reassignedOutput = layer->infer({1.0F});
 
-    requireClose(output.at(0), 0.7310586F);
-    requireClose(reassignedOutput.at(0), 0.7310586F);
+    requireClose(reassignedOutput.at(0), 0.5F);
 }
 
-TEST_CASE("runtime-only layers do not expose parameters", "[layer][parameters]")
+TEST_CASE("runtime-only layers do not use parameters", "[layer][parameters]")
 {
     auto layer = makeFlattenLayer({1, 2});
 
     REQUIRE_FALSE(layer->usesParameters());
+}
+
+TEST_CASE("runtime-only layers do not expose parameter snapshots",
+          "[layer][parameters]")
+{
+    auto layer = makeFlattenLayer({1, 2});
+
     REQUIRE_FALSE(layer->parameters().has_value());
+}
+
+TEST_CASE("runtime-only layers accept parameter guard calls",
+          "[layer][parameters]")
+{
+    auto layer = makeFlattenLayer({1, 2});
+
     REQUIRE_NOTHROW(layer->requireParameters());
+}
+
+TEST_CASE("runtime-only layers reject parameter access",
+          "[layer][parameters]")
+{
+    auto layer = makeFlattenLayer({1, 2});
+
     REQUIRE_THROWS_AS(layer->getParameters(), std::runtime_error);
+}
+
+TEST_CASE("runtime-only layers reject parameter assignment",
+          "[layer][parameters]")
+{
+    auto layer = makeFlattenLayer({1, 2});
+
     REQUIRE_THROWS_AS(layer->setParameters({}), std::runtime_error);
+}
+
+TEST_CASE("model stores added layers", "[model][layer]")
+{
+    auto layer = makeDenseLayer(1, 1);
+
+    Model network;
+    network.addLayer(std::move(layer));
+
+    REQUIRE(network.numLayers() == 1);
 }
 
 TEST_CASE("model can infer through added layers", "[model][layer]")
@@ -310,7 +407,6 @@ TEST_CASE("model can infer through added layers", "[model][layer]")
 
     const Pattern output = network.infer({1.0F});
 
-    REQUIRE(network.numLayers() == 1);
     requireClose(output.at(0), 0.7310586F);
 }
 
@@ -327,7 +423,19 @@ TEST_CASE("layer guard rejects parameter layers without assigned weights",
     auto layer = std::make_unique<MissingParametersLayer>(config);
 
     REQUIRE_THROWS_AS(layer->requireParameters(), std::runtime_error);
+}
+
+TEST_CASE("layer inference rejects parameter layers without assigned weights",
+          "[layer][errors]")
+{
+    DenseLayerRecipe config;
+    config.name = "missing parameters test layer";
+    config.type = "TestLayer";
+    config.info = "intentionally skips parameter assignment";
+    config.activation = std::make_shared<SigmoidActivation<Scalar>>();
+    config.inputShape = {2};
+    config.outputShape = {1};
+    auto layer = std::make_unique<MissingParametersLayer>(config);
+
     REQUIRE_THROWS_AS(layer->infer({1.0F, 1.0F}), std::runtime_error);
-    Model network;
-    network.addLayer(std::move(layer));
 }

@@ -7,7 +7,6 @@
 
 using namespace nn;
 
-//todo:make sure one assert per test
 TEST_CASE("tensor keeps value initializer lists as one-dimensional data",
           "[tensor]")
 {
@@ -67,19 +66,34 @@ TEST_CASE("tensor can be allocated as a matrix from rows", "[tensor]")
     REQUIRE(matrix.at({1, 2}) == 6.0F);
 }
 
-TEST_CASE("tensor matrix row factory rejects invalid rows", "[tensor]")
+TEST_CASE("tensor matrix row factory rejects empty rows", "[tensor]")
 {
     REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({}), std::runtime_error);
+}
+
+TEST_CASE("tensor matrix row factory rejects empty columns", "[tensor]")
+{
     REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({{}}), std::runtime_error);
+}
+
+TEST_CASE("tensor matrix row factory rejects ragged rows", "[tensor]")
+{
     REQUIRE_THROWS_AS(Tensor<Scalar>::matrix({{1.0F, 2.0F}, {3.0F}}),
                       std::runtime_error);
 }
 
-TEST_CASE("tensor vector and matrix factories reject empty dimensions",
-          "[tensor]")
+TEST_CASE("tensor vector factory rejects zero size", "[tensor]")
 {
     REQUIRE_THROWS_AS(Tensor<Scalar>::vector(0), std::runtime_error);
+}
+
+TEST_CASE("tensor matrix factory rejects zero rows", "[tensor]")
+{
     REQUIRE_THROWS_AS(Tensor<Scalar>::matrix(0, 3), std::runtime_error);
+}
+
+TEST_CASE("tensor matrix factory rejects zero columns", "[tensor]")
+{
     REQUIRE_THROWS_AS(Tensor<Scalar>::matrix(2, 0), std::runtime_error);
 }
 
@@ -97,12 +111,26 @@ TEST_CASE("tensor indexes shaped storage in row-major order", "[tensor]")
     REQUIRE(tensor.at(23) == 42.0F);
 }
 
-TEST_CASE("tensor rejects shaped indexes with wrong rank or bounds", "[tensor]")
+TEST_CASE("tensor rejects shaped indexes with wrong rank", "[tensor]")
 {
     auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
 
     REQUIRE_THROWS_AS(tensor.offsetOf({1, 2}), std::runtime_error);
+}
+
+TEST_CASE("tensor rejects shaped indexes with out-of-bounds offsets",
+          "[tensor]")
+{
+    auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
+
     REQUIRE_THROWS_AS(tensor.offsetOf({2, 0, 0}), std::runtime_error);
+}
+
+TEST_CASE("tensor rejects shaped at indexes with out-of-bounds offsets",
+          "[tensor]")
+{
+    auto tensor = Tensor<Scalar>::withShape({2, 3, 4});
+
     REQUIRE_THROWS_AS(tensor.at({0, 3, 0}), std::runtime_error);
 }
 
@@ -128,30 +156,53 @@ TEST_CASE("tensor can reshape when element count matches", "[tensor]")
     REQUIRE(values.elementCount() == 4);
 }
 
-TEST_CASE("tensor rejects invalid explicit shapes", "[tensor]")
+TEST_CASE("tensor explicit shape rejects empty shape", "[tensor]")
 {
     REQUIRE_THROWS_AS(Tensor<Scalar>::withShape({}), std::runtime_error);
-    REQUIRE_THROWS_AS(Tensor<Scalar>::withShape({28, 0, 3}), std::runtime_error);
+}
 
+TEST_CASE("tensor explicit shape rejects zero dimensions", "[tensor]")
+{
+    REQUIRE_THROWS_AS(Tensor<Scalar>::withShape({28, 0, 3}),
+                      std::runtime_error);
+}
+
+TEST_CASE("tensor reshape rejects mismatched element count", "[tensor]")
+{
     Pattern values = {1.0F, 2.0F, 3.0F, 4.0F};
+
     REQUIRE_THROWS_AS(values.reshape({3, 3}), std::runtime_error);
 }
 
-TEST_CASE("tensor elementwise operations reject mismatched sizes", "[tensor]")
+TEST_CASE("tensor addition rejects mismatched sizes", "[tensor]")
 {
     const Pattern a = {1.0F, 2.0F};
     const Pattern b = {1.0F};
 
     REQUIRE_THROWS_AS(a + b, std::runtime_error);
+}
+
+TEST_CASE("tensor multiplication rejects mismatched sizes", "[tensor]")
+{
+    const Pattern a = {1.0F, 2.0F};
+    const Pattern b = {1.0F};
+
     REQUIRE_THROWS_AS(a * b, std::runtime_error);
 }
 
-TEST_CASE("tensor elementwise operations reject mismatched shapes", "[tensor]")
+TEST_CASE("tensor addition rejects mismatched shapes", "[tensor]")
 {
     const auto matrix = Tensor<Scalar>::withShape({2, 2}, 1.0F);
     const auto vector = Tensor<Scalar>::withShape({4}, 1.0F);
 
     REQUIRE_THROWS_AS(matrix + vector, std::runtime_error);
+}
+
+TEST_CASE("tensor multiplication rejects mismatched shapes", "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::withShape({2, 2}, 1.0F);
+    const auto vector = Tensor<Scalar>::withShape({4}, 1.0F);
+
     REQUIRE_THROWS_AS(matrix * vector, std::runtime_error);
 }
 
@@ -192,17 +243,30 @@ TEST_CASE("tensor vector matrix multiplication uses input receiver convention",
     REQUIRE(result.shape() == std::vector<size_t>{2});
 }
 
-TEST_CASE("tensor matrix vector multiplication rejects invalid shapes",
+TEST_CASE("tensor matrix vector multiplication rejects non-matrix receivers",
           "[tensor]")
 {
     const auto notMatrix = Tensor<Scalar>::withShape({2, 3, 4});
-    const auto matrix = Tensor<Scalar>::withShape({2, 3});
-    const auto notVector = Tensor<Scalar>::withShape({3, 1});
-    const Pattern shortVector = {1.0F, 2.0F};
 
     REQUIRE_THROWS_AS(notMatrix.matVec(Pattern{1.0F, 2.0F, 3.0F}),
                       std::runtime_error);
+}
+
+TEST_CASE("tensor matrix vector multiplication rejects non-vector arguments",
+          "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::withShape({2, 3});
+    const auto notVector = Tensor<Scalar>::withShape({3, 1});
+
     REQUIRE_THROWS_AS(matrix.matVec(notVector), std::runtime_error);
+}
+
+TEST_CASE("tensor matrix vector multiplication rejects mismatched vector length",
+          "[tensor]")
+{
+    const auto matrix = Tensor<Scalar>::withShape({2, 3});
+    const Pattern shortVector = {1.0F, 2.0F};
+
     REQUIRE_THROWS_AS(matrix.matVec(shortVector), std::runtime_error);
 }
 

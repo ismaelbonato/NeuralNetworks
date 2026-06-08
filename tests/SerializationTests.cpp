@@ -76,8 +76,7 @@ nn::proto::Layer &addDenseProtoLayer(nn::proto::Model &protoModel)
 }
 } // namespace
 
-TEST_CASE("model serializer saves dense model as protobuf binary",
-          "[serialization]")
+TEST_CASE("model serializer creates a protobuf file", "[serialization]")
 {
     const std::filesystem::path path = modelPath();
     std::filesystem::remove(path);
@@ -88,6 +87,15 @@ TEST_CASE("model serializer saves dense model as protobuf binary",
     model.saveToFile(path.string());
 
     REQUIRE(std::filesystem::exists(path));
+}
+
+TEST_CASE("model serializer writes the format version", "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
 
     nn::proto::Model protoModel;
     std::ifstream input(path, std::ios::binary);
@@ -95,36 +103,108 @@ TEST_CASE("model serializer saves dense model as protobuf binary",
     REQUIRE(protoModel.ParseFromIstream(&input));
 
     REQUIRE(protoModel.format_version() == 1);
-    REQUIRE(protoModel.layers_size() == 1);
+}
 
-    const auto &layer = protoModel.layers(0);
-    const auto &recipe = layer.recipe();
+TEST_CASE("model serializer writes one proto layer per model layer",
+          "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
+
+    nn::proto::Model protoModel;
+    std::ifstream input(path, std::ios::binary);
+    REQUIRE(input.good());
+    REQUIRE(protoModel.ParseFromIstream(&input));
+
+    REQUIRE(protoModel.layers_size() == 1);
+}
+
+TEST_CASE("dense serialization writes recipe metadata", "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
+
+    nn::proto::Model protoModel;
+    std::ifstream input(path, std::ios::binary);
+    REQUIRE(input.good());
+    REQUIRE(protoModel.ParseFromIstream(&input));
+
+    const auto &recipe = protoModel.layers(0).recipe();
     REQUIRE(recipe.has_dense());
     REQUIRE(recipe.name() == "serialize dense");
     REQUIRE(recipe.type() == "DenseLayer");
     REQUIRE(recipe.info() == "serialization fixture");
     REQUIRE(recipe.activation() == "sigmoid");
+}
 
+TEST_CASE("dense serialization writes recipe input and output shapes",
+          "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
+
+    nn::proto::Model protoModel;
+    std::ifstream input(path, std::ios::binary);
+    REQUIRE(input.good());
+    REQUIRE(protoModel.ParseFromIstream(&input));
+
+    const auto &recipe = protoModel.layers(0).recipe();
     REQUIRE(recipe.input_shape_size() == 1);
     REQUIRE(recipe.input_shape(0) == 2);
     REQUIRE(recipe.output_shape_size() == 1);
     REQUIRE(recipe.output_shape(0) == 1);
-
-    REQUIRE(layer.parameters().weights().shape_size() == 2);
-    REQUIRE(layer.parameters().weights().shape(0) == 1);
-    REQUIRE(layer.parameters().weights().shape(1) == 2);
-    REQUIRE(layer.parameters().weights().values_size() == 2);
-    REQUIRE(layer.parameters().weights().values(0) == 1.5F);
-    REQUIRE(layer.parameters().weights().values(1) == -2.0F);
-
-    REQUIRE(layer.parameters().biases().shape_size() == 1);
-    REQUIRE(layer.parameters().biases().shape(0) == 1);
-    REQUIRE(layer.parameters().biases().values_size() == 1);
-    REQUIRE(layer.parameters().biases().values(0) == 0.25F);
-
-    // Keep the file in the build tree so it can be inspected after the test.
 }
 
+TEST_CASE("dense serialization writes weight tensor", "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
+
+    nn::proto::Model protoModel;
+    std::ifstream input(path, std::ios::binary);
+    REQUIRE(input.good());
+    REQUIRE(protoModel.ParseFromIstream(&input));
+
+    const auto &weights = protoModel.layers(0).parameters().weights();
+    REQUIRE(weights.shape_size() == 2);
+    REQUIRE(weights.shape(0) == 1);
+    REQUIRE(weights.shape(1) == 2);
+    REQUIRE(weights.values_size() == 2);
+    REQUIRE(weights.values(0) == 1.5F);
+    REQUIRE(weights.values(1) == -2.0F);
+}
+
+TEST_CASE("dense serialization writes bias tensor", "[serialization]")
+{
+    const std::filesystem::path path = modelPath();
+    Model model;
+    model.addLayer(makeDenseLayer());
+
+    model.saveToFile(path.string());
+
+    nn::proto::Model protoModel;
+    std::ifstream input(path, std::ios::binary);
+    REQUIRE(input.good());
+    REQUIRE(protoModel.ParseFromIstream(&input));
+
+    const auto &biases = protoModel.layers(0).parameters().biases();
+    REQUIRE(biases.shape_size() == 1);
+    REQUIRE(biases.shape(0) == 1);
+    REQUIRE(biases.values_size() == 1);
+    REQUIRE(biases.values(0) == 0.25F);
+}
 
 TEST_CASE("model serializer loads saved dense model", "[serialization]")
 {
